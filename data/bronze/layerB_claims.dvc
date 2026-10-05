@@ -1,0 +1,6 @@
+outs:
+- md5: 9219f60cea2d6faf04eb89a155f38056.dir
+  size: 233595
+  nfiles: 2
+  hash: md5
+  path: layerB_claims

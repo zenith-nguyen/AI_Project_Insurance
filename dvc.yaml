@@ -1,0 +1,14 @@
+stages:
+  build_gold:
+    cmd: python -m src.data.build_gold
+    deps:
+      - data/silver/layerB_claims/claims_silver_v1.parquet
+      - data/silver/layerB_claims/manifest_v1.json
+      - src/data/build_gold.py
+      - src/data/validate_silver.py
+      - src/data/common.py
+    params:
+      - seed
+      - gold
+    outs:
+      - data/gold/dataset_v2

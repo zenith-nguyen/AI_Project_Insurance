@@ -1,0 +1,6 @@
+# Business costs are intentionally unset until the team provides evidence.
+fraud_loss_avoided: null
+review_cost: null
+siu_cost: null
+false_hold_cost: null
+ai_operation_cost_per_claim: null

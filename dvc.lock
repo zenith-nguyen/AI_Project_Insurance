@@ -1,0 +1,39 @@
+schema: '2.0'
+stages:
+  build_gold:
+    cmd: python -m src.data.build_gold
+    deps:
+    - path: data/silver/layerB_claims/claims_silver_v1.parquet
+      hash: md5
+      md5: 947ce40591815fb15965b3a1c343fb61
+      size: 112967
+    - path: data/silver/layerB_claims/manifest_v1.json
+      hash: md5
+      md5: 31c111575f854be51de1f29d56c8a65d
+      size: 777
+    - path: src/data/build_gold.py
+      hash: md5
+      md5: 89bbee37a81dbed63bfac66026c99f1f
+      size: 2181
+    - path: src/data/common.py
+      hash: md5
+      md5: 5659992f77eda37858066c7d34284ce2
+      size: 849
+    - path: src/data/validate_silver.py
+      hash: md5
+      md5: f7eb40b6497bac3597faecb57553fe30
+      size: 2772
+    params:
+      params.yaml:
+        gold:
+          version: dataset_v2
+          train_size: 0.7
+          val_size: 0.1
+          test_size: 0.2
+        seed: 42
+    outs:
+    - path: data/gold/dataset_v2
+      hash: md5
+      md5: 1dc0a048f18098f40f5dceda99cba5f1.dir
+      size: 174550
+      nfiles: 4

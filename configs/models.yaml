@@ -1,0 +1,19 @@
+logreg:
+  C: 1.0
+  class_weight: balanced
+  max_iter: 2000
+random_forest:
+  n_estimators: 250
+  min_samples_leaf: 5
+  class_weight: balanced_subsample
+xgboost:
+  n_estimators: 250
+  max_depth: 3
+  learning_rate: 0.04
+  subsample: 0.85
+  colsample_bytree: 0.85
+lightgbm:
+  n_estimators: 250
+  num_leaves: 15
+  learning_rate: 0.04
+  min_child_samples: 20

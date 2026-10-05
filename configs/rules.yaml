@@ -1,0 +1,21 @@
+rules:
+  - name: high_claim_amount
+    feature: total_claim_amount
+    op: train_quantile_gte
+    value: 0.80
+    weight: 1.0
+  - name: short_policy_tenure
+    feature: policy_age_days
+    op: lte
+    value: 90
+    weight: 1.0
+  - name: no_police_report
+    feature: police_report_available
+    op: equals
+    value: NO
+    weight: 0.5
+  - name: severe_incident
+    feature: incident_severity
+    op: equals
+    value: Major Damage
+    weight: 0.5

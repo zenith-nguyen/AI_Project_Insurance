@@ -1,0 +1,25 @@
+target: fraud_label
+always_exclude:
+  - claim_id
+  - source_row
+  - fraud_reported
+  - fraud_label
+  - policy_number
+  - incident_location
+  - insured_zip
+  - auto_model
+  - policy_bind_date
+  - incident_date
+  - incident_hour_of_the_day
+  - months_as_customer
+  - age
+  - total_claim_amount
+review_before_use:
+  - incident_severity
+  - injury_claim
+  - property_claim
+  - vehicle_claim
+  - police_report_available
+  - authorities_contacted
+  - witnesses
+  - bodily_injuries

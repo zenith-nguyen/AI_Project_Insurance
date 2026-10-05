@@ -1,0 +1,6 @@
+ultralytics>=8,<9
+torch>=2,<3
+torchvision>=0.19,<1
+opencv-python>=4,<5
+transformers>=4,<6
+faiss-cpu>=1.8,<2
