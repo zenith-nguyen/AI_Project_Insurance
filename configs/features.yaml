@@ -1,4 +1,9 @@
 target: fraud_label
+EXCLUDE_BIASED_FEATURES: true
+biased_features:
+  - insured_hobbies
+  - insured_zip
+  - incident_location
 always_exclude:
   - claim_id
   - source_row

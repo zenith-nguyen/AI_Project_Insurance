@@ -27,6 +27,7 @@ python -m src.data.ingest_claims 'data/bronze/layerB_claims/Worksheet in Case St
 python -m src.data.validate_silver
 dvc repro
 python -m src.models.train
+python -m src.features.robustness_audit
 python -m src.explainability.shap_analysis
 python -m src.models.predict data/gold/dataset_v2/test.parquet reports/metrics/test_queue.csv
 pytest -q
@@ -41,6 +42,18 @@ Only train is used for feature audit, model selection (repeated stratified CV), 
 The feature policy in `configs/features.yaml` conservatively excludes IDs, location proxies, raw dates, the source target, and potentially redundant totals. Fields in `review_before_use` require confirmation that they are known at scoring time. `reports/leakage/` contains a train-only descriptive audit; association is not proof of leakage. `configs/rules.yaml` holds the baseline heuristics, including a claim amount quantile fitted only on train.
 
 `reports/RESULTS.md` is the readable result; `reports/metrics/tabular_v1.json` contains detailed numbers. `reports/metrics/test_predictions.csv` provides claim-level scores and labels for local analysis. These files and `artifacts/` are ignored by Git. Business net value is intentionally unavailable until `configs/business.yaml` contains real costs and avoided losses.
+
+`configs/features.yaml` contains `EXCLUDE_BIASED_FEATURES`. When enabled, training drops `insured_hobbies`, `insured_zip`, and `incident_location`, and writes a separate `tabular_bias_excluded_v1` result/artifact without overwriting the original baseline.
+
+Inspect a downloaded CarDD FiftyOne folder before any conversion or training:
+
+```powershell
+python scripts/inspect_cardd.py 'PATH_TO_CARDD'
+```
+
+The inspector reads `fiftyone.yml`, `samples.json`, `metadata.json`, counts images under `data/`, discovers annotation classes and geometry actually present, and extracts `CarDD_license.pdf`. It does not assume COCO annotations.
+
+`configs/stages.yaml` defines candidate feature sets for intake and complete-file scoring checkpoints. Stage-model training remains excluded from `run_all.ps1` until the business team confirms which fields exist at each moment. `reports/ROBUSTNESS.md` contains the train-only sensitivity check.
 
 ## Image branch
 

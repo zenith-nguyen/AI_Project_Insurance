@@ -1,0 +1,36 @@
+# Candidate feature sets pending confirmation of data availability at each checkpoint.
+stage1_intake:
+  description: Initial claim intake using policy, vehicle, and basic incident fields.
+  features:
+    - policy_csl
+    - policy_deductable
+    - policy_annual_premium
+    - umbrella_limit
+    - policy_age_days
+    - incident_type
+    - collision_type
+    - number_of_vehicles_involved
+    - auto_make
+    - auto_year
+stage3_complete:
+  description: Complete claim file using claim evidence but excluding social and geographic proxies.
+  features:
+    - policy_csl
+    - policy_deductable
+    - policy_annual_premium
+    - umbrella_limit
+    - policy_age_days
+    - incident_type
+    - collision_type
+    - incident_severity
+    - authorities_contacted
+    - number_of_vehicles_involved
+    - property_damage
+    - bodily_injuries
+    - witnesses
+    - police_report_available
+    - injury_claim
+    - property_claim
+    - vehicle_claim
+    - auto_make
+    - auto_year

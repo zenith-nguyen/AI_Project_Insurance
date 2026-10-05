@@ -4,6 +4,7 @@ import pandas as pd
 
 from src.data.common import ROOT, config, sha256
 from src.data.validate_silver import validate
+from src.features.preprocessing import features
 
 
 def test_real_silver_manifest_and_schema():
@@ -20,3 +21,9 @@ def test_frozen_gold_has_exact_counts_and_no_claim_overlap():
     assert len(set().union(*(set(frame.claim_id) for frame in splits.values()))) == 1000
     for name in splits:
         assert sha256(folder / f"{name}.parquet") == manifest["splits"][name]["sha256"]
+
+
+def test_bias_exclusion_policy_removes_named_features():
+    folder = ROOT / "data/gold" / config("params.yaml")["gold"]["version"]
+    transformed = features(pd.read_parquet(folder / "train.parquet"))
+    assert {"insured_hobbies", "insured_zip", "incident_location"}.isdisjoint(transformed.columns)

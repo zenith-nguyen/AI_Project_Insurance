@@ -11,6 +11,8 @@ if ($LASTEXITCODE -ne 0) { throw 'Silver validation failed' }
 if ($LASTEXITCODE -ne 0) { throw 'DVC reproduction failed' }
 & $python -m src.models.train
 if ($LASTEXITCODE -ne 0) { throw 'Model training failed' }
+& $python -m src.features.robustness_audit
+if ($LASTEXITCODE -ne 0) { throw 'Robustness audit failed' }
 & $python -m src.explainability.shap_analysis
 if ($LASTEXITCODE -ne 0) { throw 'Explanation export failed' }
 & $python -m src.evaluation.report

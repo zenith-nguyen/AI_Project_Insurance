@@ -59,6 +59,9 @@ def _load_splits() -> tuple[dict[str, pd.DataFrame], dict]:
 
 def run() -> dict:
     params = config("params.yaml")
+    feature_policy = config("configs/features.yaml")
+    exclude_biased = bool(feature_policy.get("EXCLUDE_BIASED_FEATURES", False))
+    run_name = "tabular_bias_excluded_v1" if exclude_biased else "tabular_v1"
     splits, gold_manifest = _load_splits()
     write_report(splits["train"])
     x = {name: features(frame) for name, frame in splits.items()}
@@ -99,6 +102,8 @@ def run() -> dict:
     rule_metrics = evaluate(y["test"], rule_test, params["evaluation"]["k_values"])
     result = {
         "created_at_utc": utc_now(), "dataset": "Kaggle insurance-fraud-detection tabular only", "gold_version": gold_manifest["version"], "gold_test_sha256": gold_manifest["splits"]["test"]["sha256"],
+        "run_name": run_name,
+        "feature_policy": {"EXCLUDE_BIASED_FEATURES": exclude_biased, "biased_features": feature_policy.get("biased_features", [])},
         "model_selection": "train repeated stratified CV mean average precision", "selected_model": winner, "cv": cv_results,
         "calibration": "sigmoid on train out-of-fold logits; isotonic exploratory only", "validation": evaluate(y["val"], val_score, params["evaluation"]["k_values"], probability=True),
         "validation_isotonic_brier_exploratory": float(brier_score_loss(y["val"], isotonic_val)),
@@ -111,12 +116,12 @@ def run() -> dict:
     }
     output = ROOT / "reports/metrics"
     output.mkdir(parents=True, exist_ok=True)
-    write_json(output / "tabular_v1.json", result)
+    write_json(output / f"{run_name}.json", result)
     predictions = splits["test"][["claim_id", "fraud_label"]].copy()
     predictions["calibrated_score"] = test_score
     predictions["rule_score"] = rule_test
-    predictions.to_csv(output / "test_predictions.csv", index=False)
-    artifacts = ROOT / "artifacts/models/tabular_v1"
+    predictions.to_csv(output / f"{run_name}_test_predictions.csv", index=False)
+    artifacts = ROOT / "artifacts/models" / run_name
     artifacts.mkdir(parents=True, exist_ok=True)
     joblib.dump({"model": model, "calibrator": calibrator, "rules": rule, "thresholds": thresholds, "feature_columns": list(x["train"].columns)}, artifacts / "bundle.joblib")
     return result

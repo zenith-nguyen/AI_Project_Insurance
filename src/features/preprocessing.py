@@ -17,7 +17,10 @@ def features(frame: pd.DataFrame) -> pd.DataFrame:
     if {"policy_bind_date", "incident_date"}.issubset(result.columns):
         result["policy_age_days"] = (pd.to_datetime(result.incident_date) - pd.to_datetime(result.policy_bind_date)).dt.days
         result.loc[result.policy_age_days < 0, "policy_age_days"] = np.nan
-    result = result.drop(columns=[column for column in policy["always_exclude"] if column in result], errors="ignore")
+    excluded = list(policy["always_exclude"])
+    if policy.get("EXCLUDE_BIASED_FEATURES", False):
+        excluded.extend(policy.get("biased_features", []))
+    result = result.drop(columns=[column for column in excluded if column in result], errors="ignore")
     if any(pd.api.types.is_datetime64_any_dtype(result[column]) for column in result):
         raise ValueError("Unreviewed datetime feature present")
     # sklearn's imputers handle np.nan consistently across pandas versions.
