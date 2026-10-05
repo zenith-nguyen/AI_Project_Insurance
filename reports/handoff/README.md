@@ -14,4 +14,4 @@ Các file dưới đây dùng số liệu đã chạy trong repo tại ngày 05/
 | Thanh Vy | `layer_c_scenario_script.py` | Sinh biến thể ảnh cho kịch bản 3, 4, 5 và 8 |
 | Tất cả thành viên | `document_network_scope.md` | Quyết định phạm vi Document và Network |
 
-Lưu ý: `cardd_summary.md` chưa có số ảnh, lớp và nội dung license đã xác minh vì nhóm chưa cung cấp đường dẫn CarDD thực tế. Không thay các mục này bằng số ước lượng.
+Lưu ý: path CarDD trong MyDrive đã được xác nhận, nhưng `cardd_summary.md` chưa có số ảnh, lớp và nội dung license vì inspector chưa được chạy trong Colab. Không thay các mục này bằng số ước lượng.

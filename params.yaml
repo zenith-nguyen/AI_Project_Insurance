@@ -4,6 +4,11 @@ gold:
   train_size: 0.70
   val_size: 0.10
   test_size: 0.20
+feature_selection:
+  version: feature_selection_v1
+  source_gold_version: dataset_v2
+  val_size: 0.20
+  seed: 20261005
 cv:
   n_splits: 5
   n_repeats: 5

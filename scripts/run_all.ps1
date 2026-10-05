@@ -13,6 +13,8 @@ if ($LASTEXITCODE -ne 0) { throw 'DVC reproduction failed' }
 if ($LASTEXITCODE -ne 0) { throw 'Model training failed' }
 & $python -m src.features.robustness_audit
 if ($LASTEXITCODE -ne 0) { throw 'Robustness audit failed' }
+& $python -m src.features.feature_policy_validation
+if ($LASTEXITCODE -ne 0) { throw 'Feature-policy validation failed' }
 & $python -m src.explainability.shap_analysis
 if ($LASTEXITCODE -ne 0) { throw 'Explanation export failed' }
 & $python -m src.evaluation.report

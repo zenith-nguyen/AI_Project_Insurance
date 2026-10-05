@@ -16,3 +16,5 @@ Gold `dataset_v2`; test gồm 200 hồ sơ, 49 fraud và 151 non-fraud. Model v�
 Bootstrap 95%: AP 0,458–0,691; ROC-AUC 0,753–0,889; Recall@10% 12,2%–28,6%; Precision@10% 30,0%–70,0%. Model hơn rule 6,1 điểm phần trăm Recall@10%, chưa đạt KPI đề xuất +10 điểm.
 
 Không diễn giải calibrated score là xác suất production vì prevalence nguồn là 24,7% và chưa có external validation.
+
+Trạng thái protocol: test 200 dòng này sau đó đã được dùng lần hai cho sensitivity check loại `insured_hobbies`, nên không còn untouched cho quyết định feature policy. Mọi lựa chọn feature tiếp theo dùng `train_fs`/`val_fs`; cần external test mới sau khi chốt policy/model.

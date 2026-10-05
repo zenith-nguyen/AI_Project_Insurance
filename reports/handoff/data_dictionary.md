@@ -21,7 +21,7 @@ Bronze giữ cùng kiểu numeric/date như bảng dưới; các cột categoric
 | `insured_sex` | string | `insured_sex` | Giới tính khai báo | Original |
 | `insured_education_level` | string | `insured_education_level` | Trình độ học vấn | Original |
 | `insured_occupation` | string | `insured_occupation` | Nghề nghiệp | Original |
-| `insured_hobbies` | string | `insured_hobbies` | Sở thích; phát hiện bias, đã loại ở biến thể mới | Original |
+| `insured_hobbies` | string | `insured_hobbies` | Sở thích; proxy cần xem xét, đã loại trong một sensitivity check | Original |
 | `insured_relationship` | string | `insured_relationship` | Quan hệ của người được bảo hiểm với chủ hợp đồng | Original |
 | `capital_gains` | int64 | `capital-gains` | Giá trị capital gains trong dữ liệu nguồn | Original, renamed |
 | `capital_loss` | int64 | `capital-loss` | Giá trị capital loss trong dữ liệu nguồn | Original, renamed |

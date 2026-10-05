@@ -11,14 +11,15 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from src.data.common import config
 
 
-def features(frame: pd.DataFrame) -> pd.DataFrame:
+def features(frame: pd.DataFrame, exclude_biased_features: bool | None = None) -> pd.DataFrame:
     policy = config("configs/features.yaml")
     result = frame.copy()
     if {"policy_bind_date", "incident_date"}.issubset(result.columns):
         result["policy_age_days"] = (pd.to_datetime(result.incident_date) - pd.to_datetime(result.policy_bind_date)).dt.days
         result.loc[result.policy_age_days < 0, "policy_age_days"] = np.nan
     excluded = list(policy["always_exclude"])
-    if policy.get("EXCLUDE_BIASED_FEATURES", False):
+    exclude_biased = policy.get("EXCLUDE_BIASED_FEATURES", False) if exclude_biased_features is None else exclude_biased_features
+    if exclude_biased:
         excluded.extend(policy.get("biased_features", []))
     result = result.drop(columns=[column for column in excluded if column in result], errors="ignore")
     if any(pd.api.types.is_datetime64_any_dtype(result[column]) for column in result):

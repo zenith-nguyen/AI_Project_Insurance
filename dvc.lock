@@ -37,3 +37,39 @@ stages:
       md5: 1dc0a048f18098f40f5dceda99cba5f1.dir
       size: 174550
       nfiles: 4
+  build_feature_selection:
+    cmd: python -m src.data.build_feature_selection_split
+    deps:
+    - path: data/gold/dataset_v2/manifest.json
+      hash: md5
+      md5: ea39878d59ec9701fb379c9b5f4febf3
+      size: 888
+    - path: data/gold/dataset_v2/test.parquet
+      hash: md5
+      md5: f1065db6e8868aef8e9380d95dee7336
+      size: 46838
+    - path: data/gold/dataset_v2/train.parquet
+      hash: md5
+      md5: f52466057f88ab10816945fa82590147
+      size: 89233
+    - path: src/data/build_feature_selection_split.py
+      hash: md5
+      md5: ec3c1690194ce7c313051d8191bfea57
+      size: 3210
+    - path: src/data/common.py
+      hash: md5
+      md5: 5659992f77eda37858066c7d34284ce2
+      size: 849
+    params:
+      params.yaml:
+        feature_selection:
+          version: feature_selection_v1
+          source_gold_version: dataset_v2
+          val_size: 0.2
+          seed: 20261005
+    outs:
+    - path: data/gold/feature_selection_v1
+      hash: md5
+      md5: 956767bc1f54268533c6efedf6d62fd3.dir
+      size: 120181
+      nfiles: 3

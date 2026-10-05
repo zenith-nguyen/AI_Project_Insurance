@@ -78,17 +78,19 @@ Gold v2 đã được cố định trước preprocessing:
 |---|---:|---|
 | Train | 700 | Audit feature, fit preprocessing, chọn mô hình và calibration |
 | Validation | 100 | Chọn ngưỡng hàng đợi review/SIU |
-| Test | 200 | Đánh giá cuối cùng một lần theo lựa chọn đã chốt |
+| Test | 200 | Baseline test; đã dùng lại cho sensitivity check và hiện được xem là spent cho feature policy |
 
 Các `claim_id` không trùng giữa ba split. Preprocessing chỉ được fit trên train.
+
+Từ 05/10/2026, 700 dòng train được tách thêm thành `train_fs` 560 dòng và `val_fs` 140 dòng dành riêng cho các quyết định feature tiếp theo. Split này không thay đổi ba file Gold gốc và không trùng với test 200 dòng.
 
 ### 3.2. Nhánh ảnh và chứng từ
 
 - CarDD dự kiến dùng cho nhận diện/segmentation hư hại và thử nghiệm ảnh trùng/chỉnh sửa.
 - CORD chỉ là nguồn nền cho OCR/document understanding.
 - CarDD, CORD và Kaggle chưa có liên kết claim-level.
-- Nhánh CarDD chưa chạy tại local vì chưa nhận đường dẫn dữ liệu/nhãn và môi trường hiện không phát hiện GPU NVIDIA.
-- Người phụ trách đã xác nhận có dữ liệu CarDD và sẽ cung cấp đường dẫn để kiểm tra cấu trúc cùng quyền sử dụng.
+- CarDD chỉ có trên Google Drive/Colab tại `/content/drive/MyDrive/AI_Project_Insurance/data/bronze/layerA_cardd/`; theo kế hoạch, inspector sẽ do người phụ trách chạy trong Colab và không chạy local.
+- Số ảnh, annotation class/geometry và nội dung license vẫn chờ output thật từ Colab.
 
 ## 4. Hạ tầng và pipeline đã hoàn thành
 
@@ -163,12 +165,12 @@ Audit chỉ dùng train đã phát hiện các nhóm cần xem xét:
 - `total_claim_amount = injury_claim + property_claim + vehicle_claim` trên 100% dòng train; đây là quan hệ dư thừa cần quản lý.
 - Các trường như `incident_severity`, claim components, police report và witnesses cần xác nhận có sẵn tại thời điểm chấm điểm nào.
 
-SHAP cho thấy mô hình hiện tại phụ thuộc mạnh vào một số giá trị của `insured_hobbies`. Trên train:
+Một số giá trị của `insured_hobbies` đứng cao trong SHAP. Trên train:
 
 - `cross-fit`: 21 fraud và 2 non-fraud trong 23 dòng.
 - `chess`: 28 fraud và 5 non-fraud trong 33 dòng.
 
-Chưa có cơ sở nghiệp vụ để coi sở thích cá nhân là tín hiệu fraud phù hợp cho production. Đây có thể là đặc điểm riêng hoặc bias của dataset.
+Chưa có cơ sở nghiệp vụ để coi sở thích cá nhân là tín hiệu fraud phù hợp cho production. Tuy nhiên, ablation riêng `insured_hobbies` chỉ làm metric thay đổi nhỏ và trái chiều: AP +0,007; ROC-AUC -0,033; Recall@10% -2,0 điểm phần trăm; Recall@20% +2,0 điểm phần trăm. Vì vậy không kết luận mô hình phụ thuộc chủ yếu vào riêng trường này.
 
 Kiểm tra độ nhạy chỉ trên train cho thấy:
 
@@ -178,7 +180,7 @@ Kiểm tra độ nhạy chỉ trên train cho thấy:
 | Hồ sơ đủ chứng từ, bỏ sở thích, nhân khẩu học, nghề nghiệp, vốn và địa lý | 0,506 | 23,6% |
 | Nhóm feature ứng viên lúc tiếp nhận | 0,284 | 10,5% |
 
-Sự suy giảm này cho thấy phần lớn hiệu năng hiện tại đến từ các trường cần xem xét về tính hợp lệ và khả năng tổng quát hóa. Vì vậy baseline hiện tại chưa phù hợp để tự động định tuyến hồ sơ thật.
+Mức giảm CV AP từ 0,706 xuống 0,506 khi bỏ cả nhóm nhân khẩu học/địa lý/sở thích/nghề nghiệp/vốn cho thấy rủi ro nằm ở nhóm proxy rộng. Các trường này cần được xem xét về tính hợp lệ và khả năng tổng quát hóa. Vì vậy baseline hiện tại chưa phù hợp để tự động định tuyến hồ sơ thật.
 
 Sau nhận xét của nhóm, cấu hình `EXCLUDE_BIASED_FEATURES` đã được bổ sung để loại `insured_hobbies`, `insured_zip` và `incident_location`. Hai trường cuối vốn đã bị loại trong baseline; khác biệt thực tế là loại thêm `insured_hobbies`. Toàn bộ CV và frozen test đã được chạy lại, lưu thành một biến thể riêng:
 
@@ -189,7 +191,9 @@ Sau nhận xét của nhóm, cấu hình `EXCLUDE_BIASED_FEATURES` đã được
 | Recall@10% | 22,4% | 20,4% |
 | Recall@20% | 44,9% | 46,9% |
 
-Kết quả không giảm đồng loạt: khả năng xếp hạng tổng thể theo ROC-AUC và Recall@10% giảm, trong khi Average Precision tăng nhẹ và Recall@20% tăng. Do frozen test đã được dùng để so sánh feature policy, cần một external test mới trước khi chốt chính sách feature cuối cùng.
+Kết quả không giảm đồng loạt: khả năng xếp hạng tổng thể theo ROC-AUC và Recall@10% giảm, trong khi Average Precision tăng nhẹ và Recall@20% tăng. Frozen test 200 dòng đã được dùng hai lần cho so sánh feature policy tính đến 05/10/2026 và không còn untouched cho mục đích này.
+
+Để tách các quyết định tiếp theo khỏi test cũ, DVC đã tạo `feature_selection_v1` chỉ từ 700 dòng train gốc: `train_fs` 560 dòng và `val_fs` 140 dòng, stratified và không trùng `claim_id` với test. Một evaluator cố định đã so sánh các feature profile trên `val_fs`; mọi lựa chọn feature tiếp theo phải dùng protocol này. Sau khi chốt feature và model, cần external test mới cho đánh giá cuối cùng.
 
 ## 7. Những phần đang chuẩn bị nhưng chưa được xem là hoàn thành
 
@@ -198,7 +202,7 @@ Nhóm đã thống nhất cần hai checkpoint chấm điểm:
 1. `stage1_intake`: chấm điểm ngay khi tiếp nhận hồ sơ.
 2. `stage3_complete`: chấm điểm lại sau khi đủ chứng từ.
 
-Config feature và mã huấn luyện/chấm điểm riêng cho hai checkpoint đã được phác thảo trong workspace. Tuy nhiên, các pipeline này chưa chạy và chưa tạo báo cáo kết quả `stages_v1`. Chúng chưa được kiểm thử hoặc commit. Không sử dụng các phần này làm bằng chứng kết quả ở thời điểm hiện tại.
+Config feature cho hai checkpoint đã được tạo. Các profile đã được chạy thăm dò bằng cùng XGBoost trên split feature-selection mới và ghi tại `reports/FEATURE_POLICY.md`; đây là bằng chứng chọn feature trên `val_fs`, không phải kết quả test cuối cùng. Mã huấn luyện/chấm điểm production riêng cho hai checkpoint vẫn chưa được xem là hoàn tất cho đến khi nghiệp vụ xác nhận thời điểm có dữ liệu.
 
 Cần xác nhận các trường `incident_type`, `collision_type`, `number_of_vehicles_involved` và các thông tin sự cố khác có sẵn, đầy đủ đến mức nào ngay tại thời điểm tiếp nhận.
 
@@ -208,12 +212,12 @@ Cần xác nhận các trường `incident_type`, `collision_type`, `number_of_v
 
 Cần:
 
-- Đường dẫn chính xác đến thư mục CarDD.
-- Xác nhận trong thư mục có ảnh, annotation và metadata nào.
+- Chạy `scripts/inspect_cardd.py` trong Colab tại `/content/drive/MyDrive/AI_Project_Insurance/data/bronze/layerA_cardd/`; không chạy inspector local vì dữ liệu chỉ có trên Drive.
+- Xác nhận trong thư mục có ảnh, annotation và metadata nào từ output thực tế.
 - Xác nhận quyền sử dụng dữ liệu trong phạm vi đồ án.
 - Môi trường Colab/Kaggle GPU để training.
 
-Sau khi có đường dẫn, bước đầu tiên là kiểm tra format thật. Chỉ sau đó mới viết hoặc chọn converter sang định dạng YOLO segmentation; không giả định mirror Hugging Face có cấu trúc giống COCO gốc.
+Bước đầu tiên là kiểm tra format thật trong Colab. Chỉ sau đó mới viết hoặc chọn converter sang định dạng YOLO segmentation; không giả định mirror Hugging Face có cấu trúc giống COCO gốc.
 
 ### 8.2. Net Value
 
@@ -244,7 +248,8 @@ Cần làm rõ:
 - Làm một data dictionary gồm tên trường, ý nghĩa, nguồn, thời điểm xuất hiện và mức độ tin cậy.
 - Chốt feature cho `stage1_intake` và `stage3_complete`.
 - Loại các proxy không phù hợp về nghiệp vụ hoặc fairness.
-- Chạy lại CV và frozen test cho hai checkpoint sau khi feature policy được duyệt.
+- Dùng `train_fs`/`val_fs` cho mọi so sánh feature policy; không dùng lại frozen test 200 dòng.
+- Sau khi feature policy/model được duyệt và khóa, đánh giá một lần trên external test mới.
 
 ### Ưu tiên 2 — Hoàn thành nhánh CarDD độc lập
 
@@ -298,7 +303,7 @@ Cần làm rõ:
 
 ## 12. Kết luận
 
-Dự án đã có một nền tảng tabular end-to-end, tái lập được và có kiểm soát leakage tốt hơn baseline notebook ban đầu. XGBoost cho kết quả tốt hơn rule baseline trên frozen test, nhưng chưa đạt KPI cải thiện Recall@10% đề xuất và đang phụ thuộc vào một số feature có rủi ro bias hoặc thiếu cơ sở nghiệp vụ.
+Dự án đã có một nền tảng tabular end-to-end, tái lập được và có kiểm soát leakage tốt hơn baseline notebook ban đầu. XGBoost cho kết quả tốt hơn rule baseline trên frozen test, nhưng chưa đạt KPI cải thiện Recall@10% đề xuất. Phân tích hiện tại cho thấy sự phụ thuộc vào một nhóm proxy rộng cần rà soát về bias và cơ sở nghiệp vụ.
 
 Giá trị quan trọng nhất của giai đoạn hiện tại là pipeline dữ liệu, protocol đánh giá, khả năng tái lập và việc nhận diện đúng các giới hạn. Bước tiếp theo nên tập trung vào feature theo từng checkpoint, provenance của nhãn và dữ liệu CarDD, thay vì tiếp tục tối ưu metric trên cùng dataset nhỏ.
 

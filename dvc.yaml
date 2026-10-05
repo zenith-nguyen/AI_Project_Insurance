@@ -12,3 +12,15 @@ stages:
       - gold
     outs:
       - data/gold/dataset_v2
+  build_feature_selection:
+    cmd: python -m src.data.build_feature_selection_split
+    deps:
+      - data/gold/dataset_v2/train.parquet
+      - data/gold/dataset_v2/test.parquet
+      - data/gold/dataset_v2/manifest.json
+      - src/data/build_feature_selection_split.py
+      - src/data/common.py
+    params:
+      - feature_selection
+    outs:
+      - data/gold/feature_selection_v1

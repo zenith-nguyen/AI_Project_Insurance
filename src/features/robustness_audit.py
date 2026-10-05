@@ -36,7 +36,9 @@ def run() -> dict:
     stages = config("configs/stages.yaml")
     train_path = ROOT / "data/gold" / params["gold"]["version"] / "train.parquet"
     train = pd.read_parquet(train_path)
-    x = features(train)
+    # Reproduce the original research baseline regardless of the current
+    # EXCLUDE_BIASED_FEATURES setting; stage profiles are sliced from it below.
+    x = features(train, exclude_biased_features=False)
     y = train.fraud_label.astype(int).to_numpy()
     folds = list(RepeatedStratifiedKFold(n_splits=params["cv"]["n_splits"], n_repeats=params["cv"]["n_repeats"], random_state=params["seed"]).split(x, y))
     profiles = {}
@@ -53,7 +55,7 @@ def run() -> dict:
     lines = ["# Kiểm tra độ nhạy theo nhóm feature", "", "Đây là phân tích thăm dò bằng CV chỉ trên train; không dùng nhãn validation/test và không thay đổi kết quả test đã chốt.", "", "| Nhóm feature | Average Precision CV trung bình | Recall@10% CV trung bình | Số cột đầu vào |", "|---|---:|---:|---:|", f"| Mô hình nghiên cứu hiện tại | {original['average_precision']:.3f} | {original['recall_at_10pct']:.3f} | {len(x.columns)} |"]
     for name, report in result["profiles"].items():
         lines.append(f"| {name} | {report['average_precision_mean']:.3f} | {report['recall_at_10pct_mean']:.3f} | {report['feature_count_before_encoding']} |")
-    lines += ["", "SHAP của mô hình hiện tại bị chi phối bởi nhóm sở thích. Số lượng trên train dưới đây cho thấy cần kiểm tra nguồn gốc tín hiệu; đây không phải quan hệ nhân quả:", ""]
+    lines += ["", "Một số category sở thích đứng cao trong SHAP, nhưng không đủ để kết luận mô hình phụ thuộc chủ yếu vào riêng `insured_hobbies`. Khi bỏ riêng trường này trên frozen test, AP đổi +0,007, ROC-AUC -0,033, Recall@10% -2,0 điểm phần trăm và Recall@20% +2,0 điểm phần trăm. Mức giảm lớn xuất hiện khi bỏ cả nhóm proxy nhân khẩu học/địa lý/sở thích/nghề nghiệp/vốn: CV AP từ 0,706 xuống 0,506. Vì vậy phát hiện phù hợp hơn là sự phụ thuộc vào nhóm proxy rộng; các thống kê dưới đây chỉ giúp truy nguồn tín hiệu và không phải quan hệ nhân quả:", ""]
     for name in selected_hobbies:
         negative, positive = int(hobby.loc[name, 0]), int(hobby.loc[name, 1])
         lines.append(f"- `{name}`: {positive} nhãn fraud và {negative} nhãn non-fraud trong {positive + negative} dòng train.")

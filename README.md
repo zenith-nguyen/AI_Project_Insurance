@@ -30,6 +30,7 @@ python -m src.data.validate_silver
 dvc repro
 python -m src.models.train
 python -m src.features.robustness_audit
+python -m src.features.feature_policy_validation
 python -m src.explainability.shap_analysis
 python -m src.models.predict data/gold/dataset_v2/test.parquet reports/metrics/test_queue.csv
 pytest -q
@@ -39,7 +40,7 @@ The ingest command refuses to overwrite Silver v1. If the user's original Colab 
 
 ## Evaluation protocol
 
-Only train is used for feature audit, model selection (repeated stratified CV), preprocessing fitting, and Platt calibration (out-of-fold train scores). Validation fixes queue thresholds. Test is scored once with those choices. Model selection uses mean average precision; Recall@10%, Precision@10%, ROC-AUC, Brier score, 10-bin ECE, rule baseline, and stratified bootstrap intervals are reported. Isotonic calibration is compared on validation only and is not selected. Fixed top-K ties use stable row order. Production-prevalence scenarios reweight the frozen test score distributions under a label-shift assumption. The calibrated score reflects the source data and must not be presented as a verified production fraud probability.
+The original baseline used train for feature audit/model selection and validation for queue thresholds, then scored the 200-row test. That same test was later reused once for the bias-exclusion sensitivity check. As of 2026-10-05 it is spent for feature-policy comparison. DVC now derives `train_fs` (560 rows) and `val_fs` (140 rows) strictly from the original 700-row train; all further feature-selection decisions use these splits. After the feature policy and model are frozen, final performance requires a new external test. Fixed top-K ties use stable row order. Production-prevalence scenarios remain label-shift simulations, not external validation.
 
 The feature policy in `configs/features.yaml` conservatively excludes IDs, location proxies, raw dates, the source target, and potentially redundant totals. Fields in `review_before_use` require confirmation that they are known at scoring time. `reports/leakage/` contains a train-only descriptive audit; association is not proof of leakage. `configs/rules.yaml` holds the baseline heuristics, including a claim amount quantile fitted only on train.
 
@@ -47,10 +48,12 @@ The feature policy in `configs/features.yaml` conservatively excludes IDs, locat
 
 `configs/features.yaml` contains `EXCLUDE_BIASED_FEATURES`. When enabled, training drops `insured_hobbies`, `insured_zip`, and `incident_location`, and writes a separate `tabular_bias_excluded_v1` result/artifact without overwriting the original baseline.
 
-Inspect a downloaded CarDD FiftyOne folder before any conversion or training:
+Run `python -m src.features.feature_policy_validation` to compare current candidate policies on `val_fs` without reading the spent test. Results are written to `reports/FEATURE_POLICY.md` and `reports/metrics/feature_policy_val_fs_v1.json`.
 
-```powershell
-python scripts/inspect_cardd.py 'PATH_TO_CARDD'
+CarDD exists only in Google Drive/Colab. After mounting Drive in Colab, inspect its FiftyOne folder before conversion or training:
+
+```python
+!python scripts/inspect_cardd.py "/content/drive/MyDrive/AI_Project_Insurance/data/bronze/layerA_cardd"
 ```
 
 The inspector reads `fiftyone.yml`, `samples.json`, `metadata.json`, counts images under `data/`, discovers annotation classes and geometry actually present, and extracts `CarDD_license.pdf`. It does not assume COCO annotations.
