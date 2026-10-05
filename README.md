@@ -2,6 +2,8 @@
 
 This repository reproduces a **tabular research baseline** for the UEH CPMAI project. It scores claims for human review; a score is not evidence of fraud and must never automatically reject a claim. CarDD images and CORD documents are separate, unlinked sources and are not fused with the Kaggle rows.
 
+Team-ready handoff documents for Progress Report 2 are indexed in `reports/handoff/README.md`.
+
 ## Current data and scope
 
 The tabular source is Kaggle `arpan129/insurance-fraud-detection`, workbook `Worksheet in Case Study question 2.xlsx`, sheet `Fraud_Detection_decsion tree`. Bronze retains the workbook and a hash manifest. Silver normalizes names/missing values and adds trace IDs. Gold `dataset_v2` freezes a stratified 70/10/20 split with exact integer counts. DVC tracks Bronze/Silver and generates Gold. Raw files and model artifacts remain outside Git; no DVC remote is configured.
