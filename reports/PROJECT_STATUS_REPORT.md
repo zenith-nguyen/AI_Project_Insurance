@@ -89,8 +89,10 @@ Từ 05/10/2026, 700 dòng train được tách thêm thành `train_fs` 560 dòn
 - CarDD dự kiến dùng cho nhận diện/segmentation hư hại và thử nghiệm ảnh trùng/chỉnh sửa.
 - CORD chỉ là nguồn nền cho OCR/document understanding.
 - CarDD, CORD và Kaggle chưa có liên kết claim-level.
-- CarDD chỉ có trên Google Drive/Colab tại `/content/drive/MyDrive/AI_Project_Insurance/data/bronze/layerA_cardd/`; theo kế hoạch, inspector sẽ do người phụ trách chạy trong Colab và không chạy local.
-- Số ảnh, annotation class/geometry và nội dung license vẫn chờ output thật từ Colab.
+- CarDD chỉ có trên Google Drive/Colab tại `/content/drive/MyDrive/AI_Project_Insurance/data/bronze/layerA_cardd/`; inspector đã chạy trong Colab ngày 06/10/2026.
+- Kết quả thật: 2.753 ảnh JPG, 2.816 sample record, annotation FiftyOne `Detection`/`Detections`, 12.422 bounding box, 6.211 mask và sáu lớp `crack`, `dent`, `glass shatter`, `lamp broken`, `scratch`, `tire flat`.
+- Sample/image chưa khớp, chênh 63 record; chưa đủ điều kiện chuyển đổi hoặc train.
+- License yêu cầu prior consent của PIC Lab cho nghiên cứu, authorization cho thương mại, cấm phân phối cho bên thứ ba khi chưa được phép và yêu cầu trích dẫn paper. Repo chưa có bằng chứng prior consent.
 
 ## 4. Hạ tầng và pipeline đã hoàn thành
 
@@ -114,7 +116,7 @@ Repo đã được thiết lập với:
 - Script YOLO segmentation nhận đường dẫn dữ liệu thật, chưa chạy training.
 - Dữ liệu thô, Parquet, dự đoán từng hồ sơ và model artifact được loại khỏi Git.
 
-Pipeline tabular v1 đã được chạy lại thành công bằng một lệnh. DVC báo dữ liệu và pipeline cập nhật. Bộ kiểm thử hiện tại có 7 test và tất cả đều đạt.
+Pipeline tabular v1 đã được chạy lại thành công bằng một lệnh. DVC báo dữ liệu và pipeline cập nhật. Bộ kiểm thử hiện tại có 12 test và tất cả đều đạt, gồm test cho audit alignment CarDD.
 
 ## 5. Kết quả mô hình đã kiểm chứng
 
@@ -212,12 +214,11 @@ Cần xác nhận các trường `incident_type`, `collision_type`, `number_of_v
 
 Cần:
 
-- Chạy `scripts/inspect_cardd.py` trong Colab tại `/content/drive/MyDrive/AI_Project_Insurance/data/bronze/layerA_cardd/`; không chạy inspector local vì dữ liệu chỉ có trên Drive.
-- Xác nhận trong thư mục có ảnh, annotation và metadata nào từ output thực tế.
-- Xác nhận quyền sử dụng dữ liệu trong phạm vi đồ án.
-- Môi trường Colab/Kaggle GPU để training.
-
-Bước đầu tiên là kiểm tra format thật trong Colab. Chỉ sau đó mới viết hoặc chọn converter sang định dạng YOLO segmentation; không giả định mirror Hugging Face có cấu trúc giống COCO gốc.
+- Audit mapping giữa 2.816 sample record và 2.753 ảnh; tải bù hoặc loại record thiếu bằng manifest có lý do.
+- Kiểm tra ảnh hỏng/truncated sau khi mapping sạch.
+- Lưu bằng chứng prior consent của PIC Lab cho phạm vi đồ án.
+- Chỉ sau đó mới viết converter từ FiftyOne Detection/mask thực tế sang YOLO segmentation và chia train/validation/test.
+- Dùng môi trường Colab/Kaggle GPU cho training.
 
 ### 8.2. Net Value
 
