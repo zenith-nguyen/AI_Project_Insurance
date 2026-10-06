@@ -10,8 +10,17 @@ from pathlib import Path
 import yaml
 
 
-def materialize(bronze: Path, converted: Path, target: Path) -> dict:
+def materialize(
+    bronze: Path,
+    converted: Path,
+    target: Path,
+    image_mode: str = "symlink",
+) -> dict:
     bronze, converted, target = bronze.resolve(), converted.resolve(), target.resolve()
+    if image_mode not in {"symlink", "copy"}:
+        raise ValueError(f"Unsupported image mode: {image_mode}")
+    if image_mode == "copy" and str(target).startswith("/content/drive/"):
+        raise ValueError("Refusing to copy a training view into persistent Google Drive storage")
     if target.exists():
         raise FileExistsError(f"Target already exists: {target}")
     report = json.loads((converted / "conversion_report.json").read_text(encoding="utf-8"))
@@ -25,7 +34,8 @@ def materialize(bronze: Path, converted: Path, target: Path) -> dict:
     building = target.with_name(target.name + ".building")
     if building.exists():
         raise FileExistsError(f"Stale materialization directory exists: {building}")
-    link_counts = {"images": 0, "labels": 0}
+    file_counts = {"images": 0, "labels": 0}
+    image_bytes = 0
     building.mkdir(parents=True)
     try:
         for index, row in enumerate(rows, start=1):
@@ -38,10 +48,15 @@ def materialize(bronze: Path, converted: Path, target: Path) -> dict:
             label_link = building / "labels" / split / source_label.name
             image_link.parent.mkdir(parents=True, exist_ok=True)
             label_link.parent.mkdir(parents=True, exist_ok=True)
-            os.symlink(source_image, image_link)
-            os.symlink(source_label, label_link)
-            link_counts["images"] += 1
-            link_counts["labels"] += 1
+            if image_mode == "copy":
+                shutil.copy2(source_image, image_link)
+                shutil.copy2(source_label, label_link)
+                image_bytes += source_image.stat().st_size
+            else:
+                os.symlink(source_image, image_link)
+                os.symlink(source_label, label_link)
+            file_counts["images"] += 1
+            file_counts["labels"] += 1
             if index % 500 == 0 or index == len(rows):
                 print(f"Training view links: {index}/{len(rows)}", flush=True)
         data_yaml = {
@@ -62,8 +77,10 @@ def materialize(bronze: Path, converted: Path, target: Path) -> dict:
         "target": str(target),
         "source_bronze": str(bronze),
         "source_labels": str(converted / "labels"),
-        "image_links": link_counts["images"],
-        "label_links": link_counts["labels"],
+        "image_mode": image_mode,
+        "image_files": file_counts["images"],
+        "label_files": file_counts["labels"],
+        "image_bytes_materialized": image_bytes,
         "persistent_image_bytes_added": 0,
     }
 
@@ -73,8 +90,18 @@ def main() -> None:
     parser.add_argument("bronze", type=Path)
     parser.add_argument("converted", type=Path)
     parser.add_argument("target", type=Path)
+    parser.add_argument(
+        "--image-mode",
+        choices=("symlink", "copy"),
+        default="symlink",
+        help="Use copy for faster Colab training in ephemeral /content storage",
+    )
     args = parser.parse_args()
-    print(json.dumps(materialize(args.bronze, args.converted, args.target), ensure_ascii=False, indent=2))
+    print(json.dumps(
+        materialize(args.bronze, args.converted, args.target, args.image_mode),
+        ensure_ascii=False,
+        indent=2,
+    ))
 
 
 if __name__ == "__main__":

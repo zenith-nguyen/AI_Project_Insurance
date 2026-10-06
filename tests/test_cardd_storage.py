@@ -50,3 +50,17 @@ def test_materialize_cardd_uses_links_without_persistent_copy(tmp_path):
     assert (target / "images/train/example.jpg").is_symlink()
     assert (target / "labels/train/example.txt").is_symlink()
     assert view_report["persistent_image_bytes_added"] == 0
+
+
+def test_materialize_cardd_can_copy_into_ephemeral_training_view(tmp_path):
+    bronze, converted = build_fixture(tmp_path)
+    slim(bronze, converted)
+    target = tmp_path / "copied_training_view"
+
+    view_report = materialize(bronze, converted, target, image_mode="copy")
+
+    assert (target / "images/train/example.jpg").read_bytes() == b"image"
+    assert not (target / "images/train/example.jpg").is_symlink()
+    assert (target / "labels/train/example.txt").is_file()
+    assert view_report["image_mode"] == "copy"
+    assert view_report["image_bytes_materialized"] == 5

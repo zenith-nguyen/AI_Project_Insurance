@@ -1,0 +1,36 @@
+protocol: cardd_yolov8_seg_v1
+task: instance_segmentation
+selection_metric: validation_mask_map50_95
+test_policy: evaluate_once_after_model_and_checkpoint_are_frozen
+
+data:
+  expected_images: 2816
+  expected_instances: 6211
+  split_images:
+    train: 1966
+    val: 431
+    test: 419
+  seed: 20261006
+
+smoke_test:
+  model: yolov8n-seg.pt
+  epochs: 2
+  fraction: 0.10
+  image_size: 640
+  batch: 8
+  seed: 20261007
+
+baseline:
+  model: yolov8n-seg.pt
+  epochs: 100
+  patience: 20
+  image_size: 640
+  batch: 8
+  workers: 2
+  seed: 20261007
+  deterministic: true
+  save_period: 10
+
+candidate_after_baseline:
+  model: yolov8s-seg.pt
+  condition: run_only_if_resources_allow_and_compare_on_validation_only

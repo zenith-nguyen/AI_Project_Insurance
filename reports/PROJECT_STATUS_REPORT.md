@@ -121,7 +121,7 @@ Repo đã được thiết lập với:
 - Converter và validator YOLO segmentation đã chạy trên dữ liệu thật; training chưa chạy.
 - Dữ liệu thô, Parquet, dự đoán từng hồ sơ và model artifact được loại khỏi Git.
 
-Pipeline tabular v1 đã được chạy lại thành công bằng một lệnh. DVC báo dữ liệu và pipeline cập nhật. Lần kiểm thử local gần nhất có 15 test đạt; một test tạo symlink được bỏ qua trên Windows vì cần quyền hệ điều hành và sẽ chạy trong môi trường Colab/Linux.
+Pipeline tabular v1 đã được chạy lại thành công bằng một lệnh. DVC báo dữ liệu và pipeline cập nhật. Lần kiểm thử local gần nhất có 20 test đạt; một test tạo symlink được bỏ qua trên Windows vì cần quyền hệ điều hành và sẽ chạy trong môi trường Colab/Linux.
 
 ## 5. Kết quả mô hình đã kiểm chứng
 
@@ -220,9 +220,9 @@ Cần xác nhận các trường `incident_type`, `collision_type`, `number_of_v
 Cần:
 
 - Lưu bằng chứng prior consent của PIC Lab cho phạm vi đồ án.
-- Chạy validator lần cuối trên conversion v2 sau khi dựng training view tạm trong `/content`.
-- Huấn luyện baseline YOLOv8-seg và đánh giá trên test chỉ sau khi chọn model/checkpoint bằng train và validation.
-- Dùng môi trường Colab/Kaggle GPU cho training.
+- Chạy notebook `CarDD_YOLOv8_Training_v1.ipynb` trên Colab GPU: stage ảnh tạm, preflight, smoke test và baseline YOLOv8n-seg.
+- Chọn `best.pt` bằng validation mask mAP50-95; giữ test khóa cho đến khi model/checkpoint được chốt.
+- Nếu Colab ngắt, dựng lại `/content` và resume từ `last.pt` trên Drive mới.
 
 ### 8.2. Net Value
 

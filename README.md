@@ -73,6 +73,8 @@ Google Drive should retain one copy of the CarDD images under Bronze. The conver
   "/content/cardd_yolo_v1"
 ```
 
+For Colab training, use `notebooks/CarDD_YOLOv8_Training_v1.ipynb`. It copies the verified images into ephemeral `/content` for faster training, runs a two-epoch smoke test, trains the YOLOv8n-seg baseline with early stopping and persistent checkpoints, evaluates validation, and keeps final test evaluation locked until model selection is frozen. The exact protocol is documented in `reports/CARDD_TRAINING_PLAN.md`.
+
 ## Important limits
 
 This is an academic baseline, not a deployed claims decision system. The test has roughly 49 positive cases, so results have wide uncertainty. There is no prospective validation, linked multimodal dataset, verified production prevalence, measured review costs, or operational approval for automatic processing.
