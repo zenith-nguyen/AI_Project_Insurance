@@ -90,8 +90,9 @@ Từ 05/10/2026, 700 dòng train được tách thêm thành `train_fs` 560 dòn
 - CORD chỉ là nguồn nền cho OCR/document understanding.
 - CarDD, CORD và Kaggle chưa có liên kết claim-level.
 - CarDD chỉ có trên Google Drive/Colab tại `/content/drive/MyDrive/AI_Project_Insurance/data/bronze/layerA_cardd/`; inspector đã chạy trong Colab ngày 06/10/2026.
-- Kết quả thật: 2.753 ảnh JPG, 2.816 sample record, annotation FiftyOne `Detection`/`Detections`, 12.422 bounding box, 6.211 mask và sáu lớp `crack`, `dent`, `glass shatter`, `lamp broken`, `scratch`, `tire flat`.
-- Sample/image chưa khớp, chênh 63 record; chưa đủ điều kiện chuyển đổi hoặc train.
+- Kết quả inspector ban đầu: 2.753 ảnh JPG, 2.816 sample record, annotation FiftyOne `Detection`/`Detections`, 12.422 bounding box, 6.211 mask và sáu lớp `crack`, `dent`, `glass shatter`, `lamp broken`, `scratch`, `tire flat`.
+- Audit xác định 63 ảnh được annotation tham chiếu nhưng tải thiếu; không có filepath trống, ảnh thừa hoặc filename trùng. Đã tải bù từ cùng mirror.
+- Kiểm tra cuối: 2.816 sample khớp 2.816 ảnh, không thiếu/thừa, 0 ảnh hỏng và `ready_for_conversion: true`. Báo cáo nằm trên Drive tại `reports/cardd_alignment_final.json`.
 - License yêu cầu prior consent của PIC Lab cho nghiên cứu, authorization cho thương mại, cấm phân phối cho bên thứ ba khi chưa được phép và yêu cầu trích dẫn paper. Repo chưa có bằng chứng prior consent.
 
 ## 4. Hạ tầng và pipeline đã hoàn thành
@@ -214,10 +215,9 @@ Cần xác nhận các trường `incident_type`, `collision_type`, `number_of_v
 
 Cần:
 
-- Audit mapping giữa 2.816 sample record và 2.753 ảnh; tải bù hoặc loại record thiếu bằng manifest có lý do.
-- Kiểm tra ảnh hỏng/truncated sau khi mapping sạch.
 - Lưu bằng chứng prior consent của PIC Lab cho phạm vi đồ án.
-- Chỉ sau đó mới viết converter từ FiftyOne Detection/mask thực tế sang YOLO segmentation và chia train/validation/test.
+- Profile kiểu/shape mask và split/tag trong `samples.json`, rồi viết converter từ FiftyOne Detection/mask thực tế sang YOLO segmentation.
+- Chia train/validation/test có seed và manifest sau conversion; kiểm tra không có ảnh gần trùng giữa split.
 - Dùng môi trường Colab/Kaggle GPU cho training.
 
 ### 8.2. Net Value

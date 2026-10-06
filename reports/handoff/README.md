@@ -14,4 +14,4 @@ Các file dưới đây dùng số liệu đã chạy trong repo và kết quả
 | Thanh Vy | `layer_c_scenario_script.py` | Sinh biến thể ảnh cho kịch bản 3, 4, 5 và 8 |
 | Tất cả thành viên | `document_network_scope.md` | Quyết định phạm vi Document và Network |
 
-Lưu ý: CarDD đã được inspect trên Colab. Hiện có 2.753 ảnh nhưng 2.816 sample record và license yêu cầu prior consent cho nghiên cứu; chưa chuyển đổi/train trước khi xử lý hai điểm này.
+Lưu ý: CarDD đã được inspect và repair trên Colab: 2.816 sample khớp 2.816 ảnh, không có ảnh hỏng và sẵn sàng về mặt kỹ thuật cho conversion. License vẫn yêu cầu prior consent cho nghiên cứu; lưu bằng chứng consent trước khi train hoặc chia sẻ dữ liệu.
