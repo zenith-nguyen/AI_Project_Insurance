@@ -94,6 +94,9 @@ Từ 05/10/2026, 700 dòng train được tách thêm thành `train_fs` 560 dòn
 - Audit xác định 63 ảnh được annotation tham chiếu nhưng tải thiếu; không có filepath trống, ảnh thừa hoặc filename trùng. Đã tải bù từ cùng mirror.
 - Kiểm tra cuối: 2.816 sample khớp 2.816 ảnh, không thiếu/thừa, 0 ảnh hỏng và `ready_for_conversion: true`. Báo cáo nằm trên Drive tại `reports/cardd_alignment_final.json`.
 - Profile annotation xác định 6.211 damage object được lưu song song: field `detections` chứa box và field `segmentations` chứa cùng box kèm mask `$binary`. Tổng 12.422 box trước đó là đếm lặp hai field. Tất cả sample có annotation và không có tag/split sẵn.
+- Mask `$binary` đã được giải mã đúng thành mảng NumPy boolean 2D nén zlib. Toàn bộ 6.211 detection/segmentation pair khớp label và bounding box.
+- Conversion YOLO segmentation v2 đã chạy với seed `20261006`: 1.966 ảnh train, 431 validation, 419 test và tổng 6.211 object. Multilabel stratification giữ tỷ lệ từng lớp gần 70/15/15; một nhóm near-duplicate gồm hai ảnh không bị tách chéo split.
+- Vì Google Drive hết dung lượng, processed được chuyển sang chế độ chỉ giữ labels, split manifest và report. Ảnh chỉ lưu một lần trong Bronze; training view được dựng tạm bằng symlink trong `/content`.
 - License yêu cầu prior consent của PIC Lab cho nghiên cứu, authorization cho thương mại, cấm phân phối cho bên thứ ba khi chưa được phép và yêu cầu trích dẫn paper. Repo chưa có bằng chứng prior consent.
 
 ## 4. Hạ tầng và pipeline đã hoàn thành
@@ -115,7 +118,7 @@ Repo đã được thiết lập với:
 - SHAP global và local cho mô hình được chọn.
 - Lệnh chấm điểm file mới và tạo queue candidate.
 - Khung Net Value có validation, chưa cho phép chạy khi thiếu chi phí nghiệp vụ.
-- Script YOLO segmentation nhận đường dẫn dữ liệu thật, chưa chạy training.
+- Converter và validator YOLO segmentation đã chạy trên dữ liệu thật; training chưa chạy.
 - Dữ liệu thô, Parquet, dự đoán từng hồ sơ và model artifact được loại khỏi Git.
 
 Pipeline tabular v1 đã được chạy lại thành công bằng một lệnh. DVC báo dữ liệu và pipeline cập nhật. Bộ kiểm thử hiện tại có 12 test và tất cả đều đạt, gồm test cho audit alignment CarDD.
@@ -217,8 +220,8 @@ Cần xác nhận các trường `incident_type`, `collision_type`, `number_of_v
 Cần:
 
 - Lưu bằng chứng prior consent của PIC Lab cho phạm vi đồ án.
-- Profile kiểu/shape mask và split/tag trong `samples.json`, rồi viết converter từ FiftyOne Detection/mask thực tế sang YOLO segmentation.
-- Chia train/validation/test có seed và manifest sau conversion; kiểm tra không có ảnh gần trùng giữa split.
+- Chạy validator lần cuối trên conversion v2 sau khi dựng training view tạm trong `/content`.
+- Huấn luyện baseline YOLOv8-seg và đánh giá trên test chỉ sau khi chọn model/checkpoint bằng train và validation.
 - Dùng môi trường Colab/Kaggle GPU cho training.
 
 ### 8.2. Net Value
