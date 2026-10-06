@@ -90,9 +90,10 @@ Từ 05/10/2026, 700 dòng train được tách thêm thành `train_fs` 560 dòn
 - CORD chỉ là nguồn nền cho OCR/document understanding.
 - CarDD, CORD và Kaggle chưa có liên kết claim-level.
 - CarDD chỉ có trên Google Drive/Colab tại `/content/drive/MyDrive/AI_Project_Insurance/data/bronze/layerA_cardd/`; inspector đã chạy trong Colab ngày 06/10/2026.
-- Kết quả inspector ban đầu: 2.753 ảnh JPG, 2.816 sample record, annotation FiftyOne `Detection`/`Detections`, 12.422 bounding box, 6.211 mask và sáu lớp `crack`, `dent`, `glass shatter`, `lamp broken`, `scratch`, `tire flat`.
+- Kết quả inspector ban đầu: 2.753 ảnh JPG, 2.816 sample record và sáu lớp `crack`, `dent`, `glass shatter`, `lamp broken`, `scratch`, `tire flat`.
 - Audit xác định 63 ảnh được annotation tham chiếu nhưng tải thiếu; không có filepath trống, ảnh thừa hoặc filename trùng. Đã tải bù từ cùng mirror.
 - Kiểm tra cuối: 2.816 sample khớp 2.816 ảnh, không thiếu/thừa, 0 ảnh hỏng và `ready_for_conversion: true`. Báo cáo nằm trên Drive tại `reports/cardd_alignment_final.json`.
+- Profile annotation xác định 6.211 damage object được lưu song song: field `detections` chứa box và field `segmentations` chứa cùng box kèm mask `$binary`. Tổng 12.422 box trước đó là đếm lặp hai field. Tất cả sample có annotation và không có tag/split sẵn.
 - License yêu cầu prior consent của PIC Lab cho nghiên cứu, authorization cho thương mại, cấm phân phối cho bên thứ ba khi chưa được phép và yêu cầu trích dẫn paper. Repo chưa có bằng chứng prior consent.
 
 ## 4. Hạ tầng và pipeline đã hoàn thành

@@ -8,8 +8,9 @@
 - Cấu trúc thực tế là FiftyOne: `fiftyone.yml`, `samples.json`, `metadata.json`, `data/*.jpg` và `CarDD_license.pdf`.
 - Lần tải đầu có 2.753 ảnh cho 2.816 sample record. Audit xác định đúng 63 ảnh được annotation tham chiếu nhưng chưa tải; không có record thiếu filepath, ảnh thừa hoặc filename trùng.
 - Đã tải bù 63 ảnh từ cùng mirror. Kiểm tra cuối có 2.816 sample, 2.816 ảnh, không thiếu/thừa và không có ảnh hỏng; `ready_for_conversion: true`. Kết quả lưu tại `reports/cardd_alignment_final.json` trên Drive.
-- Annotation lưu trong `samples.json` dưới dạng `Detection`/`Detections`, có 12.422 `bounding_box` và 6.211 `mask`.
+- Annotation lưu song song trong hai field FiftyOne: `detections` có 6.211 box và `segmentations` có cùng 6.211 box kèm mask `$binary`. Vì vậy dataset có 6.211 damage object; con số 12.422 box của inspector đầu tiên là đếm cùng object ở cả hai field.
 - Sáu lớp tìm thấy: `crack`, `dent`, `glass shatter`, `lamp broken`, `scratch`, `tire flat`.
+- Tất cả 2.816 sample đều có annotation; dataset không cung cấp tag/split sẵn.
 
 ## License đã đọc
 
