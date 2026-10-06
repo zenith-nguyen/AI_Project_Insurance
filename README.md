@@ -64,6 +64,15 @@ The inspector reads `fiftyone.yml`, `samples.json`, `metadata.json`, counts imag
 
 `src/image/train_yolo.py` accepts a real Ultralytics segmentation `data.yaml` and runs separately on GPU. CarDD mirror metadata must be inspected and converted with its actual labels; the image branch has no claim-level linkage to the tabular data. Install `requirements-gpu.txt` in a separate Colab/GPU environment. Do not redistribute restricted raw images.
 
+Google Drive should retain one copy of the CarDD images under Bronze. The converter now defaults to `--image-mode labels-only`; existing converted outputs that contain copied images can be reduced with `scripts/slim_cardd_yolo_storage.py`. Before validation or training, `scripts/materialize_cardd_training_view.py` creates an ephemeral `/content/cardd_yolo_v1` view whose image and label entries are symbolic links. This keeps the split and labels reproducible without storing the 2,816 images twice on Drive.
+
+```python
+!python scripts/materialize_cardd_training_view.py \
+  "/content/drive/MyDrive/AI_Project_Insurance/data/bronze/layerA_cardd" \
+  "/content/drive/MyDrive/AI_Project_Insurance/data/processed/cardd_yolo_v1" \
+  "/content/cardd_yolo_v1"
+```
+
 ## Important limits
 
 This is an academic baseline, not a deployed claims decision system. The test has roughly 49 positive cases, so results have wide uncertainty. There is no prospective validation, linked multimodal dataset, verified production prevalence, measured review costs, or operational approval for automatic processing.

@@ -248,9 +248,12 @@ def convert(root: Path, output: Path, seed: int, image_mode: str, max_hamming: i
     manifest_rows = []
     for index, item in enumerate(prepared):
         split = assignments[index]
-        image_destination = working_output / "images" / split / item["image_name"]
         label_destination = working_output / "labels" / split / f"{Path(item['image_name']).stem}.txt"
-        link_modes[link_image(item["image_path"], image_destination, image_mode)] += 1
+        if image_mode == "labels-only":
+            link_modes["labels-only"] += 1
+        else:
+            image_destination = working_output / "images" / split / item["image_name"]
+            link_modes[link_image(item["image_path"], image_destination, image_mode)] += 1
         label_destination.parent.mkdir(parents=True, exist_ok=True)
         label_destination.write_text("\n".join(item["label_lines"]) + "\n", encoding="utf-8")
         split_images[split] += 1
@@ -258,7 +261,7 @@ def convert(root: Path, output: Path, seed: int, image_mode: str, max_hamming: i
             split_instances[split][CLASS_NAMES[class_id]] += int(count)
         manifest_rows.append({"image": item["image_name"], "split": split, "instances": int(sum(class_vectors[index]))})
         if (index + 1) % 250 == 0 or index + 1 == len(prepared):
-            print(f"Dataset materialized: {index + 1}/{len(prepared)}", flush=True)
+            print(f"Dataset labels written: {index + 1}/{len(prepared)}", flush=True)
 
     data_yaml = {
         "path": str(output.resolve()),
@@ -267,7 +270,10 @@ def convert(root: Path, output: Path, seed: int, image_mode: str, max_hamming: i
         "test": "images/test",
         "names": {index: name for index, name in enumerate(CLASS_NAMES)},
     }
-    (working_output / "data.yaml").write_text(yaml.safe_dump(data_yaml, sort_keys=False, allow_unicode=True), encoding="utf-8")
+    yaml_name = "data.requires_materialization.yaml" if image_mode == "labels-only" else "data.yaml"
+    (working_output / yaml_name).write_text(
+        yaml.safe_dump(data_yaml, sort_keys=False, allow_unicode=True), encoding="utf-8"
+    )
     (working_output / "split_manifest.jsonl").write_text(
         "".join(json.dumps(row, ensure_ascii=False) + "\n" for row in manifest_rows), encoding="utf-8"
     )
@@ -307,7 +313,12 @@ def main() -> None:
     parser.add_argument("cardd_root", type=Path)
     parser.add_argument("output", type=Path)
     parser.add_argument("--seed", type=int, default=20261006)
-    parser.add_argument("--image-mode", choices=("auto", "hardlink", "symlink", "copy"), default="auto")
+    parser.add_argument(
+        "--image-mode",
+        choices=("labels-only", "auto", "hardlink", "symlink", "copy"),
+        default="labels-only",
+        help="Use labels-only on persistent storage; materialize a temporary /content view before training",
+    )
     parser.add_argument("--near-duplicate-hamming", type=int, default=2)
     args = parser.parse_args()
     print(json.dumps(
