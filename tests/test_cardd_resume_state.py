@@ -45,3 +45,32 @@ def test_resume_state_recognizes_complete_bronze_and_conversion(tmp_path):
     assert result["conversion"]["metadata_ready"] is True
     assert result["resume"]["ready_to_materialize"] is True
     assert result["resume"]["safe_cleanup_candidate"] is True
+
+
+def test_resume_state_supports_bronze_and_conversion_in_separate_projects(tmp_path):
+    source = tmp_path / "source"
+    destination = tmp_path / "destination"
+    bronze = source / "data/bronze/layerA_cardd"
+    processed = destination / "data/processed/cardd_yolo_v1"
+    (bronze / "data").mkdir(parents=True)
+    (bronze / "data/one.jpg").write_bytes(b"image")
+    samples_path = bronze / "samples.json"
+    samples_path.write_text(json.dumps({"samples": [{"filepath": "data/one.jpg"}]}))
+    (processed / "labels/train").mkdir(parents=True)
+    (processed / "labels/train/one.txt").write_text("0 0 0 1 0 1 1\n")
+    row = {"image": "one.jpg", "split": "train", "instances": 1}
+    (processed / "split_manifest.jsonl").write_text(json.dumps(row) + "\n")
+    from scripts.check_cardd_resume_state import sha256
+
+    (processed / "conversion_report.json").write_text(json.dumps({
+        "images": 1,
+        "split_images": {"train": 1},
+        "samples_json_sha256": sha256(samples_path),
+        "image_materialization_modes": {"labels-only": 1},
+    }))
+
+    result = inspect(source, destination)
+
+    assert result["bronze"]["ready"] is True
+    assert result["conversion"]["metadata_ready"] is True
+    assert result["resume"]["ready_to_materialize"] is True

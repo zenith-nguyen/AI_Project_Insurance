@@ -30,10 +30,11 @@ def image_files(root: Path) -> list[Path]:
     ]
 
 
-def inspect(project: Path) -> dict[str, Any]:
+def inspect(project: Path, conversion_project: Path | None = None) -> dict[str, Any]:
     project = project.resolve()
+    conversion_project = (conversion_project or project).resolve()
     bronze = project / "data/bronze/layerA_cardd"
-    processed = project / "data/processed/cardd_yolo_v1"
+    processed = conversion_project / "data/processed/cardd_yolo_v1"
     samples_path = bronze / "samples.json"
     report_path = processed / "conversion_report.json"
     manifest_path = processed / "split_manifest.jsonl"
@@ -99,6 +100,7 @@ def inspect(project: Path) -> dict[str, Any]:
 
     return {
         "project": str(project),
+        "conversion_project": str(conversion_project),
         "bronze": {
             "samples_json_exists": samples_path.is_file(),
             "samples_json_sha256": sha256(samples_path) if samples_path.is_file() else None,
@@ -137,9 +139,14 @@ def inspect(project: Path) -> dict[str, Any]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("project", type=Path, help="AI_Project_Insurance root")
+    parser.add_argument(
+        "--conversion-project",
+        type=Path,
+        help="Optional separate project root containing processed labels/report",
+    )
     parser.add_argument("--output", type=Path, help="Optional JSON output; omit on a full Drive")
     args = parser.parse_args()
-    result = inspect(args.project)
+    result = inspect(args.project, args.conversion_project)
     rendered = json.dumps(result, ensure_ascii=False, indent=2)
     print(rendered)
     if args.output:
