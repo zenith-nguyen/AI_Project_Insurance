@@ -13,7 +13,7 @@
 - Sáu lớp tìm thấy: `crack`, `dent`, `glass shatter`, `lamp broken`, `scratch`, `tire flat`.
 - Tất cả 2.816 sample đều có annotation; dataset không cung cấp tag/split sẵn.
 - Conversion YOLO segmentation v2 đã hoàn tất với seed `20261006`: train 1.966 ảnh, validation 431 ảnh và test 419 ảnh; tổng 6.211 object. Phân bố từng lớp gần 70/15/15 và một nhóm near-duplicate gồm hai ảnh được giữ trong cùng split. Validator v2 cần chạy lần cuối trước khi training.
-- Để tiết kiệm Drive, chỉ giữ một bản ảnh trong Bronze. Thư mục processed giữ labels, split manifest và conversion report; bản YOLO đầy đủ được dựng tạm trong `/content` trước khi validation/training.
+- Google Drive hiện hết dung lượng do thư mục processed đang copy lại 2.816 ảnh Bronze. Script cleanup đã được viết và kiểm thử nhưng chưa chạy xong trên Drive. Sau cleanup, Drive sẽ chỉ giữ một bản ảnh trong Bronze cùng labels, split manifest và conversion report; bản YOLO đầy đủ được dựng tạm trong `/content` trước khi validation/training.
 
 ## License đã đọc
 

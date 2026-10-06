@@ -96,7 +96,7 @@ Từ 05/10/2026, 700 dòng train được tách thêm thành `train_fs` 560 dòn
 - Profile annotation xác định 6.211 damage object được lưu song song: field `detections` chứa box và field `segmentations` chứa cùng box kèm mask `$binary`. Tổng 12.422 box trước đó là đếm lặp hai field. Tất cả sample có annotation và không có tag/split sẵn.
 - Mask `$binary` đã được giải mã đúng thành mảng NumPy boolean 2D nén zlib. Toàn bộ 6.211 detection/segmentation pair khớp label và bounding box.
 - Conversion YOLO segmentation v2 đã chạy với seed `20261006`: 1.966 ảnh train, 431 validation, 419 test và tổng 6.211 object. Multilabel stratification giữ tỷ lệ từng lớp gần 70/15/15; một nhóm near-duplicate gồm hai ảnh không bị tách chéo split.
-- Vì Google Drive hết dung lượng, processed được chuyển sang chế độ chỉ giữ labels, split manifest và report. Ảnh chỉ lưu một lần trong Bronze; training view được dựng tạm bằng symlink trong `/content`.
+- Google Drive hiện đã hết dung lượng vì `processed/cardd_yolo_v1/images` đang chứa thêm một bản copy của 2.816 ảnh Bronze. Cơ chế lưu gọn đã được viết và kiểm thử: sau khi chạy cleanup, Drive sẽ chỉ giữ ảnh trong Bronze cùng labels, split manifest và report; training view sẽ được dựng tạm bằng symlink trong `/content`. Cleanup trên Drive vẫn đang chờ thực hiện.
 - License yêu cầu prior consent của PIC Lab cho nghiên cứu, authorization cho thương mại, cấm phân phối cho bên thứ ba khi chưa được phép và yêu cầu trích dẫn paper. Repo chưa có bằng chứng prior consent.
 
 ## 4. Hạ tầng và pipeline đã hoàn thành
@@ -121,7 +121,7 @@ Repo đã được thiết lập với:
 - Converter và validator YOLO segmentation đã chạy trên dữ liệu thật; training chưa chạy.
 - Dữ liệu thô, Parquet, dự đoán từng hồ sơ và model artifact được loại khỏi Git.
 
-Pipeline tabular v1 đã được chạy lại thành công bằng một lệnh. DVC báo dữ liệu và pipeline cập nhật. Bộ kiểm thử hiện tại có 12 test và tất cả đều đạt, gồm test cho audit alignment CarDD.
+Pipeline tabular v1 đã được chạy lại thành công bằng một lệnh. DVC báo dữ liệu và pipeline cập nhật. Lần kiểm thử local gần nhất có 15 test đạt; một test tạo symlink được bỏ qua trên Windows vì cần quyền hệ điều hành và sẽ chạy trong môi trường Colab/Linux.
 
 ## 5. Kết quả mô hình đã kiểm chứng
 
