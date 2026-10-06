@@ -21,6 +21,20 @@
 - Hướng xử lý: giữ Bronze qua shortcut cũ, chạy lại converter v2 trên Drive mới với `--image-mode labels-only`, rồi dựng training view tạm trong `/content`. Không tải lại ảnh và không copy 2.816 ảnh sang Processed.
 - Notebook resume v2 đã sửa lỗi UTF-8 và tự thực hiện nhánh recovery này.
 
+## Kết quả recovery trên Drive mới
+
+Recovery đã hoàn tất thành công ngày 07/10/2026:
+
+- Bronze qua shortcut: `PASS`.
+- Conversion v2 metadata: `PASS`.
+- Labels: 2.816 file.
+- Split: train 1.966, validation 431, test 419.
+- Dataset tạm: `/content/cardd_yolo_v1/data.yaml`.
+- Validator: `valid: true`.
+- Số ảnh copy trong Processed trên Drive mới: 0.
+
+Processed trên Drive mới hiện chỉ giữ labels, split manifest và conversion report. Ảnh được đọc từ Bronze qua shortcut Drive cũ và liên kết vào `/content` khi cần chạy model.
+
 ## Trạng thái tìm thấy trong notebook
 
 ### Tabular

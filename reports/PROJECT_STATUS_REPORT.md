@@ -96,7 +96,7 @@ Từ 05/10/2026, 700 dòng train được tách thêm thành `train_fs` 560 dòn
 - Profile annotation xác định 6.211 damage object được lưu song song: field `detections` chứa box và field `segmentations` chứa cùng box kèm mask `$binary`. Tổng 12.422 box trước đó là đếm lặp hai field. Tất cả sample có annotation và không có tag/split sẵn.
 - Mask `$binary` đã được giải mã đúng thành mảng NumPy boolean 2D nén zlib. Toàn bộ 6.211 detection/segmentation pair khớp label và bounding box.
 - Conversion YOLO segmentation v2 đã chạy với seed `20261006`: 1.966 ảnh train, 431 validation, 419 test và tổng 6.211 object. Multilabel stratification giữ tỷ lệ từng lớp gần 70/15/15; một nhóm near-duplicate gồm hai ảnh không bị tách chéo split.
-- Google Drive hiện đã hết dung lượng vì `processed/cardd_yolo_v1/images` đang chứa thêm một bản copy của 2.816 ảnh Bronze. Cơ chế lưu gọn đã được viết và kiểm thử: sau khi chạy cleanup, Drive sẽ chỉ giữ ảnh trong Bronze cùng labels, split manifest và report; training view sẽ được dựng tạm bằng symlink trong `/content`. Cleanup trên Drive vẫn đang chờ thực hiện.
+- Drive cũ đã hết dung lượng vì `processed/cardd_yolo_v1/images` chứa thêm một bản copy của 2.816 ảnh Bronze. Ngày 07/10/2026, project đã được resume trên Drive mới: Bronze được đọc qua shortcut Drive cũ, conversion v2 được tạo lại ở chế độ `labels-only`, đủ 2.816 labels với split 1.966/431/419, training view được dựng tạm trong `/content` và validator trả `valid: true`. Processed trên Drive mới không chứa bản copy ảnh.
 - License yêu cầu prior consent của PIC Lab cho nghiên cứu, authorization cho thương mại, cấm phân phối cho bên thứ ba khi chưa được phép và yêu cầu trích dẫn paper. Repo chưa có bằng chứng prior consent.
 
 ## 4. Hạ tầng và pipeline đã hoàn thành
