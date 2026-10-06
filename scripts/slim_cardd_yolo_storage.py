@@ -17,6 +17,11 @@ def slim(bronze: Path, converted: Path) -> dict:
     manifest_path = converted / "split_manifest.jsonl"
     images_dir = converted / "images"
     labels_dir = converted / "labels"
+    storage_manifest_path = converted / "storage_manifest.json"
+    if storage_manifest_path.is_file() and not images_dir.exists():
+        previous = json.loads(storage_manifest_path.read_text(encoding="utf-8"))
+        previous["already_slim"] = True
+        return previous
     if not all(path.exists() for path in (report_path, manifest_path, images_dir, labels_dir)):
         raise FileNotFoundError("Converted dataset is missing report, manifest, images, or labels")
     report = json.loads(report_path.read_text(encoding="utf-8"))
@@ -60,7 +65,7 @@ def slim(bronze: Path, converted: Path) -> dict:
         "logical_bytes_removed": bytes_removed,
         "training_instruction": "Run materialize_cardd_training_view.py into /content before validation or training",
     }
-    (converted / "storage_manifest.json").write_text(
+    storage_manifest_path.write_text(
         json.dumps(storage_report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
     return storage_report

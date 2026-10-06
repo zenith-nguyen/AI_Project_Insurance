@@ -37,6 +37,7 @@ def test_slim_cardd_removes_only_redundant_images(tmp_path):
     assert (converted / "labels/train/example.txt").is_file()
     assert (converted / "storage_manifest.json").is_file()
     assert slim_report["removed_duplicate_image_files"] == 1
+    assert slim(bronze, converted)["already_slim"] is True
 
 
 @pytest.mark.skipif(os.name == "nt", reason="Windows symlinks require developer-mode privileges")
