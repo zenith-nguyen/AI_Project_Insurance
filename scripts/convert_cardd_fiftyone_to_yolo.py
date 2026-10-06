@@ -92,7 +92,11 @@ class UnionFind:
 
 
 def duplicate_groups(image_paths: list[Path], max_hamming: int) -> list[list[int]]:
-    signatures = [dhash(path) for path in image_paths]
+    signatures = []
+    for index, path in enumerate(image_paths, start=1):
+        signatures.append(dhash(path))
+        if index % 250 == 0 or index == len(image_paths):
+            print(f"Perceptual hashes: {index}/{len(image_paths)}", flush=True)
     union = UnionFind(len(image_paths))
     for left in range(len(image_paths)):
         left_hash, left_ratio = signatures[left]
@@ -102,6 +106,8 @@ def duplicate_groups(image_paths: list[Path], max_hamming: int) -> list[list[int
                 continue
             if (left_hash ^ right_hash).bit_count() <= max_hamming:
                 union.union(left, right)
+        if (left + 1) % 500 == 0 or left + 1 == len(image_paths):
+            print(f"Near-duplicate comparisons: {left + 1}/{len(image_paths)}", flush=True)
     grouped: dict[int, list[int]] = {}
     for index in range(len(image_paths)):
         grouped.setdefault(union.find(index), []).append(index)
@@ -178,6 +184,9 @@ def link_image(source: Path, destination: Path, mode: str) -> str:
 def convert(root: Path, output: Path, seed: int, image_mode: str, max_hamming: int) -> dict[str, Any]:
     if output.exists():
         raise FileExistsError(f"Output already exists: {output}")
+    working_output = output.with_name(output.name + ".building")
+    if working_output.exists():
+        raise FileExistsError(f"Stale conversion directory exists: {working_output}")
     payload = json.loads((root / "samples.json").read_text(encoding="utf-8"))
     records = payload if isinstance(payload, list) else payload.get("samples")
     if not isinstance(records, list):
@@ -193,7 +202,7 @@ def convert(root: Path, output: Path, seed: int, image_mode: str, max_hamming: i
     class_instances: Counter[str] = Counter()
     multi_contour_objects = 0
     max_contours = 0
-    for record in records:
+    for record_index, record in enumerate(records, start=1):
         image_name = Path(str(record["filepath"]).replace("\\", "/")).name
         image_path = image_by_name.get(image_name)
         if image_path is None:
@@ -222,19 +231,21 @@ def convert(root: Path, output: Path, seed: int, image_mode: str, max_hamming: i
             class_instances[label] += 1
         prepared.append({"image_name": image_name, "image_path": image_path, "label_lines": lines})
         class_vectors.append(vector)
+        if record_index % 250 == 0 or record_index == len(records):
+            print(f"Masks converted: {record_index}/{len(records)}", flush=True)
 
     image_paths = [item["image_path"] for item in prepared]
     groups = duplicate_groups(image_paths, max_hamming=max_hamming)
     assignments = assign_groups(groups, np.asarray(class_vectors), (0.70, 0.15, 0.15), seed)
-    output.mkdir(parents=True)
+    working_output.mkdir(parents=True)
     split_images: Counter[str] = Counter()
     split_instances = {name: Counter() for name in ("train", "val", "test")}
     link_modes: Counter[str] = Counter()
     manifest_rows = []
     for index, item in enumerate(prepared):
         split = assignments[index]
-        image_destination = output / "images" / split / item["image_name"]
-        label_destination = output / "labels" / split / f"{Path(item['image_name']).stem}.txt"
+        image_destination = working_output / "images" / split / item["image_name"]
+        label_destination = working_output / "labels" / split / f"{Path(item['image_name']).stem}.txt"
         link_modes[link_image(item["image_path"], image_destination, image_mode)] += 1
         label_destination.parent.mkdir(parents=True, exist_ok=True)
         label_destination.write_text("\n".join(item["label_lines"]) + "\n", encoding="utf-8")
@@ -242,6 +253,8 @@ def convert(root: Path, output: Path, seed: int, image_mode: str, max_hamming: i
         for class_id, count in enumerate(class_vectors[index]):
             split_instances[split][CLASS_NAMES[class_id]] += int(count)
         manifest_rows.append({"image": item["image_name"], "split": split, "instances": int(sum(class_vectors[index]))})
+        if (index + 1) % 250 == 0 or index + 1 == len(prepared):
+            print(f"Dataset materialized: {index + 1}/{len(prepared)}", flush=True)
 
     data_yaml = {
         "path": str(output.resolve()),
@@ -250,8 +263,8 @@ def convert(root: Path, output: Path, seed: int, image_mode: str, max_hamming: i
         "test": "images/test",
         "names": {index: name for index, name in enumerate(CLASS_NAMES)},
     }
-    (output / "data.yaml").write_text(yaml.safe_dump(data_yaml, sort_keys=False, allow_unicode=True), encoding="utf-8")
-    (output / "split_manifest.jsonl").write_text(
+    (working_output / "data.yaml").write_text(yaml.safe_dump(data_yaml, sort_keys=False, allow_unicode=True), encoding="utf-8")
+    (working_output / "split_manifest.jsonl").write_text(
         "".join(json.dumps(row, ensure_ascii=False) + "\n" for row in manifest_rows), encoding="utf-8"
     )
     duplicate_group_sizes = sorted((len(group) for group in groups if len(group) > 1), reverse=True)
@@ -278,9 +291,10 @@ def convert(root: Path, output: Path, seed: int, image_mode: str, max_hamming: i
         "maximum_contours_in_one_object": max_contours,
         "image_materialization_modes": dict(link_modes),
     }
-    (output / "conversion_report.json").write_text(
+    (working_output / "conversion_report.json").write_text(
         json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
+    working_output.replace(output)
     return report
 
 
