@@ -7,7 +7,6 @@ import hashlib
 import io
 import json
 import os
-import random
 import shutil
 import zlib
 from collections import Counter
@@ -120,40 +119,45 @@ def assign_groups(
     fractions: tuple[float, float, float],
     seed: int,
 ) -> dict[int, str]:
-    names = ("train", "val", "test")
-    total_images = len(class_vectors)
-    total_classes = class_vectors.sum(axis=0)
-    target_images = np.asarray(fractions) * total_images
-    target_classes = np.outer(np.asarray(fractions), total_classes)
-    current_images = np.zeros(3, dtype=float)
-    current_classes = np.zeros((3, class_vectors.shape[1]), dtype=float)
-    rng = random.Random(seed)
+    from iterstrat.ml_stratifiers import MultilabelStratifiedShuffleSplit
 
-    prepared = []
-    for group in groups:
-        vector = class_vectors[group].sum(axis=0)
-        rarity = float(sum(vector / np.maximum(total_classes, 1)))
-        prepared.append((group, vector, rarity, rng.random()))
-    prepared.sort(key=lambda item: (-item[2], -len(item[0]), item[3]))
-
-    assignments: dict[int, str] = {}
-    for group, vector, _, _ in prepared:
-        scores = []
-        for split_index in range(3):
-            candidate_images = current_images.copy()
-            candidate_classes = current_classes.copy()
-            candidate_images[split_index] += len(group)
-            candidate_classes[split_index] += vector
-            image_error = np.square((candidate_images - target_images) / np.maximum(target_images, 1)).sum()
-            class_error = np.square((candidate_classes - target_classes) / np.maximum(target_classes, 1)).sum()
-            overflow = np.maximum(candidate_images - target_images, 0).sum() / total_images
-            scores.append(float(image_error + class_error + 5 * overflow))
-        chosen = min(range(3), key=lambda index: (scores[index], index))
-        current_images[chosen] += len(group)
-        current_classes[chosen] += vector
-        for image_index in group:
-            assignments[image_index] = names[chosen]
-    return assignments
+    if not np.isclose(sum(fractions), 1.0) or any(value <= 0 for value in fractions):
+        raise ValueError("Split fractions must be positive and sum to one")
+    group_counts = np.asarray([class_vectors[group].sum(axis=0) for group in groups])
+    # Stratify both class presence and repeated instances of the same class.
+    max_bucket = min(5, int(group_counts.max()))
+    stratification = np.concatenate(
+        [(group_counts >= threshold).astype(int) for threshold in range(1, max_bucket + 1)],
+        axis=1,
+    )
+    group_indices = np.arange(len(groups))
+    first = MultilabelStratifiedShuffleSplit(
+        n_splits=1,
+        test_size=fractions[1] + fractions[2],
+        random_state=seed,
+    )
+    train_group_indices, temporary_group_indices = next(first.split(group_indices[:, None], stratification))
+    temporary_stratification = stratification[temporary_group_indices]
+    second = MultilabelStratifiedShuffleSplit(
+        n_splits=1,
+        test_size=fractions[2] / (fractions[1] + fractions[2]),
+        random_state=seed + 1,
+    )
+    val_local_indices, test_local_indices = next(
+        second.split(temporary_group_indices[:, None], temporary_stratification)
+    )
+    group_split = {}
+    for group_index in train_group_indices:
+        group_split[int(group_index)] = "train"
+    for local_index in val_local_indices:
+        group_split[int(temporary_group_indices[local_index])] = "val"
+    for local_index in test_local_indices:
+        group_split[int(temporary_group_indices[local_index])] = "test"
+    return {
+        image_index: group_split[group_index]
+        for group_index, group in enumerate(groups)
+        for image_index in group
+    }
 
 
 def link_image(source: Path, destination: Path, mode: str) -> str:
