@@ -13,6 +13,14 @@
 - Notebook **không lưu** lần conversion v2 có split 1.966/431/419, không lưu thao tác cleanup Drive và chưa có YOLO training. Output v2 đã được gửi trong chat nhưng cần kiểm tra lại file thật trên Drive cũ.
 - Không cần làm lại toàn bộ dự án. Cần kiểm kê Drive cũ, tái sử dụng Bronze và conversion metadata còn tốt, rồi tiếp tục trên Drive mới.
 
+## Cập nhật sau khi mount Drive mới
+
+- Shortcut `AI_Project_Insurance_OLD` đã xuất hiện trong My Drive mới và Colab đọc được.
+- Checker trả `Bronze ready: True`, xác nhận dữ liệu nguồn qua shortcut vẫn dùng được.
+- Checker trả `Conversion metadata ready: False` và `Actual splits: {}`. Nghĩa là Drive cũ không cung cấp đủ `conversion_report.json`, `split_manifest.jsonl` và labels để resume trực tiếp.
+- Hướng xử lý: giữ Bronze qua shortcut cũ, chạy lại converter v2 trên Drive mới với `--image-mode labels-only`, rồi dựng training view tạm trong `/content`. Không tải lại ảnh và không copy 2.816 ảnh sang Processed.
+- Notebook resume v2 đã sửa lỗi UTF-8 và tự thực hiện nhánh recovery này.
+
 ## Trạng thái tìm thấy trong notebook
 
 ### Tabular
