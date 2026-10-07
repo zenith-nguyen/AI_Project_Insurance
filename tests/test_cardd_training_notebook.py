@@ -16,6 +16,9 @@ def test_training_notebook_v2_is_utf8_self_contained_and_compilable():
     assert "RUN_FINAL_TEST = False" in combined
     assert 'runtime_best = globals().get("BEST_WEIGHTS")' in combined
     assert 'cardd_yolov8n_seg_baseline_v2"\n    / "weights"' in combined
+    assert "Runtime mới chưa có Ultralytics" in combined
+    assert 'eval_dataset = Path("/content/cardd_yolo_eval_v2")' in combined
+    assert 'RUN_FINAL_TEST = globals().get("RUN_FINAL_TEST", False)' in combined
     assert "Ã" not in combined
     assert "áº" not in combined
 

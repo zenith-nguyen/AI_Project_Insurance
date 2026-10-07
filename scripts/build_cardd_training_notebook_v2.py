@@ -479,11 +479,111 @@ else:
         markdown("## 9. Đánh giá trên validation"),
         code(
             """import json
-import shutil
+import subprocess
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-from ultralytics import YOLO
+try:
+    from ultralytics import YOLO
+except ModuleNotFoundError:
+    print("Runtime mới chưa có Ultralytics; đang cài bản 8.4.173...")
+    subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "pip",
+            "install",
+            "-q",
+            "ultralytics==8.4.173",
+            "PyYAML>=6,<7",
+            "Pillow>=10,<13",
+        ],
+        check=True,
+    )
+    from ultralytics import YOLO
+
+import torch
+import yaml
+
+if not torch.cuda.is_available():
+    raise RuntimeError("Hãy chuyển runtime sang T4 GPU trước khi validation.")
+
+# Cell này tự khôi phục toàn bộ đường dẫn sau khi Colab đổi runtime.
+OLD_PROJECT = Path("/content/drive/MyDrive/AI_Project_Insurance_OLD")
+NEW_PROJECT = Path("/content/drive/MyDrive/AI_Project_Insurance")
+SOURCE_CARDD = OLD_PROJECT / "data/bronze/layerA_cardd"
+CONVERTED = NEW_PROJECT / "data/processed/cardd_yolo_v1"
+RUNS_ROOT = NEW_PROJECT / "artifacts/image"
+REPORTS_ROOT = NEW_PROJECT / "reports/metrics"
+DATA_YAML = Path("/content/cardd_yolo_v1/data.yaml")
+
+if not NEW_PROJECT.is_dir():
+    from google.colab import drive
+
+    drive.mount("/content/drive")
+
+# Nếu dataset copy trong /content đã mất, tạo view symlink nhẹ để validation.
+if not DATA_YAML.is_file():
+    eval_dataset = Path("/content/cardd_yolo_eval_v2")
+    manifest_path = CONVERTED / "split_manifest.jsonl"
+    conversion_report_path = CONVERTED / "conversion_report.json"
+    for required in [SOURCE_CARDD / "data", manifest_path, conversion_report_path]:
+        if not required.exists():
+            raise FileNotFoundError(required)
+
+    manifest_rows = [
+        json.loads(line)
+        for line in manifest_path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    conversion_report = json.loads(conversion_report_path.read_text(encoding="utf-8"))
+    if len(manifest_rows) != 2816:
+        raise RuntimeError(f"Manifest không đủ 2.816 dòng: {len(manifest_rows)}")
+
+    print("Dataset tạm đã mất; đang tạo validation view bằng symlink...")
+    for index, row in enumerate(manifest_rows, start=1):
+        image_name = row["image"]
+        split = row["split"]
+        source_image = SOURCE_CARDD / "data" / image_name
+        source_label = CONVERTED / "labels" / split / f"{Path(image_name).stem}.txt"
+        image_link = eval_dataset / "images" / split / image_name
+        label_link = eval_dataset / "labels" / split / source_label.name
+        image_link.parent.mkdir(parents=True, exist_ok=True)
+        label_link.parent.mkdir(parents=True, exist_ok=True)
+        for source, link in [(source_image, image_link), (source_label, label_link)]:
+            if link.is_symlink() or link.exists():
+                link.unlink()
+            link.symlink_to(source)
+        if index % 500 == 0 or index == len(manifest_rows):
+            print(f"Validation links: {index}/{len(manifest_rows)}")
+
+    data_payload = {
+        "path": str(eval_dataset),
+        "train": "images/train",
+        "val": "images/val",
+        "test": "images/test",
+        "names": {
+            index: name
+            for index, name in enumerate(conversion_report["classes"])
+        },
+    }
+    DATA_YAML = eval_dataset / "data.yaml"
+    DATA_YAML.write_text(
+        yaml.safe_dump(data_payload, sort_keys=False, allow_unicode=True),
+        encoding="utf-8",
+    )
+    val_images = len(list((eval_dataset / "images/val").glob("*.jpg")))
+    val_labels = len(list((eval_dataset / "labels/val").glob("*.txt")))
+    if (val_images, val_labels) != (431, 431):
+        raise RuntimeError(
+            f"Validation view không đủ: images={val_images}, labels={val_labels}"
+        )
+    print("Validation view: PASS")
+
+print("Ultralytics ready: PASS")
+print("CUDA:", torch.cuda.get_device_name(0))
+print("Validation YAML:", DATA_YAML)
 
 # Tự khôi phục đường dẫn checkpoint nếu runtime đã mất biến BEST_WEIGHTS.
 runtime_best = globals().get("BEST_WEIGHTS")
@@ -511,11 +611,6 @@ else:
         val_report = json.loads(VAL_METRICS.read_text(encoding="utf-8"))
         print("Sử dụng validation report đã có:", VAL_METRICS)
     else:
-        if val_run_dir.exists():
-            suffix = datetime.now().strftime("%Y%m%d_%H%M%S")
-            archived = val_run_dir.with_name(val_run_dir.name + "_incomplete_" + suffix)
-            shutil.move(str(val_run_dir), str(archived))
-            print("Đã lưu validation run cũ tại:", archived)
         metrics = YOLO(str(BEST_WEIGHTS)).val(
             data=str(DATA_YAML),
             split="val",
@@ -526,7 +621,7 @@ else:
             name="cardd_yolov8n_seg_val_v2",
             plots=True,
             verbose=True,
-            exist_ok=False,
+            exist_ok=True,
         )
         val_report = {
             "created_at": datetime.now(timezone.utc).isoformat(),
@@ -564,7 +659,9 @@ else:
 Giữ `RUN_FINAL_TEST = False` trong giai đoạn lựa chọn model. Chỉ đổi thành `True` sau khi nhóm đã duyệt validation và khóa checkpoint. Cell từ chối chạy test lần hai nếu báo cáo đã tồn tại."""
         ),
         code(
-            """if not RUN_FINAL_TEST:
+            """RUN_FINAL_TEST = globals().get("RUN_FINAL_TEST", False)
+
+if not RUN_FINAL_TEST:
     print("Final test vẫn đang khóa: PASS")
     print("Hãy gửi validation report cho nhóm trước khi mở test.")
 else:
