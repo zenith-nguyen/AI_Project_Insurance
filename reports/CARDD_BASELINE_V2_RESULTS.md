@@ -40,14 +40,16 @@
 
 Baseline đã học được tín hiệu segmentation rõ ràng và pipeline GPU hoạt động đúng. Hiệu năng giữa các lớp không đồng đều: `tire flat` và `glass shatter` rất cao, `lamp broken` khá tốt, trong khi `crack`, `scratch` và `dent` còn yếu. Số instance không giải thích toàn bộ chênh lệch vì `scratch` là lớp nhiều nhất nhưng mask AP vẫn thấp; cần xem prediction mẫu, kích thước vật thể, độ mảnh của mask và mức mơ hồ annotation.
 
+Confusion matrix chuẩn hóa và ba batch prediction được xem ngày 07/10/2026 cho thấy tỷ lệ đúng trên đường chéo lần lượt khoảng 0,64 (`crack`), 0,71 (`dent`), 0,96 (`glass shatter`), 0,79 (`lamp broken`), 0,74 (`scratch`) và 0,76 (`tire flat`) tại cấu hình vẽ confusion matrix của Ultralytics. Cột background cho thấy false positive tập trung nhiều ở `scratch`, `dent` và `crack`. Prediction mẫu cũng có các mask `scratch`/`dent` phủ rộng hoặc chồng lấn, trong khi vết nứt nhỏ có confidence và chất lượng biên thấp. Đây là quan sát định tính từ validation, không phải metric test.
+
 Kết quả trên là validation để chọn mô hình. Chưa có metric test và không được dùng các con số này để tuyên bố production readiness hay khả năng phát hiện gian lận. CarDD chỉ đo nhận diện hư hại; chưa có `claim_id` chung với dữ liệu fraud tabular.
 
 ## Quyết định trước final test
 
 1. Giữ test khóa.
-2. Xem confusion matrix, PR curves và prediction mẫu của ba lớp yếu.
-3. Quyết định một lần xem có chạy candidate YOLOv8s-seg cùng split/config hay khóa YOLOv8n-seg ngay.
-4. Nếu có candidate, chỉ so sánh trên validation mask mAP50-95 và metric từng lớp.
+2. Chạy đúng một candidate YOLOv8s-seg với cùng split, kích thước ảnh, seed và protocol; không đọc test.
+3. Chọn model bằng validation mask mAP50-95; dùng metric từng lớp và chi phí suy luận làm tiêu chí phụ.
+4. Nếu chênh lệch validation rất nhỏ, ưu tiên YOLOv8n-seg vì nhẹ hơn và ghi rõ giới hạn ở các lớp vết mảnh.
 5. Khóa model/checkpoint, sau đó mới chạy final test đúng một lần.
 
 ## Artifact trên Drive
