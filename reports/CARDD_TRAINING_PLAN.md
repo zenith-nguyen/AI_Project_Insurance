@@ -1,57 +1,54 @@
-# Kế hoạch huấn luyện CarDD YOLOv8-seg
+﻿# Kế hoạch huấn luyện CarDD YOLOv8-seg
 
-**Phiên bản:** v1 — 07/10/2026  
-**Trạng thái dữ liệu:** 2.816 ảnh, 6.211 damage object, validator đạt, Processed không copy ảnh.
+**Phiên bản:** v2 — 07/10/2026
+**Trạng thái dữ liệu:** 2.816 ảnh, 6.211 đối tượng hư hại, split và nhãn đã được kiểm tra.
 
 ## Mục tiêu
 
-Huấn luyện mô hình instance segmentation nhận diện sáu loại hư hại: `crack`, `dent`, `glass shatter`, `lamp broken`, `scratch`, `tire flat`. Đây là nhánh đánh giá hư hại độc lập; output chưa phải tín hiệu fraud và chưa liên kết với hồ sơ Kaggle.
+Huấn luyện mô hình instance segmentation nhận diện sáu loại hư hại: `crack`, `dent`, `glass shatter`, `lamp broken`, `scratch`, `tire flat`. Đây là nhánh đánh giá hư hại độc lập. Kết quả CarDD chưa phải tín hiệu gian lận và chưa liên kết với hồ sơ bồi thường Kaggle.
 
-## Protocol cố định
+## Cấu hình cố định
 
 | Thành phần | Cấu hình |
 |---|---|
+| Notebook chính | `CarDD_YOLOv8_Training_v2.ipynb` |
 | Baseline | `yolov8n-seg.pt`, pretrained |
-| Ảnh | 640 px |
+| Kích thước ảnh | 640 px |
 | Split | Train 1.966 / validation 431 / test 419 |
-| Seed dữ liệu | 20261006 |
-| Seed training | 20261007 |
+| Seed dữ liệu / training | 20261006 / 20261007 |
 | Batch | 8 |
 | Epoch tối đa | 100 |
 | Early stopping | patience 20 |
 | Checkpoint | mỗi 10 epoch; giữ `best.pt` và `last.pt` |
 | Metric chọn model | validation mask mAP50-95 |
-| Test | chạy một lần sau khi khóa model/checkpoint |
-
-[Tài liệu instance segmentation của Ultralytics](https://docs.ultralytics.com/tasks/segment/) mô tả cách train từ pretrained weights và báo riêng box/mask mAP. [Tài liệu validation](https://docs.ultralytics.com/modes/val/) cho phép chọn rõ split `val` hoặc `test`. Project dùng API này nhưng giữ YOLOv8n-seg để nhất quán với baseline đã thống nhất.
+| Test | chạy một lần sau khi khóa model và checkpoint |
 
 ## Trình tự chạy
 
-1. Bật GPU trong Colab và xác nhận CUDA/GPU memory.
-2. Copy ảnh từ shortcut Drive cũ vào `/content` để tăng tốc đọc; bản copy này là tạm và không tốn Drive.
-3. Chạy validator và preflight: đủ ảnh/label ở cả ba split, CUDA hoạt động, local disk còn ít nhất 5 GB.
-4. Smoke test: 2 epoch, 10% train. Mục tiêu chỉ là kiểm tra pipeline, loss hữu hạn và checkpoint được tạo.
-5. Baseline: train tối đa 100 epoch, early stopping theo validation.
-6. Đánh giá `best.pt` trên validation; lưu box/mask mAP50-95, mAP50, mAP75 và metric theo từng lớp.
-7. Chỉ cân nhắc YOLOv8s-seg nếu GPU/time cho phép; so sánh trên validation, không đọc test.
-8. Khóa model và checkpoint. Sau đó mới chạy test đúng một lần và ghi rõ ngày, hash/config.
+1. Chọn T4 GPU, gắn Drive và kiểm tra CUDA.
+2. Kiểm tra SHA-256 của `samples.json`, conversion report, manifest và 2.816 label.
+3. Dựng dataset tạm trong `/content`. Cell hiển thị tiến độ, thử lại file lỗi và tiếp tục từ `.building` nếu lần trước bị ngắt.
+4. Xác nhận số ảnh/nhãn từng split, định dạng polygon và tổng 6.211 instance.
+5. Smoke test 2 epoch trên 10% train để kiểm tra CUDA, loss và checkpoint.
+6. Baseline tối đa 100 epoch, early stopping theo validation; checkpoint lưu trên Drive mới.
+7. Đánh giá `best.pt` trên validation và lưu box/mask mAP cùng metric từng lớp.
+8. Khóa checkpoint rồi mới mở final test đúng một lần.
+
+## Khả năng phục hồi
+
+- Nếu copy ảnh bị ngắt, chạy lại cell staging; file đủ kích thước được dùng lại.
+- Nếu training bị ngắt và đã có `last.pt`, chạy lại cell training để resume.
+- Nếu `best.pt` đã tồn tại, notebook dùng lại và không train chồng lên run cũ.
+- Test bị khóa bằng `RUN_FINAL_TEST = False` và từ chối chạy lần hai khi report đã tồn tại.
 
 ## Điều kiện đạt kỹ thuật
 
-- Smoke test tạo được `best.pt` và `last.pt`.
-- Không có NaN/Inf trong loss.
+- Smoke test tạo `best.pt` và `last.pt`; loss không có NaN/Inf.
 - Validation hoàn tất cho đủ sáu lớp.
-- Report có metric mask và box, gồm kết quả từng lớp; không chỉ báo một mAP tổng.
-- Checkpoint, `args.yaml`, `results.csv`, plots và manifest được lưu trên Drive mới.
-- Không tuyên bố production readiness hoặc fraud detection từ kết quả CarDD.
+- Báo cáo có mask và box mAP50-95, mAP50, mAP75 cùng metric từng lớp.
+- Checkpoint, `results.csv`, plots và manifest được lưu trên Drive mới.
+- Không tuyên bố production readiness hoặc khả năng phát hiện gian lận từ riêng CarDD.
 
-## Xử lý gián đoạn Colab
+## Điều kiện sử dụng dữ liệu
 
-Checkpoint được ghi lên Drive mới. Nếu runtime ngắt, dựng lại dataset tạm trong `/content`, rồi resume từ `last.pt`. Không chạy lại conversion và không dùng test để quyết định có resume/tune hay không.
-
-## Việc cần lưu trước khi công bố kết quả
-
-- Bằng chứng prior consent của PIC Lab và trích dẫn DOI `10.1109/TITS.2023.3258480`.
-- Phiên bản Ultralytics, GPU, seed và toàn bộ training config.
-- Validation metrics, per-class metrics và một số prediction mẫu.
-- Final test metrics chỉ sau khi model selection hoàn tất.
+Trước khi công bố kết quả, nhóm cần lưu bằng chứng prior consent của PIC Lab và trích dẫn DOI `10.1109/TITS.2023.3258480` theo giấy phép CarDD.

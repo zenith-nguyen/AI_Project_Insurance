@@ -72,7 +72,8 @@ def materialize(
             yaml.safe_dump(data_yaml, sort_keys=False, allow_unicode=True), encoding="utf-8"
         )
         building.replace(target)
-    except Exception:
+    except BaseException:
+        # Also clean up after an interactive interruption such as Ctrl+C.
         shutil.rmtree(building, ignore_errors=True)
         raise
     return {

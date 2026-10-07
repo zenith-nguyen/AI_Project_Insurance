@@ -64,3 +64,21 @@ def test_materialize_cardd_can_copy_into_ephemeral_training_view(tmp_path):
     assert (target / "labels/train/example.txt").is_file()
     assert view_report["image_mode"] == "copy"
     assert view_report["image_bytes_materialized"] == 5
+
+
+def test_materialize_cleans_building_directory_on_keyboard_interrupt(tmp_path, monkeypatch):
+    bronze, converted = build_fixture(tmp_path)
+    slim(bronze, converted)
+    target = tmp_path / "interrupted_training_view"
+
+    def interrupt(*_args, **_kwargs):
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(
+        "scripts.materialize_cardd_training_view.shutil.copyfile",
+        interrupt,
+    )
+    with pytest.raises(KeyboardInterrupt):
+        materialize(bronze, converted, target, image_mode="copy")
+
+    assert not target.with_name(target.name + ".building").exists()
