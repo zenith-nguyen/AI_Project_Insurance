@@ -3,6 +3,8 @@
 **Phiên bản:** v2 — 07/10/2026
 **Trạng thái dữ liệu:** 2.816 ảnh, 6.211 đối tượng hư hại, split và nhãn đã được kiểm tra.
 
+**Trạng thái chạy:** YOLOv8n-seg baseline v2 đã hoàn tất 100 epoch; validation mask mAP50-95 = 0,518 và box mAP50-95 = 0,538. Final test vẫn khóa. Chi tiết tại `reports/CARDD_BASELINE_V2_RESULTS.md`.
+
 ## Mục tiêu
 
 Huấn luyện mô hình instance segmentation nhận diện sáu loại hư hại: `crack`, `dent`, `glass shatter`, `lamp broken`, `scratch`, `tire flat`. Đây là nhánh đánh giá hư hại độc lập. Kết quả CarDD chưa phải tín hiệu gian lận và chưa liên kết với hồ sơ bồi thường Kaggle.
