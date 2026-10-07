@@ -49,8 +49,10 @@ def materialize(
             image_link.parent.mkdir(parents=True, exist_ok=True)
             label_link.parent.mkdir(parents=True, exist_ok=True)
             if image_mode == "copy":
-                shutil.copy2(source_image, image_link)
-                shutil.copy2(source_label, label_link)
+                # Google Drive FUSE may reject metadata operations used by copy2().
+                # Training only needs byte-identical content in ephemeral /content.
+                shutil.copyfile(source_image, image_link)
+                shutil.copyfile(source_label, label_link)
                 image_bytes += source_image.stat().st_size
             else:
                 os.symlink(source_image, image_link)
