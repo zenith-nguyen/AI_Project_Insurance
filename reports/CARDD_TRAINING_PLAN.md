@@ -16,7 +16,7 @@ Huấn luyện mô hình instance segmentation nhận diện sáu loại hư h�
 | Notebook chính | `CarDD_YOLOv8_Training_v2.ipynb` |
 | Baseline | `yolov8n-seg.pt`, pretrained |
 | Candidate | `CarDD_YOLOv8s_Candidate_v1.ipynb`, model `yolov8s-seg.pt` |
-| Candidate khi đổi tài khoản | `CarDD_YOLOv8s_Candidate_Pro_Account_v2.ipynb` |
+| Candidate khi đổi tài khoản | `CarDD_YOLOv8s_Candidate_Acc2_v3.ipynb`; active Drive folder `AI_Project_Insurance_Acc 2` |
 | Kích thước ảnh | 640 px |
 | Split | Train 1.966 / validation 431 / test 419 |
 | Seed dữ liệu / training | 20261006 / 20261007 |
