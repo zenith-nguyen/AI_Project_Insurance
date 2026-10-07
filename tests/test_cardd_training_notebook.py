@@ -14,6 +14,8 @@ def test_training_notebook_v2_is_utf8_self_contained_and_compilable():
     assert "BUILDING_DATASET.mkdir(parents=True, exist_ok=True)" in combined
     assert "capture_output=True" not in combined
     assert "RUN_FINAL_TEST = False" in combined
+    assert 'runtime_best = globals().get("BEST_WEIGHTS")' in combined
+    assert 'cardd_yolov8n_seg_baseline_v2"\n    / "weights"' in combined
     assert "Ã" not in combined
     assert "áº" not in combined
 

@@ -478,9 +478,32 @@ else:
         ),
         markdown("## 9. Đánh giá trên validation"),
         code(
-            """if BEST_WEIGHTS is None:
+            """import json
+import shutil
+from datetime import datetime, timezone
+from pathlib import Path
+
+from ultralytics import YOLO
+
+# Tự khôi phục đường dẫn checkpoint nếu runtime đã mất biến BEST_WEIGHTS.
+runtime_best = globals().get("BEST_WEIGHTS")
+default_best = (
+    RUNS_ROOT
+    / "cardd_yolov8n_seg_baseline_v2"
+    / "weights"
+    / "best.pt"
+)
+BEST_WEIGHTS = Path(runtime_best) if runtime_best is not None else default_best
+if not BEST_WEIGHTS.is_file():
+    BEST_WEIGHTS = None
+
+REPORTS_ROOT.mkdir(parents=True, exist_ok=True)
+
+if BEST_WEIGHTS is None:
     print("Chưa chạy baseline nên chưa đánh giá validation.")
+    print("Không tìm thấy:", default_best)
 else:
+    print("Checkpoint:", BEST_WEIGHTS)
     VAL_METRICS = REPORTS_ROOT / "cardd_yolov8n_seg_val_v2.json"
     val_run_dir = RUNS_ROOT / "evaluation/cardd_yolov8n_seg_val_v2"
 
@@ -489,7 +512,10 @@ else:
         print("Sử dụng validation report đã có:", VAL_METRICS)
     else:
         if val_run_dir.exists():
-            archive_unusable_run(val_run_dir)
+            suffix = datetime.now().strftime("%Y%m%d_%H%M%S")
+            archived = val_run_dir.with_name(val_run_dir.name + "_incomplete_" + suffix)
+            shutil.move(str(val_run_dir), str(archived))
+            print("Đã lưu validation run cũ tại:", archived)
         metrics = YOLO(str(BEST_WEIGHTS)).val(
             data=str(DATA_YAML),
             split="val",
