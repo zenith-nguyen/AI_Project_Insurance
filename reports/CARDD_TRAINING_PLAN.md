@@ -3,7 +3,7 @@
 **Phiên bản:** v2 — 07/10/2026
 **Trạng thái dữ liệu:** 2.816 ảnh, 6.211 đối tượng hư hại, split và nhãn đã được kiểm tra.
 
-**Trạng thái chạy:** YOLOv8n-seg baseline v2 đã hoàn tất 100 epoch; validation mask mAP50-95 = 0,518 và box mAP50-95 = 0,538. Final test vẫn khóa. Chi tiết tại `reports/CARDD_BASELINE_V2_RESULTS.md`.
+**Trạng thái chạy:** YOLOv8n-seg baseline v2 đã hoàn tất 100 epoch; validation mask mAP50-95 = 0,518 và box mAP50-95 = 0,538. Notebook candidate YOLOv8s-seg đã sẵn sàng. Final test vẫn khóa. Chi tiết baseline tại `reports/CARDD_BASELINE_V2_RESULTS.md`.
 
 ## Mục tiêu
 
@@ -15,6 +15,7 @@ Huấn luyện mô hình instance segmentation nhận diện sáu loại hư h�
 |---|---|
 | Notebook chính | `CarDD_YOLOv8_Training_v2.ipynb` |
 | Baseline | `yolov8n-seg.pt`, pretrained |
+| Candidate | `CarDD_YOLOv8s_Candidate_v1.ipynb`, model `yolov8s-seg.pt` |
 | Kích thước ảnh | 640 px |
 | Split | Train 1.966 / validation 431 / test 419 |
 | Seed dữ liệu / training | 20261006 / 20261007 |
@@ -23,6 +24,7 @@ Huấn luyện mô hình instance segmentation nhận diện sáu loại hư h�
 | Early stopping | patience 20 |
 | Checkpoint | mỗi 10 epoch; giữ `best.pt` và `last.pt` |
 | Metric chọn model | validation mask mAP50-95 |
+| Quy tắc model lớn | Chỉ chọn YOLOv8s nếu tăng ít nhất 0,0100 mask mAP50-95 |
 | Test | chạy một lần sau khi khóa model và checkpoint |
 
 ## Trình tự chạy
@@ -34,7 +36,9 @@ Huấn luyện mô hình instance segmentation nhận diện sáu loại hư h�
 5. Smoke test 2 epoch trên 10% train để kiểm tra CUDA, loss và checkpoint.
 6. Baseline tối đa 100 epoch, early stopping theo validation; checkpoint lưu trên Drive mới.
 7. Đánh giá `best.pt` trên validation và lưu box/mask mAP cùng metric từng lớp.
-8. Khóa checkpoint rồi mới mở final test đúng một lần.
+8. Chạy YOLOv8s-seg trên đúng train/validation và cùng cấu hình so sánh.
+9. Chọn YOLOv8s khi tăng ít nhất 0,0100 mask mAP50-95; nếu không thì giữ YOLOv8n nhẹ hơn.
+10. Ghi SHA-256 của checkpoint được chọn, khóa checkpoint rồi mới tạo cell final test chạy đúng một lần.
 
 ## Khả năng phục hồi
 
