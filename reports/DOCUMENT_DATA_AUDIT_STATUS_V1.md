@@ -25,3 +25,5 @@ Ngày cập nhật: 2026-10-11
 ## Trạng thái báo cáo
 
 Kết quả đủ để trình bày rằng nhóm đã thực hiện source registry, manifest audit, image-decode audit, exact-duplicate leakage detection và thiết kế remediation có thể tái lập. Chưa được tuyên bố baseline chứng từ hoàn tất cho đến khi processed split PASS và metric OCR/KIE được tạo.
+
+Audit hoàn chỉnh ngày 2026-10-11 xác nhận CORD, FUNSD canonical, XFUND và RVL-CDIP sample đều PASS. SROIE Processed lần đầu còn một exact duplicate nội bộ bị chia giữa train/validation; thuật toán đã được sửa sang group split theo SHA-256 để giữ toàn bộ bản giống nhau trong cùng một split.

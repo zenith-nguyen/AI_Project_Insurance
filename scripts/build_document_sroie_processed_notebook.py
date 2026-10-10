@@ -128,12 +128,37 @@ clean_pool = train_raw.filter(keep_mask)
 if clean_pool.num_rows != EXPECTED["train"] + EXPECTED["validation"]:
     raise RuntimeError("Số dòng train sạch không đúng 618.")
 
-clean_keys = clean_pool["key"].to_pylist()
-ranked_indices = sorted(
-    range(clean_pool.num_rows),
-    key=lambda index: hashlib.sha256(f"{SEED}:{clean_keys[index]}".encode()).hexdigest(),
+# Group identical images before splitting. The source train pool itself contains
+# an exact duplicate pair; row-wise splitting can put its copies on two sides.
+image_groups = {}
+for index, value in enumerate(clean_pool["image"].to_pylist()):
+    raw = value.get("bytes") if isinstance(value, dict) else value
+    if raw is None:
+        raise RuntimeError(f"Missing image bytes at clean-pool row {index}")
+    digest = hashlib.sha256(raw).hexdigest()
+    image_groups.setdefault(digest, []).append(index)
+
+ranked_groups = sorted(
+    image_groups.items(),
+    key=lambda item: hashlib.sha256(f"{SEED}:{item[0]}".encode()).hexdigest(),
 )
-validation_indices = sorted(ranked_indices[:VALIDATION_ROWS])
+
+# Deterministic subset-sum chooses whole image groups while keeping exactly 93 rows.
+choices = {0: []}
+for digest, indices in ranked_groups:
+    group_size = len(indices)
+    for current_total in sorted(list(choices), reverse=True):
+        new_total = current_total + group_size
+        if new_total <= VALIDATION_ROWS and new_total not in choices:
+            choices[new_total] = choices[current_total] + [(digest, indices)]
+    if VALIDATION_ROWS in choices:
+        break
+if VALIDATION_ROWS not in choices:
+    raise RuntimeError("Không thể tạo validation 93 dòng mà vẫn giữ nguyên duplicate groups.")
+
+validation_indices = sorted(
+    index for _, indices in choices[VALIDATION_ROWS] for index in indices
+)
 validation_set = set(validation_indices)
 train_indices = [index for index in range(clean_pool.num_rows) if index not in validation_set]
 
@@ -146,6 +171,8 @@ observed = {
     "test": test_table.num_rows,
 }
 print("Processed rows:", observed)
+print("Unique image groups in clean pool:", len(image_groups))
+print("Internal duplicate groups kept intact:", sum(len(rows) > 1 for rows in image_groups.values()))
 if observed != {name: EXPECTED[name] for name in ("train", "validation", "test")}:
     raise RuntimeError("Processed split counts failed.")"""
         ),
@@ -211,7 +238,12 @@ report = {
     "source_inventory": str(sroie_root),
     "remediation_manifest": str(REMEDIATION_PATH),
     "policy": remediation["policy"],
+    "split_policy": "deterministic_group_by_image_sha256_subset_sum",
     "seed": SEED,
+    "clean_pool_unique_image_groups": len(image_groups),
+    "clean_pool_internal_duplicate_groups": sum(
+        len(rows) > 1 for rows in image_groups.values()
+    ),
     "removed_train_keys": sorted(remove_train_keys),
     "test_used_for_split_or_selection": False,
     "files": file_records,

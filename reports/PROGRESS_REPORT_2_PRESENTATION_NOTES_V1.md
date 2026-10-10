@@ -4,7 +4,7 @@
 
 Nhóm đã tổ chức dữ liệu theo Bronze/Processed/Artifacts/Reports, lập registry bảy nguồn và lưu manifest/checksum. CORD, FUNSD, XFUND, SROIE và sample RVL-CDIP đã được intake. MIDV được đăng ký nhưng hoãn tải lớn theo phạm vi hiện tại.
 
-Audit đã phát hiện vấn đề thực thay vì chỉ kiểm tra số file: SROIE corrected mirror có tám ảnh trùng tuyệt đối giữa train và test. Chính sách khắc phục là giữ test, bỏ bản train trùng và tạo validation từ train sạch. FUNSD có hai cây lưu trữ cùng bộ 199 mẫu; audit mới chọn một canonical root thay vì đếm sai 398 mẫu.
+Audit tự động hoàn chỉnh xác nhận CORD, FUNSD canonical, XFUND và RVL-CDIP sample đều PASS. Audit đã phát hiện vấn đề thực thay vì chỉ kiểm tra số file: SROIE corrected mirror có tám ảnh trùng tuyệt đối giữa train và test. Chính sách khắc phục là giữ test, bỏ bản train trùng và tạo validation từ train sạch. FUNSD có hai cây lưu trữ cùng bộ 199 mẫu; audit chọn một canonical root thay vì đếm sai 398 mẫu. Processed split dùng group split theo SHA-256 để một ảnh và các bản sao của nó luôn ở cùng split.
 
 ## 2. Baseline và evaluation v1
 

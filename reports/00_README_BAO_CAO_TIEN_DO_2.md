@@ -1,0 +1,26 @@
+# Gói dữ liệu — Báo cáo tiến độ lần 2
+
+Mở tài liệu theo thứ tự sau để trình bày trực tiếp:
+
+1. `PROGRESS_REPORT_2_PRESENTATION_NOTES_V1.md` — kịch bản trình bày ngắn.
+2. `PROGRESS_REPORT_2_READINESS_2026-10-10.md` — mức đáp ứng yêu cầu môn học.
+3. `data_audit_report.md`, `DOCUMENT_DATA_AUDIT_STATUS_V1.md` và `DOCUMENT_DATA_AUDIT_RUN_2026-10-11.md` — Data Audit Report và kết quả chạy thật.
+4. `data_dictionary.md` — Data Dictionary.
+5. `DOCUMENT_DATA_SOURCE_PLAN_V1.md` và `DOCUMENT_SOURCE_LINK_AUDIT_V1.md` — nguồn và provenance.
+6. `EXPERIMENT_EVIDENCE_INDEX_V1.md` — nơi tìm từng bằng chứng.
+7. `CARDD_MODEL_SELECTION_V1.md` và `CARDD_FINAL_TEST_V1.md` — baseline/evaluation đã hoàn tất.
+8. `DOCUMENT_MODEL_BASELINE_PLAN_V1.md` — baseline process cho nhánh chứng từ.
+9. `model_selection_matrix.md` — Model Selection Matrix.
+10. `metrics_v1.md` — Metrics v1.
+11. `risk_register_v2_additions.md` — Risk Register v2.
+12. `DRIVE_DATA_CATALOG_V1.md` — vị trí dữ liệu và model trên Google Drive.
+13. `SROIE_PROCESSED_SPLIT_DIAGNOSTIC_2026-10-11.md` — nguyên nhân lỗi split và bản sửa group-aware.
+
+## Trạng thái cần nói rõ
+
+- CarDD: đã hoàn tất baseline, candidate comparison, model lock và final test đúng một lần.
+- Document data: registry, intake và audit tự động đã hoàn tất; SROIE raw có tám cặp leakage đã được ghi nhận.
+- SROIE processed: notebook đã được sửa để chia theo nhóm SHA-256; cần chạy lại cell cuối để tạo artifact PASS.
+- Document baseline metrics: chưa chạy, vì nhóm đang hoàn tất data gate trước khi benchmark.
+- RAG prompt/retrieval test: chưa áp dụng vì chưa chọn RAG làm baseline.
+- Production/go-live: chưa mở; còn cần dữ liệu bảo hiểm thật, PII/license review, API, UI integration, monitoring và UAT.
