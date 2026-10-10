@@ -40,5 +40,7 @@ def test_document_audit_expected_counts_are_locked():
     assert '"test": 361' in combined
     assert '"known_exact_cross_split_duplicates": 8' in combined
     assert "sroie_source_split_dedup_v1.json" in combined
+    assert "complete_dataset_roots_found" in combined
+    assert "Selected FUNSD root:" in combined
     assert '"sample_rows": 1600' in combined
     assert '"per_class": 100' in combined

@@ -329,27 +329,84 @@ print("SROIE structure: PASS; raw source leakage: DETECTED AND RECORDED")"""
         markdown("## 6. FUNSD"),
         code(
             """funsd_root = Path(sources["funsd"]["inventory"]["path"])
-funsd_images = sorted(
-    path for path in funsd_root.rglob("*")
-    if path.is_file() and path.suffix.lower() in IMAGE_EXTENSIONS
-)
+
+# Một số lần intake cũ để lại hai cây extracted giống nhau. Audit theo dataset
+# root hoàn chỉnh thay vì cộng tất cả file dưới inventory rồi báo sai 398 mẫu.
+funsd_candidates = []
+for training_dir in sorted(funsd_root.rglob("training_data")):
+    dataset_root = training_dir.parent
+    testing_dir = dataset_root / "testing_data"
+    required_dirs = [
+        training_dir / "images",
+        training_dir / "annotations",
+        testing_dir / "images",
+        testing_dir / "annotations",
+    ]
+    if not all(path.is_dir() for path in required_dirs):
+        continue
+    images = sorted(
+        path for directory in (training_dir / "images", testing_dir / "images")
+        for path in directory.iterdir()
+        if path.is_file() and path.suffix.lower() in IMAGE_EXTENSIONS
+    )
+    annotations = sorted(
+        path for directory in (training_dir / "annotations", testing_dir / "annotations")
+        for path in directory.glob("*.json")
+    )
+    funsd_candidates.append({
+        "root": dataset_root,
+        "images": images,
+        "annotations": annotations,
+    })
+
+valid_candidates = [
+    item for item in funsd_candidates
+    if len(item["images"]) == EXPECTED["funsd"]["rows"]
+    and len(item["annotations"]) == EXPECTED["funsd"]["rows"]
+]
+if not valid_candidates:
+    raise RuntimeError({
+        "error": "Không tìm thấy FUNSD dataset root đủ 199 cặp.",
+        "candidates": [
+            {"root": str(item["root"]), "images": len(item["images"]), "annotations": len(item["annotations"])}
+            for item in funsd_candidates
+        ],
+    })
+
+valid_candidates.sort(key=lambda item: (
+    0 if "raw/extracted" in item["root"].as_posix() else 1,
+    len(item["root"].parts),
+    str(item["root"]),
+))
+funsd_selected = valid_candidates[0]
+funsd_images = funsd_selected["images"]
+funsd_json = funsd_selected["annotations"]
 funsd_hashes, funsd_corrupt = verify_physical_images(funsd_images)
-funsd_json = sorted(path for path in funsd_root.rglob("*.json") if path.name != "source_manifest.json")
 funsd_duplicate_hashes = {
     digest: count for digest, count in Counter(funsd_hashes.values()).items() if count > 1
 }
+image_stems = {path.stem for path in funsd_images}
+annotation_stems = {path.stem for path in funsd_json}
 funsd_result = {
+    "selected_dataset_root": str(funsd_selected["root"]),
+    "complete_dataset_roots_found": [str(item["root"]) for item in valid_candidates],
+    "duplicate_storage_roots": max(0, len(valid_candidates) - 1),
     "images": len(funsd_images),
     "annotations": len(funsd_json),
     "corrupt_images": funsd_corrupt,
     "exact_duplicate_hashes": funsd_duplicate_hashes,
     "count_pass": len(funsd_images) == EXPECTED["funsd"]["rows"],
-    "pairing_pass": len(funsd_images) == len(funsd_json),
+    "pairing_pass": image_stems == annotation_stems,
 }
-print(funsd_result)
+print("Selected FUNSD root:", funsd_result["selected_dataset_root"])
+print("Complete roots found:", len(valid_candidates))
+print("Canonical counts:", {"images": len(funsd_images), "annotations": len(funsd_json)})
+print("Corrupt canonical images:", len(funsd_corrupt))
 if not funsd_result["count_pass"] or not funsd_result["pairing_pass"] or funsd_corrupt:
     raise RuntimeError("FUNSD audit failed.")
-print("FUNSD: PASS")"""
+print("FUNSD canonical dataset: PASS")
+if funsd_result["duplicate_storage_roots"]:
+    print("FUNSD duplicate storage trees recorded:", funsd_result["duplicate_storage_roots"])"""
         ),
         markdown("## 7. XFUND archives và checksum"),
         code(
