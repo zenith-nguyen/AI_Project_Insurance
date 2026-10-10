@@ -48,7 +48,11 @@ AUDIT_MD = AUDIT_ROOT / "DOCUMENT_DATA_AUDIT_V1.md"
 EXPECTED = {
     "cord_v2": {"rows": 1000, "splits": {"train": 800, "validation": 100, "test": 100}},
     "funsd": {"rows": 199},
-    "sroie": {"rows": 973, "splits": {"train": 626, "test": 347}},
+    "sroie": {
+        "rows": 987,
+        "splits": {"train": 626, "test": 361},
+        "known_exact_cross_split_duplicates": 8,
+    },
     "rvl_cdip": {"sample_rows": 1600, "classes": 16, "per_class": 100},
     "xfund": {"languages": 7, "assets": 28},
 }
@@ -139,7 +143,7 @@ def split_from_name(name: str):
 
 def parquet_image_audit(paths):
     split_rows = Counter()
-    split_hashes = defaultdict(set)
+    split_hash_records = defaultdict(lambda: defaultdict(list))
     corrupt = []
     schemas = {}
     for path in tqdm(paths, desc="Parquet files"):
@@ -147,12 +151,15 @@ def parquet_image_audit(paths):
         parquet = pq.ParquetFile(path)
         split_rows[split] += parquet.metadata.num_rows
         schemas[str(path)] = parquet.schema_arrow.names
-        if "image" not in parquet.schema_arrow.names:
+        schema_names = parquet.schema_arrow.names
+        if "image" not in schema_names:
             continue
+        columns = ["image"] + (["key"] if "key" in schema_names else [])
         total_batches = (parquet.metadata.num_rows + 31) // 32
-        batches = parquet.iter_batches(columns=["image"], batch_size=32)
+        batches = parquet.iter_batches(columns=columns, batch_size=32)
         for batch in tqdm(batches, total=total_batches, desc=path.name, leave=False):
-            for scalar in batch.column(0):
+            keys = batch.column(1).to_pylist() if len(columns) > 1 else [None] * len(batch)
+            for row_index, (scalar, key) in enumerate(zip(batch.column(0), keys)):
                 value = scalar.as_py()
                 raw = value.get("bytes") if isinstance(value, dict) else value
                 if raw is None:
@@ -161,18 +168,38 @@ def parquet_image_audit(paths):
                 try:
                     with Image.open(io.BytesIO(raw)) as image:
                         image.verify()
-                    split_hashes[split].add(hashlib.sha256(raw).hexdigest())
+                    digest = hashlib.sha256(raw).hexdigest()
+                    split_hash_records[split][digest].append({
+                        "split": split,
+                        "key": key,
+                        "parquet": str(path),
+                        "batch_row": row_index,
+                    })
                 except Exception as error:
                     corrupt.append({"path": str(path), "error": repr(error)})
     overlaps = {}
-    names = sorted(split_hashes)
+    overlap_details = {}
+    names = sorted(split_hash_records)
     for index, left in enumerate(names):
         for right in names[index + 1:]:
-            overlaps[f"{left}__{right}"] = len(split_hashes[left] & split_hashes[right])
+            pair_name = f"{left}__{right}"
+            common = sorted(set(split_hash_records[left]) & set(split_hash_records[right]))
+            overlaps[pair_name] = len(common)
+            overlap_details[pair_name] = [
+                {
+                    "sha256": digest,
+                    "left": split_hash_records[left][digest],
+                    "right": split_hash_records[right][digest],
+                }
+                for digest in common
+            ]
     return {
         "split_rows": dict(split_rows),
-        "unique_image_hashes": {key: len(value) for key, value in split_hashes.items()},
+        "unique_image_hashes": {
+            key: len(value) for key, value in split_hash_records.items()
+        },
         "cross_split_exact_duplicates": overlaps,
+        "cross_split_exact_duplicate_details": overlap_details,
         "corrupt_images": corrupt,
         "schemas": schemas,
     }
@@ -236,18 +263,68 @@ for source_name in ["cord_v2", "sroie"]:
     result["row_count_pass"] = observed_total == expected["rows"]
     result["split_count_pass"] = result["split_rows"] == expected["splits"]
     result["image_decode_pass"] = not result["corrupt_images"]
-    result["leakage_pass"] = no_overlap(result["cross_split_exact_duplicates"])
+    result["source_split_clean"] = no_overlap(result["cross_split_exact_duplicates"])
+    result["leakage_pass"] = result["source_split_clean"]
+    if source_name == "sroie":
+        observed_duplicates = sum(result["cross_split_exact_duplicates"].values())
+        result["known_leakage_characterized_pass"] = (
+            observed_duplicates == expected["known_exact_cross_split_duplicates"]
+        )
     parquet_results[source_name] = result
     print(source_name, result["split_rows"])
-    print("  decode:", result["image_decode_pass"], "leakage:", result["leakage_pass"])
+    print(
+        "  decode:", result["image_decode_pass"],
+        "source split clean:", result["source_split_clean"],
+    )
+
+sroie_details = parquet_results["sroie"]["cross_split_exact_duplicate_details"]
+sroie_pairs = [item for group in sroie_details.values() for item in group]
+SROIE_REMEDIATION = REGISTRY_ROOT / "remediation/sroie_source_split_dedup_v1.json"
+all_sroie_records = [
+    record
+    for pair in sroie_pairs
+    for side in ("left", "right")
+    for record in pair[side]
+]
+sroie_remediation = {
+    "schema_version": 1,
+    "created_at": utc_now(),
+    "source": "sroie",
+    "policy": "preserve_source_test_and_remove_exact_duplicates_from_train",
+    "source_train_rows": EXPECTED["sroie"]["splits"]["train"],
+    "source_test_rows": EXPECTED["sroie"]["splits"]["test"],
+    "exact_duplicate_pairs": sroie_pairs,
+    "remove_from_train_keys": sorted({
+        record["key"] for record in all_sroie_records
+        if record["split"] == "train" and record["key"] is not None
+    }),
+    "preserve_test_keys": sorted({
+        record["key"] for record in all_sroie_records
+        if record["split"] == "test" and record["key"] is not None
+    }),
+    "processed_split_status": "not_applied_yet",
+}
+atomic_json(SROIE_REMEDIATION, sroie_remediation)
+print("SROIE exact train/test duplicates:", len(sroie_pairs))
+for pair in sroie_pairs:
+    records = pair["left"] + pair["right"]
+    train_key = next(item["key"] for item in records if item["split"] == "train")
+    test_key = next(item["key"] for item in records if item["split"] == "test")
+    print(" ", pair["sha256"][:12], train_key, "<->", test_key)
+print("SROIE remediation manifest:", SROIE_REMEDIATION)
 
 if not all(
     item["row_count_pass"] and item["split_count_pass"]
-    and item["image_decode_pass"] and item["leakage_pass"]
+    and item["image_decode_pass"]
     for item in parquet_results.values()
 ):
-    raise RuntimeError("CORD/SROIE parquet audit failed.")
-print("CORD and SROIE: PASS")"""
+    raise RuntimeError("CORD/SROIE structural parquet audit failed.")
+if not parquet_results["cord_v2"]["source_split_clean"]:
+    raise RuntimeError("CORD source split contains exact duplicates.")
+if not parquet_results["sroie"]["known_leakage_characterized_pass"]:
+    raise RuntimeError("SROIE leakage differs from the pinned 8-pair audit result.")
+print("CORD structure/leakage: PASS")
+print("SROIE structure: PASS; raw source leakage: DETECTED AND RECORDED")"""
         ),
         markdown("## 6. FUNSD"),
         code(
@@ -372,12 +449,14 @@ print("RVL-CDIP sample: PASS")"""
         parquet_results["cord_v2"]["image_decode_pass"],
         parquet_results["cord_v2"]["leakage_pass"],
     ]),
-    "sroie": all([
+    "sroie_structure": all([
         parquet_results["sroie"]["row_count_pass"],
         parquet_results["sroie"]["split_count_pass"],
         parquet_results["sroie"]["image_decode_pass"],
-        parquet_results["sroie"]["leakage_pass"],
     ]),
+    "sroie_known_leakage_characterized": parquet_results["sroie"][
+        "known_leakage_characterized_pass"
+    ] and SROIE_REMEDIATION.is_file(),
     "funsd": funsd_result["count_pass"] and funsd_result["pairing_pass"] and not funsd_corrupt,
     "xfund": xfund_result["asset_count_pass"] and not checksum_errors and not zip_errors and xfund_result["leakage_pass"],
     "rvl_sample": rvl_result["row_count_pass"] and rvl_result["balance_pass"]
@@ -402,11 +481,15 @@ audit = {
     "created_at": utc_now(),
     "project": str(NEW_PROJECT),
     "automated_checks": automated_checks,
-    "automated_audit_valid": all(automated_checks.values()),
-    "research_baseline_gate": "ready" if all(automated_checks.values()) else "blocked",
+    "automated_audit_valid": all(automated_checks.values())
+        and parquet_results["sroie"]["source_split_clean"],
+    "automated_structure_valid": all(automated_checks.values()),
+    "raw_sroie_source_split_clean": parquet_results["sroie"]["source_split_clean"],
+    "research_baseline_gate": "blocked_pending_processed_sroie_split_rebuild",
     "commercial_production_gate": "blocked",
     "manual_gates": manual_gates,
     "cord_sroie": parquet_results,
+    "sroie_remediation_manifest": str(SROIE_REMEDIATION),
     "funsd": funsd_result,
     "xfund": xfund_result,
     "rvl_cdip_sample": rvl_result,
@@ -422,6 +505,8 @@ lines = [
     "",
     f"- Created: {audit['created_at']}",
     f"- Automated audit valid: **{audit['automated_audit_valid']}**",
+    f"- Automated structure valid: **{audit['automated_structure_valid']}**",
+    f"- Raw SROIE source split clean: **{audit['raw_sroie_source_split_clean']}**",
     f"- Research baseline gate: **{audit['research_baseline_gate']}**",
     f"- Commercial production gate: **{audit['commercial_production_gate']}**",
     "",
@@ -436,6 +521,8 @@ lines += [
     "",
     "- PII review is required.",
     "- Near-duplicate review is required before the final split.",
+    f"- SROIE contains {len(sroie_pairs)} exact train/test duplicate pairs; preserve test and remove their train copies in Processed.",
+    f"- SROIE remediation manifest: `{SROIE_REMEDIATION}`",
     "- FUNSD/XFUND/RVL licensing blocks direct commercial production use pending review.",
     "- Public datasets do not replace labeled Vietnamese insurance documents.",
 ]
@@ -444,6 +531,8 @@ AUDIT_MD.write_text("\\n".join(lines) + "\\n", encoding="utf-8")
 print("\\n=== DOCUMENT DATA AUDIT COMPLETED ===")
 print(json.dumps(automated_checks, ensure_ascii=False, indent=2))
 print("Automated audit valid:", audit["automated_audit_valid"])
+print("Automated structure valid:", audit["automated_structure_valid"])
+print("Raw SROIE source split clean:", audit["raw_sroie_source_split_clean"])
 print("Research baseline gate:", audit["research_baseline_gate"])
 print("Commercial production gate:", audit["commercial_production_gate"])
 print("Audit JSON:", AUDIT_JSON)
@@ -452,7 +541,8 @@ print("Audit report:", AUDIT_MD)"""
         markdown(
             """## 10. Sau audit
 
-- Nếu `automated_audit_valid=True`, có thể bắt đầu tạo dataset Processed và benchmark nghiên cứu.
+- `automated_structure_valid=True` xác nhận file, schema và số lượng; nó không có nghĩa raw SROIE đã sạch leakage.
+- Chưa benchmark SROIE cho tới khi notebook Processed áp dụng `sroie_source_split_dedup_v1.json`: giữ nguyên 361 test, loại 8 bản train trùng, rồi tạo validation chỉ từ train còn lại.
 - Giữ `commercial_production_gate=blocked` cho tới khi hoàn tất legal/PII review và có dữ liệu chứng từ bảo hiểm thật.
 - Gửi output cuối cùng cùng hai file audit. Notebook tiếp theo sẽ chuẩn hóa task và dựng baseline document classification/OCR/KIE; không dùng test split để chọn model."""
         ),

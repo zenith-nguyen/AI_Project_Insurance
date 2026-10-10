@@ -37,6 +37,8 @@ def test_document_audit_expected_counts_are_locked():
     assert '"train": 800' in combined
     assert '"validation": 100' in combined
     assert '"train": 626' in combined
-    assert '"test": 347' in combined
+    assert '"test": 361' in combined
+    assert '"known_exact_cross_split_duplicates": 8' in combined
+    assert "sroie_source_split_dedup_v1.json" in combined
     assert '"sample_rows": 1600' in combined
     assert '"per_class": 100' in combined
