@@ -62,7 +62,7 @@ print("Registry:", REGISTRY_PATH)"""
 import sys
 
 subprocess.run(
-    [sys.executable, "-m", "pip", "install", "-q", "Pillow>=10", "pyarrow>=15"],
+    [sys.executable, "-m", "pip", "install", "-q", "Pillow>=10", "pyarrow>=15", "tqdm>=4"],
     check=True,
 )
 
@@ -87,6 +87,7 @@ from datetime import datetime, timezone
 
 import pyarrow.parquet as pq
 from PIL import Image
+from tqdm.auto import tqdm
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".tif", ".tiff", ".bmp", ".webp"}
 
@@ -115,7 +116,7 @@ def sha256_file(path: Path, chunk_size=8 * 1024 * 1024):
 def verify_physical_images(paths):
     corrupt = []
     hashes = {}
-    for path in paths:
+    for path in tqdm(paths, desc="Physical images"):
         try:
             with Image.open(path) as image:
                 image.verify()
@@ -141,14 +142,16 @@ def parquet_image_audit(paths):
     split_hashes = defaultdict(set)
     corrupt = []
     schemas = {}
-    for path in paths:
+    for path in tqdm(paths, desc="Parquet files"):
         split = split_from_name(path.name)
         parquet = pq.ParquetFile(path)
         split_rows[split] += parquet.metadata.num_rows
         schemas[str(path)] = parquet.schema_arrow.names
         if "image" not in parquet.schema_arrow.names:
             continue
-        for batch in parquet.iter_batches(columns=["image"], batch_size=32):
+        total_batches = (parquet.metadata.num_rows + 31) // 32
+        batches = parquet.iter_batches(columns=["image"], batch_size=32)
+        for batch in tqdm(batches, total=total_batches, desc=path.name, leave=False):
             for scalar in batch.column(0):
                 value = scalar.as_py()
                 raw = value.get("bytes") if isinstance(value, dict) else value
@@ -280,7 +283,7 @@ asset_paths = sorted((xfund_root / "raw/release_assets").glob("*"))
 checksum_errors = []
 zip_errors = []
 xfund_split_hashes = defaultdict(set)
-for path in asset_paths:
+for path in tqdm(asset_paths, desc="XFUND assets audit"):
     expected_sha = asset_by_name.get(path.name, {}).get("sha256")
     if expected_sha and sha256_file(path) != expected_sha:
         checksum_errors.append(path.name)
@@ -324,7 +327,7 @@ rvl_counts = Counter(row["class_name"] for row in rvl_rows)
 rvl_missing = []
 rvl_hash_errors = []
 rvl_corrupt = []
-for row in rvl_rows:
+for row in tqdm(rvl_rows, desc="RVL sample audit"):
     path = rvl_root / row["relative_path"]
     if not path.is_file():
         rvl_missing.append(str(path))
