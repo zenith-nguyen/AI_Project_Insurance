@@ -18,3 +18,13 @@ Bootstrap 95%: AP 0,458–0,691; ROC-AUC 0,753–0,889; Recall@10% 12,2%–28,6%
 Không diễn giải calibrated score là xác suất production vì prevalence nguồn là 24,7% và chưa có external validation.
 
 Trạng thái protocol: test 200 dòng này sau đó đã được dùng lần hai cho sensitivity check loại `insured_hobbies`, nên không còn untouched cho quyết định feature policy. Mọi lựa chọn feature tiếp theo dùng `train_fs`/`val_fs`; cần external test mới sau khi chốt policy/model.
+
+## CarDD validation — chưa phải final test
+
+| Metric | YOLOv8n | YOLOv8s được chọn |
+|---|---:|---:|
+| Mask mAP50-95 | 0,5175 | **0,5284** |
+| Mask mAP50 | 0,6974 | **0,6980** |
+| Box mAP50-95 | 0,5377 | **khoảng 0,5570** |
+
+YOLOv8s tăng `0,010865` mask mAP50-95 và vượt ngưỡng chọn model `0,010000`. Đây là validation metric trên 431 ảnh/935 instance. Final test 419 ảnh/931 instance chưa chạy, vì vậy không được ghi các số trên là test performance.

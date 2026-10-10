@@ -3,7 +3,7 @@
 **Phiên bản:** v2 — 07/10/2026
 **Trạng thái dữ liệu:** 2.816 ảnh, 6.211 đối tượng hư hại, split và nhãn đã được kiểm tra.
 
-**Trạng thái chạy:** YOLOv8n-seg baseline v2 đã hoàn tất 100 epoch; validation mask mAP50-95 = 0,518 và box mAP50-95 = 0,538. Notebook candidate YOLOv8s-seg đã sẵn sàng. Final test vẫn khóa. Chi tiết baseline tại `reports/CARDD_BASELINE_V2_RESULTS.md`.
+**Trạng thái chạy:** YOLOv8n-seg baseline và YOLOv8s-seg candidate đều đã hoàn tất 100 epoch. YOLOv8s đạt validation mask mAP50-95 = 0,5284, tăng 0,0109 so với baseline và đã được khóa cho final test. Final test chưa chạy. Chi tiết tại `reports/CARDD_MODEL_SELECTION_V1.md`.
 
 ## Mục tiêu
 

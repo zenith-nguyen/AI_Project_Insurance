@@ -4,9 +4,9 @@
 
 **Phụ trách Data & Modeling:** Huy Nhật
 
-**Ngày cập nhật:** 05/10/2026
+**Ngày cập nhật:** 10/10/2026
 
-**Trạng thái:** Đã hoàn thành và kiểm chứng baseline tabular v1; các nhánh mở rộng đang chờ dữ liệu và xác nhận nghiệp vụ.
+**Trạng thái:** Đã hoàn thành baseline tabular v1; CarDD đã khóa YOLOv8s bằng validation và đang chờ final test one-shot; nhánh chứng từ chờ audit dữ liệu thật.
 
 ## 1. Tóm tắt điều hành
 
@@ -89,7 +89,7 @@ Từ 05/10/2026, 700 dòng train được tách thêm thành `train_fs` 560 dòn
 - CarDD dự kiến dùng cho nhận diện/segmentation hư hại và thử nghiệm ảnh trùng/chỉnh sửa.
 - CORD chỉ là nguồn nền cho OCR/document understanding.
 - CarDD, CORD và Kaggle chưa có liên kết claim-level.
-- CarDD chỉ có trên Google Drive/Colab tại `/content/drive/MyDrive/AI_Project_Insurance/data/bronze/layerA_cardd/`; inspector đã chạy trong Colab ngày 06/10/2026.
+- CarDD Bronze được đọc qua shortcut `/content/drive/MyDrive/AI_Project_Insurance_OLD/data/bronze/layerA_cardd/`; active project, report và checkpoint nằm tại `/content/drive/MyDrive/AI_Project_Insurance_Acc 2/`.
 - Kết quả inspector ban đầu: 2.753 ảnh JPG, 2.816 sample record và sáu lớp `crack`, `dent`, `glass shatter`, `lamp broken`, `scratch`, `tire flat`.
 - Audit xác định 63 ảnh được annotation tham chiếu nhưng tải thiếu; không có filepath trống, ảnh thừa hoặc filename trùng. Đã tải bù từ cùng mirror.
 - Kiểm tra cuối: 2.816 sample khớp 2.816 ảnh, không thiếu/thừa, 0 ảnh hỏng và `ready_for_conversion: true`. Báo cáo nằm trên Drive tại `reports/cardd_alignment_final.json`.
@@ -118,7 +118,7 @@ Repo đã được thiết lập với:
 - SHAP global và local cho mô hình được chọn.
 - Lệnh chấm điểm file mới và tạo queue candidate.
 - Khung Net Value có validation, chưa cho phép chạy khi thiếu chi phí nghiệp vụ.
-- Converter và validator YOLO segmentation đã chạy trên dữ liệu thật; training chưa chạy.
+- Converter và validator YOLO segmentation đã chạy trên dữ liệu thật. YOLOv8n baseline và YOLOv8s candidate đã hoàn tất 100 epoch; YOLOv8s được chọn bằng validation và test chưa chạy.
 - Dữ liệu thô, Parquet, dự đoán từng hồ sơ và model artifact được loại khỏi Git.
 
 Pipeline tabular v1 đã được chạy lại thành công bằng một lệnh. DVC báo dữ liệu và pipeline cập nhật. Lần kiểm thử local gần nhất có 20 test đạt; một test tạo symlink được bỏ qua trên Windows vì cần quyền hệ điều hành và sẽ chạy trong môi trường Colab/Linux.
@@ -217,12 +217,7 @@ Cần xác nhận các trường `incident_type`, `collision_type`, `number_of_v
 
 ### 8.1. CarDD / YOLOv8-seg
 
-Cần:
-
-- Lưu bằng chứng prior consent của PIC Lab cho phạm vi đồ án.
-- Chạy notebook `CarDD_YOLOv8_Training_v1.ipynb` trên Colab GPU: stage ảnh tạm, preflight, smoke test và baseline YOLOv8n-seg.
-- Chọn `best.pt` bằng validation mask mAP50-95; giữ test khóa cho đến khi model/checkpoint được chốt.
-- Nếu Colab ngắt, dựng lại `/content` và resume từ `last.pt` trên Drive mới.
+Đã hoàn thành conversion, validation, YOLOv8n baseline, YOLOv8s candidate và model selection. YOLOv8s tăng `0,010865` validation mask mAP50-95 so với baseline, vượt ngưỡng đặt trước `0,010000`; checkpoint đã khóa bằng SHA-256. Còn hai việc: chạy final test đúng một lần bằng notebook one-shot và lưu bằng chứng prior consent của PIC Lab.
 
 ### 8.2. Net Value
 
