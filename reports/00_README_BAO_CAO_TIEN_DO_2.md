@@ -15,6 +15,10 @@ Mở tài liệu theo thứ tự sau để trình bày trực tiếp:
 11. `risk_register_v2_additions.md` — Risk Register v2.
 12. `DRIVE_DATA_CATALOG_V1.md` — vị trí dữ liệu và model trên Google Drive.
 13. `SROIE_PROCESSED_SPLIT_DIAGNOSTIC_2026-10-11.md` — nguyên nhân lỗi split và bản sửa group-aware.
+14. `GROUND_TRUTH_DEFINITION_V1.md` — định nghĩa ground truth theo task.
+15. `DATA_LEAKAGE_CHECK_V1.md` — kết quả leakage và remediation.
+16. `DOCUMENT_EDA_SOURCE_ANALYSIS_V1.md` — EDA/phân tích nguồn.
+17. `REPORT_REQUIREMENTS_COVERAGE_V1.md` — đối chiếu từng yêu cầu mục 6.2.
 
 ## Trạng thái cần nói rõ
 
