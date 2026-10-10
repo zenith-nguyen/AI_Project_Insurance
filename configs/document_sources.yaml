@@ -1,0 +1,94 @@
+schema_version: 1
+project_root_colab: /content/drive/MyDrive/AI_Project_Insurance_Acc 2
+bronze_root: data/bronze/documents
+registry_root: data/registry/documents
+quarantine_root: data/quarantine/documents
+
+sources:
+  cord_v2:
+    version: v2
+    task: [receipt_parsing, ocr, kie]
+    acquisition: huggingface_snapshot
+    repo_id: naver-clova-ix/cord-v2
+    revision: 41b075798d0d9da590a950dac1e3d4a21826d4fd
+    expected_examples: 1000
+    expected_splits: {train: 800, validation: 100, test: 100}
+    approximate_download_gb: 2.31
+    license: CC-BY-4.0
+    source_url: https://huggingface.co/datasets/naver-clova-ix/cord-v2
+    auto_download_default: true
+
+  funsd:
+    version: original_2019
+    task: [form_understanding, ocr, layout, kie]
+    acquisition: direct_archive
+    archive_url: https://guillaumejaume.github.io/FUNSD/dataset.zip
+    expected_examples: 199
+    approximate_download_gb: 0.02
+    license: non-commercial-research-education
+    source_url: https://guillaumejaume.github.io/FUNSD/
+    terms_url: https://guillaumejaume.github.io/FUNSD/work/
+    auto_download_default: true
+
+  xfund:
+    version: v1.0
+    task: [multilingual_form_understanding, layout, kie]
+    acquisition: github_release
+    github_repo: doc-analysis/XFUND
+    github_tag: v1.0
+    expected_examples: 1393
+    languages: [zh, ja, es, fr, it, de, pt]
+    license: CC-BY-NC-SA-4.0
+    source_url: https://github.com/doc-analysis/XFUND/releases/tag/v1.0
+    auto_download_default: true
+
+  sroie:
+    version: ICDAR2019
+    task: [receipt_ocr, text_detection, kie]
+    acquisition: manual_or_kaggle_mirror
+    source_url: https://rrc.cvc.uab.es/?ch=13&com=downloads
+    expected_examples: 987
+    license: verify-from-RRC-or-selected-mirror
+    auto_download_default: false
+    note: Prefer RRC. If a Kaggle mirror is used, pin owner/dataset/version and record checksums.
+
+  midv500:
+    version: v1
+    task: [identity_document_detection, ocr, field_extraction]
+    acquisition: zenodo_record
+    zenodo_record: 18504926
+    expected_videos: 500
+    expected_document_types: 50
+    approximate_download_gb: 32.9
+    source_url: https://zenodo.org/records/18504926
+    auto_download_default: false
+    note: Download per document type unless the ID-document branch is approved.
+
+  midv2020:
+    version: v1
+    task: [identity_document_detection, ocr, field_extraction]
+    acquisition: zenodo_record
+    zenodo_record: 18786808
+    expected_documents: 1000
+    expected_annotated_images: 72409
+    approximate_download_gb: 17.4
+    source_url: https://zenodo.org/records/18786808
+    full_source_url: https://l3i-share.univ-lr.fr/MIDV2020/midv2020.html
+    auto_download_default: false
+    recommended_files: [license.txt, md5.txt, readme.txt, templates.tar, scan_upright.tar, scan_rotated.tar, photo.tar]
+    note: clips.tar adds about 10.3 GB. Original TIFF/video set is available separately from L3i.
+
+  rvl_cdip:
+    version: mirror_main
+    task: [document_classification]
+    acquisition: huggingface_stream_or_snapshot
+    repo_id: aharley/rvl_cdip
+    expected_examples: 400000
+    expected_classes: 16
+    expected_splits: {train: 320000, validation: 40000, test: 40000}
+    approximate_download_gb: 38.8
+    license: other-review-required
+    source_url: https://huggingface.co/datasets/aharley/rvl_cdip
+    audit_url: https://aclanthology.org/2023.eacl-main.195/
+    auto_download_default: false
+    note: Default to a balanced streamed sample; scan PII and deduplicate before use.

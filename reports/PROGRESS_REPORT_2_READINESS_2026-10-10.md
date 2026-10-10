@@ -5,7 +5,7 @@
 
 ## Tình hình chung
 
-Phần kỹ thuật cốt lõi cho báo cáo lần 2 đã có: audit dữ liệu tabular, data dictionary, leakage check, baseline rule, bốn model tabular, model selection, metrics và phân tích hạn chế. Nhánh CarDD đã tiến xa hơn kế hoạch cũ: YOLOv8n baseline và YOLOv8s candidate đều hoàn tất; YOLOv8s đã được chọn bằng validation. Google Drive hiện đã có final-test report và execution lock. Cần đọc và xác minh hai artifact này để ghi metric thật; tuyệt đối không chạy final test lần hai.
+Phần kỹ thuật cốt lõi cho báo cáo lần 2 đã có: audit dữ liệu tabular, data dictionary, leakage check, baseline rule, bốn model tabular, model selection, metrics và phân tích hạn chế. Nhánh CarDD đã hoàn tất training, model selection và final test đúng một lần. YOLOv8s được chọn bằng validation; final-test artifact verification PASS với mask mAP50-95 `0,513978`. Không chạy final test lần hai.
 
 ## Checklist deliverable
 
@@ -26,9 +26,9 @@ Phần kỹ thuật cốt lõi cho báo cáo lần 2 đã có: audit dữ liệu
 | EDA/source analysis | Hoàn thành cho tabular và CarDD | status report, leakage/robustness, CarDD reports | Chưa có EDA sáu nguồn document |
 | Ground Truth Definition | Một phần | Fraud target và CarDD annotation đã mô tả | Viết protocol OCR/KIE; RAG citation policy chỉ khi dùng RAG |
 | Data Leakage Check | Hoàn thành v1 | `reports/leakage/`, feature policy, split near-duplicate CarDD | Document split leakage chưa audit |
-| Baseline process/model | Hoàn thành | Rule + XGBoost tabular; YOLOv8n/YOLOv8s CarDD | Đọc và xác minh final-test report đã có |
+| Baseline process/model | Hoàn thành | Rule + XGBoost tabular; YOLOv8n/YOLOv8s CarDD; final test đã khóa | Không chạy lại CarDD test |
 | Model Selection Matrix | Hoàn thành tabular; CarDD đã khóa | `model_selection_matrix.md`, `CARDD_MODEL_SELECTION_V1.md` | Thêm document build/buy matrix sau audit |
-| Metrics v1 | Hoàn thành tabular; CarDD validation xong; final report đã tồn tại trên Drive | `metrics_v1.md`, CarDD validation reports | Đọc metric final test từ report, không chạy lại |
+| Metrics v1 | Hoàn thành tabular và CarDD | `metrics_v1.md`, `CARDD_FINAL_TEST_V1.md`, CarDD JSON reports trên Drive | Bổ sung error gallery/model card nếu cần trình bày |
 | RAG prompt/retrieval test | Chưa áp dụng | Chưa chọn RAG làm baseline | Chỉ làm nếu scope chính thức có RAG |
 
 ## Kết quả nên trình bày
@@ -48,7 +48,8 @@ Phần kỹ thuật cốt lõi cho báo cáo lần 2 đã có: audit dữ liệu
 - YOLOv8n validation mask mAP50-95 `0,5175`.
 - YOLOv8s validation mask mAP50-95 `0,5284`, tăng `0,0109` và vừa đủ vượt ngưỡng chọn model `0,0100`.
 - Checkpoint YOLOv8s đã khóa bằng SHA-256 `6c0d828760a427d48623653dcd6fffeb1cf591045d9ce8b8684a1d0f5f89420b`.
-- Final-test report và execution lock đã tồn tại trên Drive; chỉ điền số liệu sau khi notebook read-only xác minh report. Không chạy lại test.
+- Final test 419 ảnh/931 instance: mask mAP50-95 `0,513978`, mask mAP50 `0,681571`, box mAP50-95 `0,539952`.
+- Artifact verification PASS; không chạy lại test hoặc tinh chỉnh theo test.
 
 ## Cách kể câu chuyện khi trình bày trực tiếp
 
@@ -61,9 +62,9 @@ Phần kỹ thuật cốt lõi cho báo cáo lần 2 đã có: audit dữ liệu
 
 ## Ưu tiên tiếp theo
 
-1. Chạy notebook read-only `CarDD_Final_Test_Report_Reader_Acc2_v1.ipynb`, xác minh report/lock và cập nhật metric thật.
-2. Inventory sáu nguồn document đã có; kiểm tra license, schema, split và dung lượng.
-3. Chọn một baseline document nhỏ, tránh tải/chạy toàn bộ RVL-CDIP khi chưa cần.
+1. Inventory sáu nguồn document đã có; kiểm tra license, schema, split và dung lượng.
+2. Chọn một baseline document nhỏ, tránh tải/chạy toàn bộ RVL-CDIP khi chưa cần.
+3. Hoàn thiện model card/error gallery CarDD nếu cần cho buổi trình bày; không mở lại model selection.
 4. Không làm lại các artifact business mà nhóm đã xác nhận đang có; chỉ tham chiếu chúng khi trình bày.
 5. Chỉ mở nhánh NetworkX khi có entity-edge và `event_time`; dữ liệu document công khai không tạo được graph fraud claim-level.
 

@@ -73,7 +73,13 @@ Google Drive should retain one copy of the CarDD images under Bronze. The conver
   "/content/cardd_yolo_v1"
 ```
 
-For Colab training, use `notebooks/CarDD_YOLOv8_Training_v1.ipynb`. It copies the verified images into ephemeral `/content` for faster training, runs a two-epoch smoke test, trains the YOLOv8n-seg baseline with early stopping and persistent checkpoints, evaluates validation, and keeps final test evaluation locked until model selection is frozen. The exact protocol is documented in `reports/CARDD_TRAINING_PLAN.md`.
+CarDD training and evaluation are complete. YOLOv8s-seg was selected on validation and evaluated exactly once on 419 test images/931 instances; final-test mask mAP50-95 is `0.513978`. The report and execution lock passed the read-only integrity checks. Do not rerun or tune against the final test. The exact protocol and metrics are documented in `reports/CARDD_MODEL_SELECTION_V1.md` and `reports/CARDD_TRAINING_PLAN.md`.
+
+## Document branch
+
+Use `notebooks/Document_Data_Intake_Acc2_v1.ipynb` on a CPU Colab runtime to register and download document datasets into `data/bronze/documents/<source>/<version>`. The notebook pins CORD, downloads the official FUNSD archive and XFUND release, supports an RRC archive or a version-pinned Kaggle mirror for SROIE, inventories MIDV Zenodo records, and gates large MIDV/RVL-CDIP downloads by free space. It writes one source manifest per dataset plus `data/registry/documents/document_sources_registry.json`.
+
+The operating rules are in `reports/DOCUMENT_DATA_OPERATIONS_GUIDE_V1.md`; source/license findings are in `reports/DOCUMENT_SOURCE_LINK_AUDIT_V1.md`. Public document datasets remain separate from claims and CarDD. Only real operational documents with a valid `claim_id` may be integrated according to `reports/DOCUMENT_CLAIM_INTEGRATION_CONTRACT_V1.md`.
 
 ## Important limits
 

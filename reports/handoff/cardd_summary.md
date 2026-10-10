@@ -23,7 +23,8 @@
 - Checkpoint khóa: `artifacts/image/cardd_yolov8s_seg_candidate_v1/weights/best.pt`.
 - SHA-256: `6c0d828760a427d48623653dcd6fffeb1cf591045d9ce8b8684a1d0f5f89420b`.
 - Candidate cải thiện `crack`, `glass shatter`, `tire flat`, nhưng `dent`, `lamp broken`, `scratch` giảm nhẹ. Không mô tả model tốt hơn trên mọi lớp.
-- Test không được dùng để chọn model. Final-test report và execution lock hiện đã tồn tại trên Drive; metric thật đang chờ notebook read-only xác minh.
+- Test không được dùng để chọn model. Final test đã chạy đúng một lần trên 419 ảnh/931 instance; notebook read-only xác minh report, execution lock, checkpoint hash, `run_id` và report hash đều PASS.
+- Final-test mask mAP50-95 `0,513978`, mask mAP50 `0,681571`, mask mAP75 `0,519355`; box mAP50-95 `0,539952`.
 
 ## License đã đọc
 
@@ -41,9 +42,9 @@ Trạng thái hiện tại: đã đọc điều khoản nhưng chưa có bằng 
 | Cấu trúc mask chi tiết | Đã xác minh và convert thành YOLO segmentation |
 | Split train/val/test | Đã tạo bằng multilabel stratification; không có near-duplicate chéo split |
 | Model selection | Đã khóa YOLOv8s bằng validation và SHA-256 |
-| Final test | Report và execution lock đã tồn tại; không chạy lại, chỉ đọc/xác minh |
+| Final test | Hoàn tất đúng một lần; artifact verification PASS; không chạy lại |
 | Prior consent | Chưa có bằng chứng chấp thuận của PIC Lab trong repo |
 
 ## Bước tiếp theo
 
-Chạy final test đúng một lần bằng checkpoint đã khóa, cập nhật report test, sau đó đóng nhánh CarDD. Song song, lưu bằng chứng prior consent của PIC Lab. Không cần tải, repair hoặc train thêm CarDD trước final test.
+Đóng nhánh CarDD về mặt modeling. Lưu bằng chứng prior consent của PIC Lab; nếu cần trình bày thêm thì tạo model card và gallery lỗi từ run final-test hiện có. Không chọn lại model hoặc tinh chỉnh theo final test.

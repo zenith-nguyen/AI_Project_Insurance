@@ -6,7 +6,7 @@
 
 **Ngày cập nhật:** 10/10/2026
 
-**Trạng thái:** Đã hoàn thành baseline tabular v1; CarDD đã khóa YOLOv8s bằng validation và final-test report đã tồn tại trên Drive, đang chờ đọc/xác minh metric; nhánh chứng từ chờ audit dữ liệu thật.
+**Trạng thái:** Đã hoàn thành baseline tabular v1; CarDD đã khóa YOLOv8s bằng validation và hoàn tất final test đúng một lần với artifact verification PASS; nhánh chứng từ chuyển sang data intake/audit.
 
 ## 1. Tóm tắt điều hành
 
@@ -217,7 +217,7 @@ Cần xác nhận các trường `incident_type`, `collision_type`, `number_of_v
 
 ### 8.1. CarDD / YOLOv8-seg
 
-Đã hoàn thành conversion, validation, YOLOv8n baseline, YOLOv8s candidate và model selection. YOLOv8s tăng `0,010865` validation mask mAP50-95 so với baseline, vượt ngưỡng đặt trước `0,010000`; checkpoint đã khóa bằng SHA-256. Final-test report và execution lock đã tồn tại trên Drive, vì vậy không chạy test lần hai. Còn hai việc: đọc/xác minh metric bằng notebook read-only và lưu bằng chứng prior consent của PIC Lab.
+Đã hoàn thành conversion, validation, YOLOv8n baseline, YOLOv8s candidate, model selection và final test. YOLOv8s tăng `0,010865` validation mask mAP50-95 so với baseline, vượt ngưỡng đặt trước `0,010000`; checkpoint đã khóa bằng SHA-256. Final test chạy đúng một lần trên 419 ảnh/931 instance, mask mAP50-95 `0,513978`; report/execution lock verification PASS. Không chạy test lần hai hoặc tinh chỉnh theo test. Việc còn lại ngoài modeling là lưu bằng chứng prior consent của PIC Lab.
 
 ### 8.2. Net Value
 

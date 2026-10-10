@@ -90,5 +90,5 @@ Không trộn test OCR/KIE với prompt tuning hoặc retrieval tuning.
 
 ## Bước tiếp theo khi nhận đường dẫn dữ liệu
 
-Chạy inventory read-only cho sáu thư mục, xuất `document_sources_inventory.json`, sau đó mới quyết định nguồn nào dùng cho baseline v1 và cỡ sample RVL-CDIP.
+Chạy `Document_Data_Intake_Acc2_v1.ipynb` để tải/đăng ký nguồn, tạo source manifest và xuất `data/registry/documents/document_sources_registry.json`. Sau đó audit file thật, quyết định nguồn dùng cho baseline v1 và cỡ sample RVL-CDIP. Quy trình vận hành chi tiết nằm trong `DOCUMENT_DATA_OPERATIONS_GUIDE_V1.md`.
 

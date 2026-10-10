@@ -1,7 +1,7 @@
 # CarDD — Model Selection v1
 
 **Ngày khóa model:** 10/10/2026  
-**Trạng thái:** đã chọn model bằng validation; final-test report và execution lock đã tồn tại trên Drive, đang chờ đọc/xác minh metric
+**Trạng thái:** hoàn tất model selection và final test đúng một lần; artifact verification PASS
 **Test đã dùng để chọn model:** không
 
 ## Kết luận
@@ -58,7 +58,36 @@ YOLOv8s lớn hơn và chậm hơn đáng kể. Quyết định chọn model d�
 - Test không có trong candidate `data.yaml` và chưa được model selection đọc.
 - File lựa chọn trên Drive: `reports/metrics/cardd_yolo_model_selection_v1.json`.
 
-## Bước tiếp theo đã khóa
+## Final test đã khóa và xác minh
 
-Chạy notebook `CarDD_YOLOv8s_Final_Test_Acc2_v1.ipynb` đúng một lần. Notebook xác minh SHA-256 checkpoint, tạo execution lock trước khi model đọc test và từ chối chạy lại khi report hoặc lock đã tồn tại.
+Final test dùng đúng checkpoint đã chọn, 419 ảnh và 931 instance. Notebook read-only xác minh toàn bộ điều kiện: đúng split test, `test_run_number = 1`, đúng checkpoint hash, selection không dùng test, execution đã hoàn tất, `run_id` trùng nhau và report hash khớp execution lock.
+
+| Chỉ số final test | Giá trị |
+|---|---:|
+| Mask mAP50-95 | **0,513978** |
+| Mask mAP50 | **0,681571** |
+| Mask mAP75 | **0,519355** |
+| Box mAP50-95 | **0,539952** |
+| Box mAP50 | **0,685981** |
+| Box mAP75 | **0,556786** |
+
+| Lớp | Final-test mask mAP50-95 |
+|---|---:|
+| crack | 0,086252 |
+| dent | 0,277864 |
+| glass shatter | 0,917869 |
+| lamp broken | 0,670178 |
+| scratch | 0,280436 |
+| tire flat | 0,851268 |
+
+Mask mAP50-95 test thấp hơn validation khoảng `0,0144`, một khoảng giảm vừa phải. `Tire flat` giảm đáng kể so với validation; đây là lớp cần xem gallery lỗi và uncertainty trước khi diễn giải khả năng triển khai. Không dùng final test để chỉnh threshold, augmentation, checkpoint hoặc chọn lại model.
+
+Artifact trên Drive:
+
+```text
+reports/metrics/cardd_yolov8s_seg_final_test_v1.json
+reports/metrics/cardd_yolov8s_seg_final_test_v1.execution.json
+```
+
+Nhánh CarDD đã đóng về mặt training/evaluation. Việc còn lại ngoài modeling là lưu bằng chứng prior consent theo license và chuẩn bị model card/error analysis nếu cần trình bày.
 
