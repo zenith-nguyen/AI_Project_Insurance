@@ -23,7 +23,7 @@
 - Checkpoint khóa: `artifacts/image/cardd_yolov8s_seg_candidate_v1/weights/best.pt`.
 - SHA-256: `6c0d828760a427d48623653dcd6fffeb1cf591045d9ce8b8684a1d0f5f89420b`.
 - Candidate cải thiện `crack`, `glass shatter`, `tire flat`, nhưng `dent`, `lamp broken`, `scratch` giảm nhẹ. Không mô tả model tốt hơn trên mọi lớp.
-- Test chưa được dùng để chọn model. Notebook final test one-shot đã được chuẩn bị; chưa có metric test tại thời điểm cập nhật.
+- Test không được dùng để chọn model. Final-test report và execution lock hiện đã tồn tại trên Drive; metric thật đang chờ notebook read-only xác minh.
 
 ## License đã đọc
 
@@ -41,7 +41,7 @@ Trạng thái hiện tại: đã đọc điều khoản nhưng chưa có bằng 
 | Cấu trúc mask chi tiết | Đã xác minh và convert thành YOLO segmentation |
 | Split train/val/test | Đã tạo bằng multilabel stratification; không có near-duplicate chéo split |
 | Model selection | Đã khóa YOLOv8s bằng validation và SHA-256 |
-| Final test | Chưa chạy; notebook one-shot đã sẵn sàng |
+| Final test | Report và execution lock đã tồn tại; không chạy lại, chỉ đọc/xác minh |
 | Prior consent | Chưa có bằng chứng chấp thuận của PIC Lab trong repo |
 
 ## Bước tiếp theo

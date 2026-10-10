@@ -3,9 +3,13 @@
 **Ngày cập nhật:** 10/10/2026  
 **Trạng thái:** nhóm đã có dữ liệu; chưa audit file thực tế trong workspace/Drive
 
+Nguồn tải và rủi ro đã được rà soát tại `reports/DOCUMENT_SOURCE_LINK_AUDIT_V1.md`. Kết quả này là audit liên kết/publication; file thật trên Drive vẫn phải qua inventory và checksum trước khi dùng.
+
 ## Mục tiêu
 
 Các bộ dữ liệu công khai được dùng để xây và đánh giá module chứng từ độc lập: phân loại loại chứng từ, OCR, nhận diện vùng và trích xuất trường. Chúng không có `claim_id` chung với Kaggle fraud hoặc CarDD, nên không được ghép từng dòng và không được dùng để tuyên bố phát hiện gian lận claim-level.
+
+Schema nối với dữ liệu claim thật được định nghĩa tại `reports/DOCUMENT_CLAIM_INTEGRATION_CONTRACT_V1.md`.
 
 ## Vai trò dự kiến
 

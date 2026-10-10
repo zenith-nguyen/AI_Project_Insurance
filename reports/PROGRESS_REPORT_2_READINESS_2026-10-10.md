@@ -5,30 +5,30 @@
 
 ## Tình hình chung
 
-Phần kỹ thuật cốt lõi cho báo cáo lần 2 đã có: audit dữ liệu tabular, data dictionary, leakage check, baseline rule, bốn model tabular, model selection, metrics và phân tích hạn chế. Nhánh CarDD đã tiến xa hơn kế hoạch cũ: YOLOv8n baseline và YOLOv8s candidate đều hoàn tất; YOLOv8s đã được chọn bằng validation. Final test CarDD còn đúng một bước và chưa có số liệu tại thời điểm lập báo cáo này.
+Phần kỹ thuật cốt lõi cho báo cáo lần 2 đã có: audit dữ liệu tabular, data dictionary, leakage check, baseline rule, bốn model tabular, model selection, metrics và phân tích hạn chế. Nhánh CarDD đã tiến xa hơn kế hoạch cũ: YOLOv8n baseline và YOLOv8s candidate đều hoàn tất; YOLOv8s đã được chọn bằng validation. Google Drive hiện đã có final-test report và execution lock. Cần đọc và xác minh hai artifact này để ghi metric thật; tuyệt đối không chạy final test lần hai.
 
 ## Checklist deliverable
 
 | Deliverable | Trạng thái | Bằng chứng hiện có | Việc còn lại |
 |---|---|---|---|
-| AI Canvas v1 | Chưa thấy file trong repo | Luồng hệ thống và nguyên tắc nằm trong `PROJECT_STATUS_REPORT.md` | Nhóm gom thành canvas một trang |
-| Project Charter | Chưa thấy file riêng | Mục tiêu, phạm vi và nguyên tắc đã có trong status report | Chốt owner, timeline, in/out scope |
+| AI Canvas v1 | Nhóm xác nhận đã có ngoài repo kỹ thuật | Artifact business do nhóm quản lý | Không làm lại trong nhánh kỹ thuật |
+| Project Charter | Nhóm xác nhận đã có ngoài repo kỹ thuật | Artifact business do nhóm quản lý | Không làm lại trong nhánh kỹ thuật |
 | Product Vision & Target Users | Một phần | Reviewer, giám định viên, SIU và human-in-the-loop đã mô tả | Viết thành mục riêng, thêm nhu cầu từng user |
-| Stakeholder Map | Chưa có bản chính thức | Danh sách người hỗ trợ trong status report | Vẽ influence/interest và trách nhiệm |
+| Stakeholder Map | Nhóm xác nhận đã có ngoài repo kỹ thuật | Artifact business do nhóm quản lý | Không làm lại trong nhánh kỹ thuật |
 | KPI Tree | Một phần | AP, ROC-AUC, Recall@K, Precision@K, queue rate, calibration | Nối business KPI → operation KPI → model metric |
-| Competitor/Product Comparison | Chưa có | Chưa có artifact trong repo | So sánh rule/manual review/build/API theo tiêu chí thống nhất |
-| Data Source Plan | Đã có v1 | `DOCUMENT_DATA_SOURCE_PLAN_V1.md`, roadmap multimodal | Audit sáu thư mục dữ liệu thật |
+| Competitor/Product Comparison | Nhóm xác nhận đã có ngoài repo kỹ thuật | Artifact business do nhóm quản lý | Không làm lại trong nhánh kỹ thuật |
+| Data Source Plan | Đã có v1 và audit link | `DOCUMENT_DATA_SOURCE_PLAN_V1.md`, `DOCUMENT_SOURCE_LINK_AUDIT_V1.md` | Audit sáu thư mục dữ liệu thật |
 | Risk Register | Có phần kỹ thuật v2 | `risk_register_v2_additions.md` | Ghép với Risk Register v1 của nhóm thành một bảng |
-| Backlog + Sprint Plan | Chưa thấy file | Roadmap kỹ thuật có thứ tự ưu tiên | Chuyển thành backlog có PIC, deadline, definition of done |
-| Mockup/user workflow | Có workflow chữ | Claim intake → signals → risk score → review | Làm mockup đơn giản nếu giảng viên cần hình |
+| Backlog + Sprint Plan | Nhóm xác nhận đã có ngoài repo kỹ thuật | Artifact business do nhóm quản lý | Không làm lại trong nhánh kỹ thuật |
+| Mockup/user workflow | Nhóm xác nhận đã có ngoài repo kỹ thuật | Artifact business do nhóm quản lý | Không làm lại trong nhánh kỹ thuật |
 | Data Audit Report | Hoàn thành v1 | `data_audit_report.md`, CarDD audit | Thêm audit document sau inventory |
-| Data Dictionary/KB Audit | Tabular đã hoàn thành | `data_dictionary.md` | Document field dictionary chưa audit |
+| Data Dictionary/KB Audit | Tabular đã hoàn thành; document integration schema v1 đã có | `data_dictionary.md`, `DOCUMENT_CLAIM_INTEGRATION_CONTRACT_V1.md` | Audit field dictionary trên dữ liệu document thật |
 | EDA/source analysis | Hoàn thành cho tabular và CarDD | status report, leakage/robustness, CarDD reports | Chưa có EDA sáu nguồn document |
 | Ground Truth Definition | Một phần | Fraud target và CarDD annotation đã mô tả | Viết protocol OCR/KIE; RAG citation policy chỉ khi dùng RAG |
 | Data Leakage Check | Hoàn thành v1 | `reports/leakage/`, feature policy, split near-duplicate CarDD | Document split leakage chưa audit |
-| Baseline process/model | Hoàn thành | Rule + XGBoost tabular; YOLOv8n/YOLOv8s CarDD | CarDD final test còn chờ |
+| Baseline process/model | Hoàn thành | Rule + XGBoost tabular; YOLOv8n/YOLOv8s CarDD | Đọc và xác minh final-test report đã có |
 | Model Selection Matrix | Hoàn thành tabular; CarDD đã khóa | `model_selection_matrix.md`, `CARDD_MODEL_SELECTION_V1.md` | Thêm document build/buy matrix sau audit |
-| Metrics v1 | Hoàn thành tabular; CarDD validation xong | `metrics_v1.md`, CarDD validation reports | Thêm CarDD final-test metric sau khi chạy một lần |
+| Metrics v1 | Hoàn thành tabular; CarDD validation xong; final report đã tồn tại trên Drive | `metrics_v1.md`, CarDD validation reports | Đọc metric final test từ report, không chạy lại |
 | RAG prompt/retrieval test | Chưa áp dụng | Chưa chọn RAG làm baseline | Chỉ làm nếu scope chính thức có RAG |
 
 ## Kết quả nên trình bày
@@ -48,7 +48,7 @@ Phần kỹ thuật cốt lõi cho báo cáo lần 2 đã có: audit dữ liệu
 - YOLOv8n validation mask mAP50-95 `0,5175`.
 - YOLOv8s validation mask mAP50-95 `0,5284`, tăng `0,0109` và vừa đủ vượt ngưỡng chọn model `0,0100`.
 - Checkpoint YOLOv8s đã khóa bằng SHA-256 `6c0d828760a427d48623653dcd6fffeb1cf591045d9ce8b8684a1d0f5f89420b`.
-- Final test chưa chạy tại thời điểm báo cáo; không được điền số liệu test dự đoán.
+- Final-test report và execution lock đã tồn tại trên Drive; chỉ điền số liệu sau khi notebook read-only xác minh report. Không chạy lại test.
 
 ## Cách kể câu chuyện khi trình bày trực tiếp
 
@@ -61,9 +61,9 @@ Phần kỹ thuật cốt lõi cho báo cáo lần 2 đã có: audit dữ liệu
 
 ## Ưu tiên tiếp theo
 
-1. Chạy CarDD final test bằng notebook one-shot và cập nhật metric thật.
+1. Chạy notebook read-only `CarDD_Final_Test_Report_Reader_Acc2_v1.ipynb`, xác minh report/lock và cập nhật metric thật.
 2. Inventory sáu nguồn document đã có; kiểm tra license, schema, split và dung lượng.
 3. Chọn một baseline document nhỏ, tránh tải/chạy toàn bộ RVL-CDIP khi chưa cần.
-4. Hoàn thiện các tài liệu quản trị còn thiếu: Canvas, Charter, Stakeholder Map, KPI Tree, Backlog và Mockup.
+4. Không làm lại các artifact business mà nhóm đã xác nhận đang có; chỉ tham chiếu chúng khi trình bày.
 5. Chỉ mở nhánh NetworkX khi có entity-edge và `event_time`; dữ liệu document công khai không tạo được graph fraud claim-level.
 

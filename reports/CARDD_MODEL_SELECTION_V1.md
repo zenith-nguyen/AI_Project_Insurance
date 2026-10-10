@@ -1,7 +1,7 @@
 # CarDD — Model Selection v1
 
 **Ngày khóa model:** 10/10/2026  
-**Trạng thái:** đã chọn model bằng validation; final test chưa chạy  
+**Trạng thái:** đã chọn model bằng validation; final-test report và execution lock đã tồn tại trên Drive, đang chờ đọc/xác minh metric
 **Test đã dùng để chọn model:** không
 
 ## Kết luận

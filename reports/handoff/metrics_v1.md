@@ -27,4 +27,4 @@ Trạng thái protocol: test 200 dòng này sau đó đã được dùng lần h
 | Mask mAP50 | 0,6974 | **0,6980** |
 | Box mAP50-95 | 0,5377 | **khoảng 0,5570** |
 
-YOLOv8s tăng `0,010865` mask mAP50-95 và vượt ngưỡng chọn model `0,010000`. Đây là validation metric trên 431 ảnh/935 instance. Final test 419 ảnh/931 instance chưa chạy, vì vậy không được ghi các số trên là test performance.
+YOLOv8s tăng `0,010865` mask mAP50-95 và vượt ngưỡng chọn model `0,010000`. Đây là validation metric trên 431 ảnh/935 instance. Final-test report cho 419 ảnh/931 instance đã tồn tại trên Drive nhưng chưa được đọc vào repo; không ghi các số validation trên là test performance và không chạy test lần hai.
