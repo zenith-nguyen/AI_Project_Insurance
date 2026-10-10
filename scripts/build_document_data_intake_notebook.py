@@ -53,6 +53,10 @@ DOWNLOAD_XFUND = True
 # SROIE: chọn một trong hai cách và pin version.
 SROIE_ARCHIVE_ON_DRIVE = ""  # Ví dụ: /content/drive/MyDrive/downloads/sroie.zip
 SROIE_KAGGLE_HANDLE = ""     # Bắt buộc dạng owner/dataset/versions/N
+# Fallback công khai đã hiệu chỉnh; nguồn gốc vẫn là ICDAR 2019 RRC.
+DOWNLOAD_SROIE_HF_MIRROR = True
+SROIE_HF_REPO = "jsdnrs/ICDAR2019-SROIE"
+SROIE_HF_REVISION = "bffe40c26759f3376ec2b3ae9031dbba54cd587c"
 
 # Nguồn lớn: chỉ bật sau khi xem bảng dung lượng ở cuối notebook.
 ALLOW_LARGE_DOWNLOADS = False
@@ -327,9 +331,9 @@ else:
     print("XFUND: SKIPPED")"""
         ),
         markdown(
-            """## 7. SROIE — RRC hoặc Kaggle mirror đã pin
+            """## 7. SROIE — RRC hoặc mirror đã pin
 
-Ưu tiên tải archive từ RRC rồi đặt đường dẫn vào `SROIE_ARCHIVE_ON_DRIVE`. Nếu dùng Kaggle, handle phải có `/versions/N`; notebook không chấp nhận `latest` không được ghi version."""
+Ưu tiên tải archive từ RRC rồi đặt đường dẫn vào `SROIE_ARCHIVE_ON_DRIVE`. Nếu dùng Kaggle, handle phải có `/versions/N`; notebook không chấp nhận `latest` không được ghi version. Khi cả hai trường để trống, notebook dùng mirror Hugging Face đã hiệu chỉnh và ghim commit; manifest vẫn lưu RRC là nguồn gốc."""
         ),
         code(
             """sroie_root = source_dir("sroie", "ICDAR2019")
@@ -374,6 +378,38 @@ elif SROIE_KAGGLE_HANDLE:
         },
     )
     print("SROIE Kaggle mirror: DOWNLOADED, AUDIT REQUIRED")
+elif DOWNLOAD_SROIE_HF_MIRROR:
+    from huggingface_hub import snapshot_download
+
+    output = snapshot_download(
+        repo_id=SROIE_HF_REPO,
+        repo_type="dataset",
+        revision=SROIE_HF_REVISION,
+        local_dir=sroie_root / "raw/huggingface_corrected_mirror",
+        allow_patterns=[
+            "data/*.parquet",
+            "README.md",
+            "LICENSE",
+            "NOTICE",
+        ],
+    )
+    write_manifest(
+        sroie_root,
+        {
+            "dataset_name": "sroie",
+            "version": "ICDAR2019-corrected-hf-mirror",
+            "status": "downloaded_from_huggingface_mirror_pending_audit",
+            "canonical_source_url": "https://rrc.cvc.uab.es/?ch=13&com=downloads",
+            "mirror_url": f"https://huggingface.co/datasets/{SROIE_HF_REPO}",
+            "mirror_repo": SROIE_HF_REPO,
+            "mirror_revision": SROIE_HF_REVISION,
+            "local_path": str(output),
+            "expected_train_examples": 626,
+            "expected_test_examples": 347,
+            "license": "CC-BY-4.0-verify-during-audit",
+        },
+    )
+    print("SROIE corrected Hugging Face mirror: PASS, AUDIT REQUIRED")
 else:
     write_manifest(
         sroie_root,
@@ -384,7 +420,7 @@ else:
             "source_url": "https://rrc.cvc.uab.es/?ch=13&com=downloads",
         },
     )
-    print("SROIE: WAITING FOR RRC ARCHIVE OR PINNED KAGGLE HANDLE")"""
+    print("SROIE: WAITING FOR RRC ARCHIVE OR PINNED MIRROR")"""
         ),
         markdown("## 8. MIDV — inventory Zenodo và tải có gate"),
         code(

@@ -111,6 +111,8 @@ Không nên tải toàn bộ MIDV-500, MIDV-2020 và RVL-CDIP trong cùng một 
 3. Chỉ mở MIDV khi scope có giấy tờ định danh.
 4. RVL-CDIP bắt đầu bằng sample cân bằng; audit PII/duplicate trước training.
 
+Nếu SROIE chưa có archive RRC hoặc Kaggle handle, notebook dùng mirror hiệu chỉnh `jsdnrs/ICDAR2019-SROIE` tại commit đã ghim. Manifest phân biệt rõ nguồn gốc RRC và mirror, đồng thời giữ trạng thái `pending_audit` cho tới khi kiểm tra số mẫu, schema, license và checksum hoàn tất.
+
 ### RVL-CDIP loader compatibility
 
 Dataset script upstream hiện còn các URL lịch sử dạng `datasets/rvl_cdip` không có namespace. `huggingface_hub` mới có thể báo `HfUriError`. Notebook tạo một bản compatibility loader cục bộ, thay đúng bốn URL bằng namespace `datasets/aharley/rvl_cdip`, kiểm tra số lượng thay thế và ghi SHA-256 của loader vào manifest. Chỉ cần chạy lại notebook từ đầu; các nguồn đã có sẽ được reuse và cell RVL sẽ lấy lại sample.

@@ -25,6 +25,9 @@ def test_document_intake_has_governance_and_large_download_gates():
     assert "DOWNLOAD_RVL_CDIP_FULL = False" in combined
     assert "SROIE_KAGGLE_HANDLE" in combined
     assert '"/versions/" not in SROIE_KAGGLE_HANDLE' in combined
+    assert "jsdnrs/ICDAR2019-SROIE" in combined
+    assert "bffe40c26759f3376ec2b3ae9031dbba54cd587c" in combined
+    assert "expected_train_examples" in combined
     assert "safe_extract_zip" in combined
     assert "Unsafe ZIP member" in combined
     assert "document_sources_registry.json" in combined
