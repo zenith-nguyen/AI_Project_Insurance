@@ -110,6 +110,10 @@ Không nên tải toàn bộ MIDV-500, MIDV-2020 và RVL-CDIP trong cùng một 
 2. SROIE sau khi khóa nguồn RRC hoặc mirror/version.
 3. Chỉ mở MIDV khi scope có giấy tờ định danh.
 4. RVL-CDIP bắt đầu bằng sample cân bằng; audit PII/duplicate trước training.
+
+### RVL-CDIP loader compatibility
+
+Dataset script upstream hiện còn các URL lịch sử dạng `datasets/rvl_cdip` không có namespace. `huggingface_hub` mới có thể báo `HfUriError`. Notebook tạo một bản compatibility loader cục bộ, thay đúng bốn URL bằng namespace `datasets/aharley/rvl_cdip`, kiểm tra số lượng thay thế và ghi SHA-256 của loader vào manifest. Chỉ cần chạy lại notebook từ đầu; các nguồn đã có sẽ được reuse và cell RVL sẽ lấy lại sample.
 5. Sau inventory, chốt một baseline nhỏ. Không train đồng thời trên tất cả nguồn.
 
 ## Liên kết với claim

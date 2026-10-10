@@ -488,6 +488,7 @@ rvl_details = {}
 
 if DOWNLOAD_RVL_CDIP_SAMPLE:
     from datasets import load_dataset
+    from huggingface_hub import hf_hub_download
 
     sample_root = rvl_root / "sample_raw"
     sample_root.mkdir(parents=True, exist_ok=True)
@@ -497,8 +498,39 @@ if DOWNLOAD_RVL_CDIP_SAMPLE:
         rvl_status = "sample_exists"
     else:
         try:
+            # The upstream dataset script still points to the historical,
+            # namespace-less `datasets/rvl_cdip` URLs. Newer huggingface_hub
+            # rejects that redirect as an invalid hf:// URI. Keep the source
+            # script intact in the HF cache and create a small, auditable local
+            # compatibility copy with the canonical namespace.
+            upstream_script = Path(
+                hf_hub_download(
+                    repo_id="aharley/rvl_cdip",
+                    repo_type="dataset",
+                    filename="rvl_cdip.py",
+                )
+            )
+            patched_script = rvl_root / "loader_compat" / "rvl_cdip.py"
+            patched_script.parent.mkdir(parents=True, exist_ok=True)
+            script_text = upstream_script.read_text(encoding="utf-8")
+            historical_prefix = (
+                "https://huggingface.co/datasets/rvl_cdip/resolve/main/"
+            )
+            canonical_prefix = (
+                "https://huggingface.co/datasets/aharley/rvl_cdip/resolve/main/"
+            )
+            replacement_count = script_text.count(historical_prefix)
+            if replacement_count != 4:
+                raise RuntimeError(
+                    "RVL loader upstream changed; expected 4 historical URLs, "
+                    f"found {replacement_count}. Stop for source audit."
+                )
+            patched_script.write_text(
+                script_text.replace(historical_prefix, canonical_prefix),
+                encoding="utf-8",
+            )
             stream = load_dataset(
-                "aharley/rvl_cdip",
+                str(patched_script),
                 split="train",
                 streaming=True,
                 trust_remote_code=True,
@@ -538,6 +570,11 @@ if DOWNLOAD_RVL_CDIP_SAMPLE:
             rvl_status = "balanced_sample_downloaded_pending_pii_and_duplicate_audit"
             rvl_details["sample_counts"] = {
                 label_names[index]: count for index, count in counts.items()
+            }
+            rvl_details["loader_compatibility_patch"] = {
+                "upstream_repo": "aharley/rvl_cdip",
+                "historical_url_replacements": replacement_count,
+                "patched_script_sha256": sha256_file(patched_script),
             }
             print("RVL balanced sample: PASS")
         except Exception as error:
@@ -627,11 +664,16 @@ print("Run record:", run_path)
 print("Free Drive GB:", round(free_gb(NEW_PROJECT), 2))"""
         ),
         markdown(
-            """## 11. Sau khi chạy
+            """## 11. Sau khi chạy — cổng chuyển từ intake sang model
 
-Gửi output `DOCUMENT DATA INTAKE COMPLETED` và file `document_sources_registry.json`. Không bắt đầu train document model cho đến khi source có status phù hợp, license được lưu và duplicate/PII audit hoàn tất.
+1. Lưu output `DOCUMENT DATA INTAKE COMPLETED` và `document_sources_registry.json`.
+2. Xử lý mọi source còn `awaiting`, `sample_blocked` hoặc `pending_audit`.
+3. Chạy license, PII, duplicate/near-duplicate và leakage audit.
+4. Khóa task riêng cho document classification, OCR và key-information extraction.
+5. Tạo split train/validation/test theo nguồn và document identity; không nối theo từng dòng với CarDD.
+6. Chỉ sau khi các cổng trên PASS mới chạy baseline document model.
 
-Nếu cần tải full MIDV/RVL, bật `ALLOW_LARGE_DOWNLOADS` cùng đúng cờ dataset sau khi xác nhận Drive còn đủ dung lượng."""
+Nếu cần tải full MIDV/RVL, bật `ALLOW_LARGE_DOWNLOADS` cùng đúng cờ dataset sau khi xác nhận Drive còn đủ dung lượng. Public document datasets phục vụ pretraining/benchmark; dữ liệu bảo hiểm thật chỉ hợp nhất với CarDD/graph khi có `claim_id` hợp lệ."""
         ),
     ]
 

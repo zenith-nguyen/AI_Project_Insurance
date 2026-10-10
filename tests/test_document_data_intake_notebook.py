@@ -47,4 +47,7 @@ def test_document_intake_pins_reproducible_sources_and_keeps_public_data_separat
     assert "18504926" in combined
     assert "18786808" in combined
     assert "aharley/rvl_cdip" in combined
+    assert "historical_url_replacements" in combined
+    assert 'replacement_count != 4' in combined
+    assert 'str(patched_script)' in combined
     assert "claim_id" not in combined
