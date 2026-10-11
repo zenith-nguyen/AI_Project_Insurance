@@ -7,15 +7,15 @@
 
 | Thành phần | Đã xây trong source code | Đã kiểm thử cục bộ | Đã chạy metric trên dữ liệu thật |
 |---|---:|---:|---:|
-| Document classifier DiT | Adapter inference + notebook validation | Có, kiểm tra contract bằng mock | Chưa; notebook sẵn sàng |
-| PaddleOCR | Adapter chuẩn hóa output v2/v3 + notebook CER/WER | Có | Chưa; notebook sẵn sàng |
-| Rule KIE | Trích xuất ngày, tổng tiền, số chứng từ, biển số | Có | Chưa; notebook sẵn sàng |
+| Document classifier DiT | Adapter inference + notebook validation | Có, kiểm tra contract bằng mock | Smoke metric 0,9626 trên sample từ upstream train; independent validation chờ chạy |
+| PaddleOCR | Adapter chuẩn hóa output v2/v3 + notebook CER/WER | Có | Có: CER 0,4097; WER 0,5592 trên 93 SROIE validation |
+| Rule KIE | Trích xuất ngày, tổng tiền, số chứng từ, biển số | Có | Có: F1 0,6776 cho date/total trên validation |
 | LayoutLMv3 KIE | Adapter checkpoint + notebook fine-tune | Có preflight | Chưa train |
 | Consistency rules | Amount/date/plate với pass/fail/unknown | Có | Chưa có claim-document thật |
 | NetworkX | Graph point-in-time và sáu feature v1 | Có | Chỉ demo synthetic; chưa có graph thật |
 | Reviewer result contract | JSON hợp nhất damage/document/rules/graph/risk | Có | Chưa tích hợp API/UI |
 
-Không dùng từ “hoàn thành model chứng từ” trước khi notebook baseline sinh report metric. Không dùng kết quả synthetic NetworkX như bằng chứng phát hiện fraud.
+Baseline document validation đã có metric thật. Không dùng từ “hoàn thành model chứng từ” trước khi LayoutLMv3 được train, so sánh và khóa. Không dùng kết quả synthetic NetworkX như bằng chứng phát hiện fraud.
 
 ## Source code đã tạo
 
@@ -40,10 +40,13 @@ Cấu hình được tách khỏi code tại `configs/document_pipeline.yaml`, `
    - rule KIE: precision, recall và micro-F1 cho ngày và tổng tiền.
 
 Notebook cài PaddlePaddle 3.2.0 từ index CPU chính thức để tránh lệch CUDA của Colab; phần DiT vẫn dùng GPU. Nếu runtime không có wheel PaddlePaddle tương thích, đổi Colab runtime sang Python được PaddlePaddle hỗ trợ rồi chạy lại từ đầu.
+
+Quy tắc đã khóa trước khi xem kết quả LayoutLMv3: candidate chỉ được chọn nếu field exact-match micro-F1 cho `date`/`total` tăng ít nhất **0,02** so với rule isolated baseline và weak-alignment coverage đạt ít nhất **0,85**. Nếu không đạt, giữ rule baseline và ghi candidate là không được chọn.
 3. Gửi file `reports/metrics/documents/document_baselines_validation_v1.json` để review. Test vẫn khóa.
-4. Chạy `Document_LayoutLMv3_Candidate_Acc2_v1.ipynb`. Notebook fine-tune trên 525 train, chọn checkpoint theo F1 trên 93 validation, ghi hash cây checkpoint và không đọc test.
-5. Chỉ đặt quy tắc chọn model và duyệt validation xong mới tạo notebook final test riêng.
-6. `Claim_Consistency_NetworkX_Demo_Acc2_v1.ipynb` chạy CPU được. Đây là demo logic; benchmark graph thật chỉ mở khi có bảng claim/entity/edge hợp lệ.
+4. Chạy `Document_DiT_Independent_Validation_Acc2_v1.ipynb` để thay smoke metric từ upstream train bằng metric trên upstream RVL validation.
+5. Chạy `Document_LayoutLMv3_Candidate_Acc2_v1.ipynb`. Notebook fine-tune trên 525 train, chọn checkpoint theo field exact-match F1 trên 93 validation, ghi hash cây checkpoint và không đọc test.
+6. Chỉ đặt quy tắc chọn model và duyệt validation xong mới tạo notebook final test riêng.
+7. `Claim_Consistency_NetworkX_Demo_Acc2_v1.ipynb` chạy CPU được. Đây là demo logic; benchmark graph thật chỉ mở khi có bảng claim/entity/edge hợp lệ.
 
 ## Model nào đang chạy việc gì
 
@@ -83,7 +86,7 @@ Mọi nhánh chỉ hợp nhất bằng `claim_id` thật. Tất cả node/edge/f
 - Toàn bộ suite: **51 passed, 1 skipped**.
 - Notebook JSON: hợp lệ.
 - Tất cả code cell trong ba notebook mới: compile PASS.
-- Phần chưa có bằng chứng: metric document validation, LayoutLMv3 checkpoint, graph metric trên dữ liệu nghiệp vụ thật, API/UI/UAT.
+- Phần chưa có bằng chứng: LayoutLMv3 checkpoint, graph metric trên dữ liệu nghiệp vụ thật, API/UI/UAT.
 
 ## Các giới hạn phải trình bày
 

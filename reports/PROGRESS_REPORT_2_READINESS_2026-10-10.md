@@ -17,7 +17,7 @@ Phần kỹ thuật cốt lõi cho báo cáo lần 2 đã có: audit dữ liệu
 | Stakeholder Map | Nhóm xác nhận đã có ngoài repo kỹ thuật | Artifact business do nhóm quản lý | Không làm lại trong nhánh kỹ thuật |
 | KPI Tree | Một phần | AP, ROC-AUC, Recall@K, Precision@K, queue rate, calibration | Nối business KPI → operation KPI → model metric |
 | Competitor/Product Comparison | Nhóm xác nhận đã có ngoài repo kỹ thuật | Artifact business do nhóm quản lý | Không làm lại trong nhánh kỹ thuật |
-| Data Source Plan | Hoàn thành v1 và audit file thật | `DOCUMENT_DATA_SOURCE_PLAN_V1.md`, `DOCUMENT_SOURCE_LINK_AUDIT_V1.md`, `DOCUMENT_DATA_AUDIT_RUN_2026-10-11.md` | Chạy lại SROIE processed group split |
+| Data Source Plan | Hoàn thành v1, audit file thật và processed SROIE sạch | `DOCUMENT_DATA_SOURCE_PLAN_V1.md`, `DOCUMENT_DATA_AUDIT_RUN_2026-10-11.md`, `SROIE_PROCESSED_SPLIT_RESULT_V1.md` | Duy trì registry/checksum |
 | Risk Register | Có phần kỹ thuật v2 | `risk_register_v2_additions.md` | Ghép với Risk Register v1 của nhóm thành một bảng |
 | Backlog + Sprint Plan | Nhóm xác nhận đã có ngoài repo kỹ thuật | Artifact business do nhóm quản lý | Không làm lại trong nhánh kỹ thuật |
 | Mockup/user workflow | Nhóm xác nhận đã có ngoài repo kỹ thuật | Artifact business do nhóm quản lý | Không làm lại trong nhánh kỹ thuật |
@@ -62,7 +62,7 @@ Phần kỹ thuật cốt lõi cho báo cáo lần 2 đã có: audit dữ liệu
 
 ## Ưu tiên tiếp theo
 
-1. Chạy lại SROIE processed group split và lưu report PASS.
+1. Lưu và trình bày SROIE processed split PASS cùng document baseline validation.
 2. Chạy baseline document nhỏ trên split đã khóa; không tải/chạy toàn bộ RVL-CDIP khi chưa cần.
 3. Hoàn thiện model card/error gallery CarDD nếu cần cho buổi trình bày; không mở lại model selection.
 4. Không làm lại các artifact business mà nhóm đã xác nhận đang có; chỉ tham chiếu chúng khi trình bày.

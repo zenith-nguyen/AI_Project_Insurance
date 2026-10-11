@@ -9,12 +9,12 @@
 | Data Leakage Check | `DATA_LEAKAGE_CHECK_V1.md`, `SROIE_PROCESSED_SPLIT_DIAGNOSTIC_2026-10-11.md` | Có kết quả và remediation |
 | Baseline model/process | `CARDD_BASELINE_V2_RESULTS.md`, `DOCUMENT_MODEL_BASELINE_PLAN_V1.md`, `DOCUMENT_GRAPH_IMPLEMENTATION_V1.md` | CarDD hoàn tất; document source/notebook/test đã sẵn sàng, metric chờ chạy Colab |
 | Model Selection Matrix | `model_selection_matrix.md`, `CARDD_MODEL_SELECTION_V1.md` | Có |
-| Metrics v1 | `metrics_v1.md`, `CARDD_FINAL_TEST_V1.md` | Có; document metric chờ baseline run |
+| Metrics v1 | `metrics_v1.md`, `CARDD_FINAL_TEST_V1.md`, `DOCUMENT_BASELINE_VALIDATION_V1.md` | Có CarDD và document baseline validation |
 | Risk Register v2 | `risk_register_v2_additions.md` | Có |
 | RAG prompt/retrieval test | `GROUND_TRUTH_DEFINITION_V1.md` ghi rõ chưa áp dụng | N/A vì chưa chọn RAG |
 
 ## Phạm vi trình bày trung thực
 
-Nhóm có thể tuyên bố CarDD evaluation v1 đã hoàn tất và document data audit đã hoàn tất. Không tuyên bố document model đã train hoặc đạt chất lượng production. SROIE processed notebook đã có bản sửa group-aware và cần một lần rerun PASS để đóng data gate.
+Nhóm có thể tuyên bố CarDD evaluation v1, document data audit, SROIE processed data gate và document baseline validation đã hoàn tất. Không tuyên bố LayoutLMv3 đã train hoặc document pipeline đạt chất lượng production.
 
-Source code cho classifier/OCR/KIE/consistency/NetworkX đã được xây và unit-test. Đây là bằng chứng implementation readiness; không thay thế validation metric trên dữ liệu thật.
+Source code cho classifier/OCR/KIE/consistency/NetworkX đã được xây và unit-test. DiT, PaddleOCR và rule KIE đã có validation metric; NetworkX hiện mới có synthetic engineering demo.

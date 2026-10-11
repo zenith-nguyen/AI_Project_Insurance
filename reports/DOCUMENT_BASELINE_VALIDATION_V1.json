@@ -1,0 +1,32 @@
+{
+  "evidence_date": "2026-10-11",
+  "evidence_source": "Colab output and Drive report supplied by the project team",
+  "drive_report": "/content/drive/MyDrive/AI_Project_Insurance_Acc 2/reports/metrics/documents/document_baselines_validation_v1.json",
+  "split": "validation",
+  "test_used": false,
+  "classifier": {
+    "model": "microsoft/dit-base-finetuned-rvlcdip",
+    "revision": "23f8b03d130fb66bbc9a15df3c75d753e49240eb",
+    "validation_rows": 320,
+    "macro_f1": 0.9626177897840285,
+    "balanced_accuracy": 0.9624999999999999,
+    "limitation": "The intake sample was drawn from upstream RVL-CDIP train, which was used to fine-tune DiT. This is an engineering smoke metric, not independent validation."
+  },
+  "ocr": {
+    "engine": "PaddleOCR",
+    "validation_rows": 93,
+    "cer": 0.409656383653424,
+    "wer": 0.5592311957124376,
+    "mean_seconds_per_page": 28.172213671161305
+  },
+  "kie": {
+    "baseline": "document-rule-kie-v1",
+    "precision": 0.8110236220472441,
+    "recall": 0.5819209039548022,
+    "micro_f1": 0.6776315789473685,
+    "evaluated_fields": [
+      "document_date",
+      "total_amount"
+    ]
+  }
+}

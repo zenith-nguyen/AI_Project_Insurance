@@ -22,12 +22,15 @@ Mở tài liệu theo thứ tự sau để trình bày trực tiếp:
 18. `PRODUCT_MODEL_AND_USAGE_V1.md` — sản phẩm, model stack và cách đưa model vào sử dụng.
 19. `CARDD_PICLAB_CONSENT_ACTION_V1.md` — kế hoạch đóng bằng chứng prior consent.
 20. `DOCUMENT_GRAPH_IMPLEMENTATION_V1.md` — code, notebook, trạng thái và cách dùng nhánh document/graph.
+21. `SROIE_PROCESSED_SPLIT_RESULT_V1.md` — data gate SROIE đã PASS và không còn cross-split overlap.
+22. `DOCUMENT_BASELINE_VALIDATION_V1.md` — metric DiT, PaddleOCR và rule KIE trên validation.
+23. `Document_DiT_Independent_Validation_Acc2_v1.ipynb` — kiểm tra DiT trên upstream RVL validation độc lập với sample train intake.
 
 ## Trạng thái cần nói rõ
 
 - CarDD: đã hoàn tất baseline, candidate comparison, model lock và final test đúng một lần.
 - Document data: registry, intake và audit tự động đã hoàn tất; SROIE raw có tám cặp leakage đã được ghi nhận.
-- SROIE processed: notebook đã được sửa để chia theo nhóm SHA-256; cần chạy lại cell cuối để tạo artifact PASS.
-- Document baseline: source code, test và notebook đã sẵn sàng; metric chưa chạy vì cần rerun SROIE processed gate rồi chạy Colab.
+- SROIE processed: PASS với 525/93/361 và exact overlap bằng 0.
+- Document baseline: đã có validation metric cho DiT, PaddleOCR và rule KIE; LayoutLMv3 candidate chưa train.
 - RAG prompt/retrieval test: chưa áp dụng vì chưa chọn RAG làm baseline.
 - Production/go-live: chưa mở; còn cần dữ liệu bảo hiểm thật, PII/license review, API, UI integration, monitoring và UAT.

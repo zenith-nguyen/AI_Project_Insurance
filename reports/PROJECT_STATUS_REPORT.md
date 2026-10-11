@@ -6,7 +6,7 @@
 
 **Ngày cập nhật:** 11/10/2026
 
-**Trạng thái:** Đã hoàn thành baseline tabular v1; CarDD đã khóa YOLOv8s bằng validation và hoàn tất final test đúng một lần với artifact verification PASS; document intake và full audit đã hoàn tất, SROIE processed group split chờ rerun PASS.
+**Trạng thái:** Đã hoàn thành baseline tabular v1; CarDD đã khóa YOLOv8s bằng validation và hoàn tất final test đúng một lần với artifact verification PASS; document intake/audit và SROIE processed split đã PASS; DiT/PaddleOCR/rule KIE đã có validation baseline, LayoutLMv3 candidate chờ train.
 
 ## 1. Tóm tắt điều hành
 
@@ -107,7 +107,7 @@ Từ 05/10/2026, 700 dòng train được tách thêm thành `train_fs` 560 dòn
 - XFUND: 28 assets, checksum/ZIP safety PASS; 1.043 train và 350 validation images; overlap bằng 0.
 - RVL-CDIP sample: 1.600 ảnh, 16 lớp, 100 ảnh/lớp; hash/decode/balance PASS.
 - SROIE: 626 train và 361 test; tám exact duplicate train/test đã được ghi vào remediation manifest. Processed split giữ test, loại tám bản train trùng và dùng group split SHA-256 để exact duplicate nội bộ không bị tách sang train/validation.
-- Nhánh document chưa có model metric; baseline protocol tách riêng classification, OCR và KIE. Không tuyên bố document model đã train hoặc production-ready.
+- Nhánh document đã có validation metric: DiT macro-F1 0,9626 trên RVL sample, PaddleOCR CER 0,4097/WER 0,5592 và rule KIE F1 0,6776 trên SROIE. LayoutLMv3 chưa train; không tuyên bố pipeline production-ready.
 
 ## 4. Hạ tầng và pipeline đã hoàn thành
 

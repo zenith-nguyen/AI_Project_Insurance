@@ -2,7 +2,7 @@
 
 ## Kết luận hiện tại
 
-Nhánh CarDD đã hoàn tất model segmentation: `YOLOv8s-seg` là model được chọn sau khi tăng validation mask mAP50-95 từ 0.5175 lên 0.5284 và đã được đánh giá final test đúng một lần. Nhánh chứng từ chưa có model cuối cùng. Hiện tại mới hoàn tất intake và đang audit/sửa split trước khi benchmark.
+Nhánh CarDD đã hoàn tất model segmentation: `YOLOv8s-seg` là model được chọn sau khi tăng validation mask mAP50-95 từ 0.5175 lên 0.5284 và đã được đánh giá final test đúng một lần. Nhánh chứng từ chưa có model cuối cùng, nhưng data gate SROIE đã PASS và baseline validation đã hoàn tất: DiT macro-F1 0,9626, PaddleOCR CER 0,4097/WER 0,5592 và rule KIE F1 0,6776. LayoutLMv3 candidate chờ train và so sánh.
 
 Nhánh chứng từ là một pipeline gồm ba bài toán, không phải một model duy nhất:
 
@@ -42,6 +42,6 @@ Baseline là mốc đơn giản, tái lập được để chứng minh model/ca
 ## Trạng thái cổng
 
 - Cấu trúc raw data: đã qua registry/manifest preflight.
-- SROIE raw split: phát hiện 8 cặp exact duplicate train/test; đã có remediation manifest.
-- Benchmark document: khóa cho tới khi `Document_SROIE_Processed_Split_Acc2_v1.ipynb` PASS.
+- SROIE raw split: phát hiện 8 cặp exact duplicate train/test; processed split đã loại đúng tám mẫu và cả ba cross-split overlap bằng 0.
+- Benchmark document: validation baseline đã hoàn tất; test vẫn khóa trong thời gian train/chọn LayoutLMv3.
 - Production: khóa cho tới khi có dữ liệu chứng từ bảo hiểm thật, review PII/license và kiểm thử end-to-end.
