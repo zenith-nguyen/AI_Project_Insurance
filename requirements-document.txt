@@ -1,0 +1,11 @@
+# Install beside requirements.txt for document/graph experiments.
+networkx>=3.3,<4
+transformers>=4.45,<6
+torch>=2,<3
+torchvision>=0.20,<1
+paddleocr>=3,<4
+# Install PaddlePaddle separately for the target CPU/CUDA runtime. The Colab
+# notebook uses the official CPU wheel for reproducibility.
+Pillow>=10,<13
+scikit-learn>=1.5,<2
+PyYAML>=6,<7

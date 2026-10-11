@@ -7,7 +7,7 @@
 | EDA / phân tích tài liệu nguồn | `DOCUMENT_EDA_SOURCE_ANALYSIS_V1.md`, `DOCUMENT_SOURCE_LINK_AUDIT_V1.md` | Có |
 | Ground Truth Definition / Citation Policy | `GROUND_TRUTH_DEFINITION_V1.md` | Có; RAG ghi N/A hiện tại |
 | Data Leakage Check | `DATA_LEAKAGE_CHECK_V1.md`, `SROIE_PROCESSED_SPLIT_DIAGNOSTIC_2026-10-11.md` | Có kết quả và remediation |
-| Baseline model/process | `CARDD_BASELINE_V2_RESULTS.md`, `DOCUMENT_MODEL_BASELINE_PLAN_V1.md` | CarDD hoàn tất; document protocol sẵn sàng |
+| Baseline model/process | `CARDD_BASELINE_V2_RESULTS.md`, `DOCUMENT_MODEL_BASELINE_PLAN_V1.md`, `DOCUMENT_GRAPH_IMPLEMENTATION_V1.md` | CarDD hoàn tất; document source/notebook/test đã sẵn sàng, metric chờ chạy Colab |
 | Model Selection Matrix | `model_selection_matrix.md`, `CARDD_MODEL_SELECTION_V1.md` | Có |
 | Metrics v1 | `metrics_v1.md`, `CARDD_FINAL_TEST_V1.md` | Có; document metric chờ baseline run |
 | Risk Register v2 | `risk_register_v2_additions.md` | Có |
@@ -16,3 +16,5 @@
 ## Phạm vi trình bày trung thực
 
 Nhóm có thể tuyên bố CarDD evaluation v1 đã hoàn tất và document data audit đã hoàn tất. Không tuyên bố document model đã train hoặc đạt chất lượng production. SROIE processed notebook đã có bản sửa group-aware và cần một lần rerun PASS để đóng data gate.
+
+Source code cho classifier/OCR/KIE/consistency/NetworkX đã được xây và unit-test. Đây là bằng chứng implementation readiness; không thay thế validation metric trên dữ liệu thật.

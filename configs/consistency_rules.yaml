@@ -1,0 +1,8 @@
+schema_version: 1
+amount:
+  tolerance_ratio: 0.05
+date:
+  max_days_after_incident: 90
+missing_policy: unknown
+low_confidence_policy: unknown
+minimum_field_confidence: 0.5

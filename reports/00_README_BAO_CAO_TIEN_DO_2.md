@@ -21,12 +21,13 @@ Mở tài liệu theo thứ tự sau để trình bày trực tiếp:
 17. `REPORT_REQUIREMENTS_COVERAGE_V1.md` — đối chiếu từng yêu cầu mục 6.2.
 18. `PRODUCT_MODEL_AND_USAGE_V1.md` — sản phẩm, model stack và cách đưa model vào sử dụng.
 19. `CARDD_PICLAB_CONSENT_ACTION_V1.md` — kế hoạch đóng bằng chứng prior consent.
+20. `DOCUMENT_GRAPH_IMPLEMENTATION_V1.md` — code, notebook, trạng thái và cách dùng nhánh document/graph.
 
 ## Trạng thái cần nói rõ
 
 - CarDD: đã hoàn tất baseline, candidate comparison, model lock và final test đúng một lần.
 - Document data: registry, intake và audit tự động đã hoàn tất; SROIE raw có tám cặp leakage đã được ghi nhận.
 - SROIE processed: notebook đã được sửa để chia theo nhóm SHA-256; cần chạy lại cell cuối để tạo artifact PASS.
-- Document baseline metrics: chưa chạy, vì nhóm đang hoàn tất data gate trước khi benchmark.
+- Document baseline: source code, test và notebook đã sẵn sàng; metric chưa chạy vì cần rerun SROIE processed gate rồi chạy Colab.
 - RAG prompt/retrieval test: chưa áp dụng vì chưa chọn RAG làm baseline.
 - Production/go-live: chưa mở; còn cần dữ liệu bảo hiểm thật, PII/license review, API, UI integration, monitoring và UAT.

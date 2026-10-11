@@ -1,0 +1,12 @@
+schema_version: 1
+required_node_fields: [id, entity_type, available_at]
+required_edge_fields: [source, target, relation, event_time]
+entity_types: [claim, customer, policy, vehicle, repair_shop, document, bank_account, phone, address]
+features:
+  - graph_degree
+  - shared_entity_count
+  - connected_component_size
+  - two_hop_claim_count
+  - cycle_count
+  - distance_to_known_risky_claim
+point_in_time_rule: event_time_and_available_at_lte_scored_at

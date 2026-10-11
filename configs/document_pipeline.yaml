@@ -1,0 +1,27 @@
+schema_version: 1
+final_test_locked: true
+project_root_colab: /content/drive/MyDrive/AI_Project_Insurance_Acc 2
+classification:
+  model: microsoft/dit-base-finetuned-rvlcdip
+  revision: 23f8b03d130fb66bbc9a15df3c75d753e49240eb
+  primary_metric: macro_f1
+  secondary_metric: balanced_accuracy
+  dataset: rvl_cdip_sample
+ocr:
+  engine: PaddleOCR
+  major_version: 3
+  primary_metric: cer
+  secondary_metric: wer
+  dataset: sroie_processed_v1
+kie:
+  baseline: document-rule-kie-v1
+  candidate: microsoft/layoutlmv3-base
+  base_revision: 4dcbeabd3db1a13c8aeead201bb7a4811904f1fd
+  primary_metric: field_micro_f1
+  datasets: [sroie_processed_v1, cord_v2, funsd, xfund]
+  note: LayoutLMv3 base must be fine-tuned before inference.
+gates:
+  require_sroie_processed_valid: true
+  require_zero_cross_split_exact_duplicates: true
+  require_model_revision_and_hash: true
+  require_test_locked_during_selection: true
