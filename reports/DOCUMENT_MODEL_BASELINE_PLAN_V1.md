@@ -2,7 +2,7 @@
 
 ## Kết luận hiện tại
 
-Nhánh CarDD đã hoàn tất model segmentation: `YOLOv8s-seg` là model được chọn sau khi tăng validation mask mAP50-95 từ 0.5175 lên 0.5284 và đã được đánh giá final test đúng một lần. Nhánh chứng từ chưa có model cuối cùng, nhưng data gate SROIE đã PASS và baseline validation đã hoàn tất: DiT macro-F1 0,9626, PaddleOCR CER 0,4097/WER 0,5592 và rule KIE F1 0,6776. LayoutLMv3 candidate chờ train và so sánh.
+Nhánh CarDD đã hoàn tất model segmentation: `YOLOv8s-seg` là model được chọn sau khi tăng validation mask mAP50-95 từ 0.5175 lên 0.5284 và đã được đánh giá final test đúng một lần. Nhánh chứng từ chưa có model cuối cùng, nhưng data gate SROIE đã PASS và baseline validation đã hoàn tất: DiT macro-F1 0,9626, PaddleOCR CER 0,4097/WER 0,5592 và rule KIE F1 0,6776. LayoutLMv3 v2 dừng an toàn khi phát hiện alignment coverage 0,1290; bản v3 đã sửa mapping và chờ train/so sánh.
 
 Nhánh chứng từ là một pipeline gồm ba bài toán, không phải một model duy nhất:
 

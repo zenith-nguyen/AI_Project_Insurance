@@ -25,12 +25,14 @@ Mở tài liệu theo thứ tự sau để trình bày trực tiếp:
 21. `SROIE_PROCESSED_SPLIT_RESULT_V1.md` — data gate SROIE đã PASS và không còn cross-split overlap.
 22. `DOCUMENT_BASELINE_VALIDATION_V1.md` — metric DiT, PaddleOCR và rule KIE trên validation.
 23. `Document_DiT_Independent_Validation_Acc2_v1.ipynb` — kiểm tra DiT trên upstream RVL validation độc lập với sample train intake.
+24. `LAYOUTLMV3_ALIGNMENT_REMEDIATION_V1.md` — giải thích data gate 0,1290 và thuật toán căn chỉnh đã sửa trong notebook v3.
+25. `Document_LayoutLMv3_Candidate_Acc2_v3.ipynb` — candidate KIE mới; vẫn khóa test và giữ nguyên quy tắc chọn model.
 
 ## Trạng thái cần nói rõ
 
 - CarDD: đã hoàn tất baseline, candidate comparison, model lock và final test đúng một lần.
 - Document data: registry, intake và audit tự động đã hoàn tất; SROIE raw có tám cặp leakage đã được ghi nhận.
 - SROIE processed: PASS với 525/93/361 và exact overlap bằng 0.
-- Document baseline: đã có validation metric cho DiT, PaddleOCR và rule KIE; LayoutLMv3 candidate chưa train.
+- Document baseline: đã có validation metric cho DiT, PaddleOCR và rule KIE; LayoutLMv3 v2 dừng an toàn tại data gate, bản v3 chờ chạy.
 - RAG prompt/retrieval test: chưa áp dụng vì chưa chọn RAG làm baseline.
 - Production/go-live: chưa mở; còn cần dữ liệu bảo hiểm thật, PII/license review, API, UI integration, monitoring và UAT.

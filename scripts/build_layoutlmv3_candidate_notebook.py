@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 
 
-OUTPUT = Path("notebooks/Document_LayoutLMv3_Candidate_Acc2_v1.ipynb")
+OUTPUT = Path("notebooks/Document_LayoutLMv3_Candidate_Acc2_v3.ipynb")
 
 
 def lines(value: str) -> list[str]:
@@ -23,9 +23,9 @@ def code(value: str) -> dict:
 def main() -> None:
     cells = [
         markdown(
-            """# LayoutLMv3 KIE Candidate — Acc 2 v1
+            """# LayoutLMv3 KIE Candidate — Acc 2 v3
 
-Fine-tune candidate trên **train 525** và chọn bằng **validation 93** của processed SROIE. Test 361 luôn khóa. BIO labels được weak-align từ entity ground truth sang chuỗi OCR words; report phải nêu rõ giới hạn này."""
+Fine-tune candidate trên **train 525** và chọn bằng **validation 93** của processed SROIE. Test 361 luôn khóa. Bản v3 sửa căn chỉnh cho schema SROIE dạng dòng OCR: ngày được chuẩn hóa theo lịch, số tiền theo giá trị số và nhãn `TOTAL` chỉ dùng để phá hòa. Candidate hiện chỉ học hai trường `date`/`total`, đúng phạm vi của rule baseline dùng để so sánh."""
         ),
         code(
             '''from pathlib import Path
@@ -34,8 +34,8 @@ PROJECT = Path("/content/drive/MyDrive/AI_Project_Insurance_Acc 2")
 DATA_ROOT = PROJECT / "data/processed/documents/sroie/v1"
 BASELINE_REPORT = PROJECT / "reports/metrics/documents/document_baselines_validation_v1.json"
 SPLIT_REPORT = PROJECT / "reports/data_audit/documents/sroie_processed_split_v1.json"
-OUTPUT_ROOT = PROJECT / "artifacts/document/layoutlmv3_sroie_candidate_v1"
-REPORT_PATH = PROJECT / "reports/metrics/documents/layoutlmv3_sroie_candidate_validation_v1.json"
+OUTPUT_ROOT = PROJECT / "artifacts/document/layoutlmv3_sroie_candidate_v2"
+REPORT_PATH = PROJECT / "reports/metrics/documents/layoutlmv3_sroie_candidate_validation_v2.json"
 RUN_FINAL_TEST = False
 SEED = 20261011
 MIN_FIELD_F1_GAIN = 0.02
@@ -69,7 +69,11 @@ print("Candidate gates: PASS")'''
         ),
         markdown("## 1. Căn chỉnh entity ground truth thành BIO labels"),
         code(
-            '''import io, re
+            '''import io, re, unicodedata
+from collections import Counter
+from datetime import date
+from decimal import Decimal, InvalidOperation
+from difflib import SequenceMatcher
 import numpy as np
 import pyarrow.parquet as pq
 import torch
@@ -78,30 +82,89 @@ from torch.utils.data import Dataset
 from transformers import AutoProcessor, LayoutLMv3ForTokenClassification, Trainer, TrainingArguments, set_seed
 
 set_seed(SEED)
-FIELD_MAP = {"company":"COMPANY","date":"DATE","address":"ADDRESS","total":"TOTAL"}
+FIELD_MAP = {"date":"DATE","total":"TOTAL"}
 LABELS = ["O"] + [prefix+"-"+name for name in FIELD_MAP.values() for prefix in ("B","I")]
 LABEL2ID = {label:index for index,label in enumerate(LABELS)}
 ID2LABEL = {index:label for label,index in LABEL2ID.items()}
-normalize = lambda value: re.sub(r"\\W", "", str(value).lower())
 
-def weak_bio(words, entities):
-    labels = ["O"] * len(words)
-    normalized_words = [normalize(word) for word in words]
-    for source, target in FIELD_MAP.items():
-        value = entities.get(source) if isinstance(entities, dict) else None
-        if not value: continue
-        wanted = normalize(value)
-        for start in range(len(words)):
-            built = ""
-            for end in range(start, min(len(words), start+30)):
-                built += normalized_words[end]
-                if built == wanted:
-                    labels[start] = "B-"+target
-                    for index in range(start+1,end+1): labels[index] = "I-"+target
-                    break
-                if not wanted.startswith(built): break
-            if labels[start] != "O": break
-    return labels
+def entity_text(value):
+    if value is None: return ""
+    if isinstance(value,str): return value.strip()
+    if isinstance(value,dict):
+        for key in ("text","value","answer"):
+            if value.get(key): return entity_text(value[key])
+        return " ".join(entity_text(item) for item in value.values() if item)
+    if isinstance(value,(list,tuple,set)): return " ".join(entity_text(item) for item in value if item)
+    return str(value).strip()
+
+def normalize(value):
+    text=unicodedata.normalize("NFKC",entity_text(value)).casefold()
+    return "".join(character for character in text if character.isalnum())
+
+def parsed_dates(value):
+    text=unicodedata.normalize("NFKC",entity_text(value)); candidates=set()
+    for first,second,third in re.findall(r"(?<!\\d)(\\d{1,4})[./-](\\d{1,2})[./-](\\d{1,4})(?!\\d)",text):
+        candidates.add((int(first),int(second),int(third)) if len(first)==4 else (int(third),int(second),int(first)))
+    for digits in re.findall(r"(?<!\\d)(\\d{8})(?!\\d)",text):
+        candidates.add((int(digits[:4]),int(digits[4:6]),int(digits[6:])) if digits[:2] in {"19","20"} else (int(digits[4:]),int(digits[2:4]),int(digits[:2])))
+    result=set()
+    for year,month,day in candidates:
+        try: result.add(date(year,month,day))
+        except ValueError: pass
+    return result
+
+def parsed_amounts(value):
+    text=unicodedata.normalize("NFKC",entity_text(value)); result=set()
+    for candidate in re.findall(r"(?<!\\d)[+-]?\\d[\\d., ]*(?!\\d)",text):
+        token=candidate.replace(" ","").strip(".,")
+        if not token: continue
+        if "," in token and "." in token:
+            token=token.replace(",","") if token.rfind(".")>token.rfind(",") else token.replace(".","").replace(",",".")
+        elif "," in token:
+            tail=token.rsplit(",",1)[-1]; token=token.replace(",",".") if len(tail) in (1,2) else token.replace(",","")
+        try: result.add(Decimal(token))
+        except InvalidOperation: pass
+    return result
+
+def candidate_score(field,target,candidate):
+    wanted,observed=normalize(target),normalize(candidate)
+    if not wanted or not observed: return 0.0,"empty"
+    if wanted==observed: return 1.0,"exact_compact"
+    if field=="date":
+        if parsed_dates(target) & parsed_dates(candidate): return 0.995,"equal_date"
+        wanted_digits="".join(re.findall(r"\\d",entity_text(target)))
+        observed_digits="".join(re.findall(r"\\d",entity_text(candidate)))
+        if len(wanted_digits)>=6 and wanted_digits in observed_digits: return 0.99,"date_digits"
+    if field=="total" and parsed_amounts(target) & parsed_amounts(candidate): return 0.99,"equal_amount"
+    if wanted in observed: return 0.96,"target_contained"
+    if observed in wanted and len(observed)/len(wanted)>=0.75: return 0.93,"candidate_contained"
+    return SequenceMatcher(None,wanted,observed).ratio(),"fuzzy"
+
+def align_entity(words,field,value,max_window=3,minimum_score=0.84):
+    target=entity_text(value)
+    if not target: return None
+    ranked=[]; context_words=("date","dated","tarikh") if field=="date" else ("total","amount","grandtotal","jumlah")
+    for start in range(len(words)):
+        for end in range(start+1,min(len(words),start+max_window)+1):
+            candidate=" ".join(str(word) for word in words[start:end])
+            base,method=candidate_score(field,target,candidate)
+            if base<minimum_score: continue
+            context=normalize(" ".join(words[max(0,start-2):start+1]))
+            rank=base+(0.20 if any(label in context for label in context_words) else 0.0)
+            ranked.append((rank,base,-(end-start),start,end,method,candidate))
+    if not ranked: return None
+    _,score,_,start,end,method,candidate=max(ranked)
+    return {"field":field,"start":start,"end":end,"score":score,"method":method,"target":target,"matched_text":candidate}
+
+def weak_bio(words,entities,return_alignments=False):
+    labels=["O"]*len(words); entities=entities if isinstance(entities,dict) else {}; alignments={}; occupied=set()
+    for source,target in FIELD_MAP.items():
+        match=align_entity(words,source,entities.get(source)); alignments[source]=match
+        if match is None or any(index in occupied for index in range(match["start"],match["end"])): continue
+        labels[match["start"]]="B-"+target
+        for index in range(match["start"]+1,match["end"]): labels[index]="I-"+target
+        occupied.update(range(match["start"],match["end"]))
+    return (labels,alignments) if return_alignments else labels
 
 BASE_MODEL = "microsoft/layoutlmv3-base"
 BASE_REVISION = "4dcbeabd3db1a13c8aeead201bb7a4811904f1fd"
@@ -137,18 +200,28 @@ train_data = SROIE(DATA_ROOT/"train.parquet")
 validation_data = SROIE(DATA_ROOT/"validation.parquet")
 if (len(train_data),len(validation_data)) != (525,93): raise RuntimeError("Unexpected processed row counts.")
 validation_metadata = validation_data.evaluation_metadata()
-expected_alignment = matched_alignment = 0
+alignment_counts=Counter(); alignment_methods=Counter(); unmatched=[]
 for metadata in validation_metadata:
     entities = metadata["entities"] if isinstance(metadata["entities"],dict) else {}
-    labels = weak_bio(metadata["words"],entities)
-    for source,target in (("date","DATE"),("total","TOTAL")):
+    _,alignments=weak_bio(metadata["words"],entities,return_alignments=True)
+    for source in FIELD_MAP:
         if entities.get(source):
-            expected_alignment += 1
-            matched_alignment += any(label == "B-"+target for label in labels)
+            alignment_counts[source+"_expected"]+=1
+            match=alignments[source]
+            if match:
+                alignment_counts[source+"_matched"]+=1
+                alignment_methods[(source,match["method"])]+=1
+            else:
+                unmatched.append({"field":source,"target":entity_text(entities[source]),"words":metadata["words"]})
+expected_alignment=sum(alignment_counts[field+"_expected"] for field in FIELD_MAP)
+matched_alignment=sum(alignment_counts[field+"_matched"] for field in FIELD_MAP)
 alignment_coverage = matched_alignment/max(expected_alignment,1)
+print("Alignment counts:",dict(alignment_counts))
+print("Alignment methods:",{f"{field}:{method}":count for (field,method),count in alignment_methods.items()})
 print("Weak-alignment coverage (date/total):",alignment_coverage)
+if unmatched: print("Unmatched diagnostics (first 10):",json.dumps(unmatched[:10],ensure_ascii=False,indent=2))
 if alignment_coverage < MIN_WEAK_ALIGNMENT_COVERAGE:
-    raise RuntimeError("Weak-alignment coverage dưới ngưỡng đã khóa; sửa mapping trước khi train.")
+    raise RuntimeError("Weak-alignment coverage dưới ngưỡng đã khóa; xem unmatched diagnostics, không hạ ngưỡng.")
 print("Rows:",len(train_data),len(validation_data),"Test read: False")'''
         ),
         markdown("## 2. Fine-tune và chọn checkpoint trên validation"),
@@ -158,16 +231,21 @@ print("Rows:",len(train_data),len(validation_data),"Test read: False")'''
 DATE_RE = re.compile(r"\\b(?:\\d{1,2}[/-]){2}\\d{2,4}\\b")
 AMOUNT_RE = re.compile(r"(?:total|amount|grand total|tổng tiền|tổng cộng)\\s*[:：]?\\s*(?:VND|VNĐ|USD|\\$)?\\s*([0-9][0-9., ]{2,})",re.I)
 
+def metric_value(field,value):
+    if field=="date" and parsed_dates(value): return min(parsed_dates(value)).isoformat()
+    if field=="total" and parsed_amounts(value): return str(min(parsed_amounts(value)).normalize())
+    return normalize(value)
+
 def isolated_rule_score():
     expected,predicted = Counter(),Counter()
     for index,metadata in enumerate(validation_metadata):
         entities = metadata["entities"] if isinstance(metadata["entities"],dict) else {}
         for name in ("date","total"):
-            if entities.get(name): expected[(index,name,normalize(entities[name]))] += 1
+            if entities.get(name): expected[(index,name,metric_value(name,entities[name]))] += 1
         text = " ".join(metadata["words"])
         date,amount = DATE_RE.search(text),AMOUNT_RE.search(text)
-        if date: predicted[(index,"date",normalize(date.group(0)))] += 1
-        if amount: predicted[(index,"total",normalize(amount.group(1)))] += 1
+        if date: predicted[(index,"date",metric_value("date",date.group(0)))] += 1
+        if amount: predicted[(index,"total",metric_value("total",amount.group(1)))] += 1
     tp = sum((expected & predicted).values())
     precision = tp/sum(predicted.values()) if predicted else 0.0
     recall = tp/sum(expected.values()) if expected else 0.0
@@ -210,10 +288,10 @@ def compute_metrics(result):
             if word_id < len(word_labels): word_labels[word_id] = ID2LABEL[int(pred_row[token_index])]
         for entity_name,start,end in bio_spans(word_labels):
             field_name = {"COMPANY":"company","DATE":"date","ADDRESS":"address","TOTAL":"total"}[entity_name]
-            predicted_fields[(sequence_index,field_name,normalize(" ".join(metadata["words"][start:end])))] += 1
+            predicted_fields[(sequence_index,field_name,metric_value(field_name," ".join(metadata["words"][start:end])))] += 1
         entities = metadata["entities"] if isinstance(metadata["entities"],dict) else {}
         for field_name in FIELD_MAP:
-            if entities.get(field_name): expected_fields[(sequence_index,field_name,normalize(entities[field_name]))] += 1
+            if entities.get(field_name): expected_fields[(sequence_index,field_name,metric_value(field_name,entities[field_name]))] += 1
     true_positive = sum((true_spans & predicted_spans).values())
     precision = true_positive / sum(predicted_spans.values()) if predicted_spans else 0.0
     recall = true_positive / sum(true_spans.values()) if true_spans else 0.0
@@ -254,8 +332,10 @@ payload = {
  "created_at":datetime.now(timezone.utc).isoformat(),
  "base_model":BASE_MODEL,"base_revision":BASE_REVISION,
  "split":"validation","test_used":False,"train_rows":len(train_data),"validation_rows":len(validation_data),
- "weak_alignment_policy":"exact normalized entity value to consecutive OCR words",
+ "weak_alignment_policy":"field-aware line OCR alignment: calendar date, Decimal amount, exact/contained/fuzzy fallback; TOTAL/DATE context only breaks ties",
  "weak_alignment_coverage_date_total":alignment_coverage,
+ "weak_alignment_counts":dict(alignment_counts),
+ "weak_alignment_methods":{f"{field}:{method}":count for (field,method),count in alignment_methods.items()},
  "comparable_isolated_rule_baseline":isolated_rule_baseline,
  "metrics":{key:float(value) for key,value in metrics.items() if isinstance(value,(int,float))},
  "candidate_delta_field_micro_f1":float(metrics["eval_field_micro_f1"]-isolated_rule_baseline["field_micro_f1"]),
