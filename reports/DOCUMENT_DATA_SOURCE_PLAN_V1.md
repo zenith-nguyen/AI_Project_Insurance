@@ -1,9 +1,9 @@
 # Data Source Plan v1 — Nhánh chứng từ
 
 **Ngày cập nhật:** 10/10/2026  
-**Trạng thái:** nhóm đã có dữ liệu; chưa audit file thực tế trong workspace/Drive
+**Trạng thái:** intake và audit file thực tế đã hoàn tất cho CORD, FUNSD canonical, XFUND, SROIE và RVL-CDIP sample; MIDV hoãn theo scope.
 
-Nguồn tải và rủi ro đã được rà soát tại `reports/DOCUMENT_SOURCE_LINK_AUDIT_V1.md`. Kết quả này là audit liên kết/publication; file thật trên Drive vẫn phải qua inventory và checksum trước khi dùng.
+Nguồn tải và rủi ro đã được rà soát tại `reports/DOCUMENT_SOURCE_LINK_AUDIT_V1.md`. File thật trên Drive đã qua registry/manifest, decode, checksum hoặc hash, split-count và exact-duplicate audit. SROIE raw có tám exact duplicate train/test và đã có remediation manifest; processed split dùng group-aware SHA-256 split.
 
 ## Mục tiêu
 

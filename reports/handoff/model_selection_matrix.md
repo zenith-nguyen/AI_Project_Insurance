@@ -20,4 +20,4 @@ Protocol dùng cùng train/validation split, ảnh 640, batch 8, seed 20261007 v
 | YOLOv8n-seg baseline v2 | 0,5175 | — | Baseline |
 | YOLOv8s-seg candidate v1 | **0,5284** | **+0,0109** | **Được chọn** |
 
-Checkpoint YOLOv8s đã khóa bằng SHA-256 `6c0d828760a427d48623653dcd6fffeb1cf591045d9ce8b8684a1d0f5f89420b`. Test CarDD chưa được dùng tại thời điểm cập nhật.
+Checkpoint YOLOv8s đã khóa bằng SHA-256 `6c0d828760a427d48623653dcd6fffeb1cf591045d9ce8b8684a1d0f5f89420b`. Test CarDD không được dùng trong quá trình chọn model. Sau khi khóa checkpoint, final test đã chạy đúng một lần trên 419 ảnh/931 instance: mask mAP50-95 `0,513978`, mask mAP50 `0,681571`, box mAP50-95 `0,539952`. Không mở lại model selection theo kết quả test.

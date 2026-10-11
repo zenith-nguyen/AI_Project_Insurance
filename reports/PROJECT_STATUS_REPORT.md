@@ -4,9 +4,9 @@
 
 **Phụ trách Data & Modeling:** Huy Nhật
 
-**Ngày cập nhật:** 10/10/2026
+**Ngày cập nhật:** 11/10/2026
 
-**Trạng thái:** Đã hoàn thành baseline tabular v1; CarDD đã khóa YOLOv8s bằng validation và hoàn tất final test đúng một lần với artifact verification PASS; nhánh chứng từ chuyển sang data intake/audit.
+**Trạng thái:** Đã hoàn thành baseline tabular v1; CarDD đã khóa YOLOv8s bằng validation và hoàn tất final test đúng một lần với artifact verification PASS; document intake và full audit đã hoàn tất, SROIE processed group split chờ rerun PASS.
 
 ## 1. Tóm tắt điều hành
 
@@ -86,7 +86,7 @@ Từ 05/10/2026, 700 dòng train được tách thêm thành `train_fs` 560 dòn
 
 ### 3.2. Nhánh ảnh và chứng từ
 
-- CarDD dự kiến dùng cho nhận diện/segmentation hư hại và thử nghiệm ảnh trùng/chỉnh sửa.
+- CarDD đã được dùng cho nhận diện/segmentation hư hại; YOLOv8s-seg là checkpoint được chọn và đã final-test đúng một lần.
 - CORD chỉ là nguồn nền cho OCR/document understanding.
 - CarDD, CORD và Kaggle chưa có liên kết claim-level.
 - CarDD Bronze được đọc qua shortcut `/content/drive/MyDrive/AI_Project_Insurance_OLD/data/bronze/layerA_cardd/`; active project, report và checkpoint nằm tại `/content/drive/MyDrive/AI_Project_Insurance_Acc 2/`.
@@ -98,6 +98,16 @@ Từ 05/10/2026, 700 dòng train được tách thêm thành `train_fs` 560 dòn
 - Conversion YOLO segmentation v2 đã chạy với seed `20261006`: 1.966 ảnh train, 431 validation, 419 test và tổng 6.211 object. Multilabel stratification giữ tỷ lệ từng lớp gần 70/15/15; một nhóm near-duplicate gồm hai ảnh không bị tách chéo split.
 - Drive cũ đã hết dung lượng vì `processed/cardd_yolo_v1/images` chứa thêm một bản copy của 2.816 ảnh Bronze. Ngày 07/10/2026, project đã được resume trên Drive mới: Bronze được đọc qua shortcut Drive cũ, conversion v2 được tạo lại ở chế độ `labels-only`, đủ 2.816 labels với split 1.966/431/419, training view được dựng tạm trong `/content` và validator trả `valid: true`. Processed trên Drive mới không chứa bản copy ảnh.
 - License yêu cầu prior consent của PIC Lab cho nghiên cứu, authorization cho thương mại, cấm phân phối cho bên thứ ba khi chưa được phép và yêu cầu trích dẫn paper. Repo chưa có bằng chứng prior consent.
+
+### 3.3. Nhánh chứng từ
+
+- Registry gồm CORD v2, FUNSD, XFUND, SROIE, RVL-CDIP, MIDV-500 và MIDV-2020; không thiếu source manifest.
+- CORD v2: 800 train, 100 validation, 100 test; decode PASS và không exact duplicate chéo split.
+- FUNSD: canonical root có 199 ảnh/199 annotation, 0 ảnh hỏng; một cây storage trùng đã được ghi nhận và không đếm kép.
+- XFUND: 28 assets, checksum/ZIP safety PASS; 1.043 train và 350 validation images; overlap bằng 0.
+- RVL-CDIP sample: 1.600 ảnh, 16 lớp, 100 ảnh/lớp; hash/decode/balance PASS.
+- SROIE: 626 train và 361 test; tám exact duplicate train/test đã được ghi vào remediation manifest. Processed split giữ test, loại tám bản train trùng và dùng group split SHA-256 để exact duplicate nội bộ không bị tách sang train/validation.
+- Nhánh document chưa có model metric; baseline protocol tách riêng classification, OCR và KIE. Không tuyên bố document model đã train hoặc production-ready.
 
 ## 4. Hạ tầng và pipeline đã hoàn thành
 
@@ -118,7 +128,7 @@ Repo đã được thiết lập với:
 - SHAP global và local cho mô hình được chọn.
 - Lệnh chấm điểm file mới và tạo queue candidate.
 - Khung Net Value có validation, chưa cho phép chạy khi thiếu chi phí nghiệp vụ.
-- Converter và validator YOLO segmentation đã chạy trên dữ liệu thật. YOLOv8n baseline và YOLOv8s candidate đã hoàn tất 100 epoch; YOLOv8s được chọn bằng validation và test chưa chạy.
+- Converter và validator YOLO segmentation đã chạy trên dữ liệu thật. YOLOv8n baseline và YOLOv8s candidate đã hoàn tất 100 epoch; YOLOv8s được chọn bằng validation, checkpoint đã khóa và final test đã chạy đúng một lần trên 419 ảnh/931 instance.
 - Dữ liệu thô, Parquet, dự đoán từng hồ sơ và model artifact được loại khỏi Git.
 
 Pipeline tabular v1 đã được chạy lại thành công bằng một lệnh. DVC báo dữ liệu và pipeline cập nhật. Lần kiểm thử local gần nhất có 20 test đạt; một test tạo symlink được bỏ qua trên Windows vì cần quyền hệ điều hành và sẽ chạy trong môi trường Colab/Linux.
@@ -251,13 +261,11 @@ Cần làm rõ:
 - Dùng `train_fs`/`val_fs` cho mọi so sánh feature policy; không dùng lại frozen test 200 dòng.
 - Sau khi feature policy/model được duyệt và khóa, đánh giá một lần trên external test mới.
 
-### Ưu tiên 2 — Hoàn thành nhánh CarDD độc lập
+### Ưu tiên 2 — Đóng vận hành nhánh CarDD
 
-- Kiểm tra dataset và license.
-- Chuẩn hóa annotation theo format thực tế.
-- Chia train/validation/test theo quy tắc tránh ảnh gần trùng giữa các split.
-- Huấn luyện YOLOv8-seg trên GPU.
-- Báo cáo mAP50, mAP50:95, per-class AP và lỗi điển hình.
+- Lưu bằng chứng prior consent của PIC Lab và citation bắt buộc.
+- Giữ checkpoint/report/execution lock; không chạy lại final test hoặc chọn lại model.
+- Đóng gói inference code/API cho YOLOv8s-seg và tạo error gallery từ artifact hiện có.
 - Giữ kết quả nhánh ảnh độc lập cho đến khi có dữ liệu liên kết claim-level.
 
 ### Ưu tiên 3 — Kiểm chứng dữ liệu và nhãn
@@ -295,7 +303,7 @@ Cần làm rõ:
 
 - Dataset chỉ có 1.000 dòng và 247 fraud; kết quả có độ bất định cao.
 - Prevalence 24,7% khác đáng kể giả định production 5–10%.
-- Recall@10% tối đa trên dữ liệu prevalence 24,7% chỉ khoảng 40,8%; không thể áp KPI production trực tiếp mà không điều chỉnh định nghĩa hoặc scenario.
+- Trần Recall@10% là khoảng 40,5% trên toàn nguồn prevalence 24,7% và khoảng 40,8% trên frozen test prevalence 24,5%; không thể áp KPI 60% trực tiếp mà không đổi scenario/prevalence.
 - Các nguồn multimodal chưa liên kết theo claim.
 - Không được public raw CarDD khi chưa đáp ứng điều kiện license.
 - Kaggle API token đã từng được gửi qua hội thoại; token đó cần được thu hồi và tạo mới. Token không được lưu trong repo hoặc file cấu hình của project.

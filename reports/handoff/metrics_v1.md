@@ -19,7 +19,7 @@ Không diễn giải calibrated score là xác suất production vì prevalence 
 
 Trạng thái protocol: test 200 dòng này sau đó đã được dùng lần hai cho sensitivity check loại `insured_hobbies`, nên không còn untouched cho quyết định feature policy. Mọi lựa chọn feature tiếp theo dùng `train_fs`/`val_fs`; cần external test mới sau khi chốt policy/model.
 
-## CarDD validation — chưa phải final test
+## CarDD validation — dùng để chọn model, tách biệt final test
 
 | Metric | YOLOv8n | YOLOv8s được chọn |
 |---|---:|---:|

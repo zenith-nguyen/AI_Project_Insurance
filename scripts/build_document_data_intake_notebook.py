@@ -405,7 +405,8 @@ elif DOWNLOAD_SROIE_HF_MIRROR:
             "mirror_revision": SROIE_HF_REVISION,
             "local_path": str(output),
             "expected_train_examples": 626,
-            "expected_test_examples": 347,
+            "expected_test_examples": 361,
+            "expected_total_examples": 987,
             "license": "CC-BY-4.0-verify-during-audit",
         },
     )

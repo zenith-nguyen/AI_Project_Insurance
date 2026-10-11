@@ -26,6 +26,8 @@ def test_document_intake_has_governance_and_large_download_gates():
     assert "SROIE_KAGGLE_HANDLE" in combined
     assert '"/versions/" not in SROIE_KAGGLE_HANDLE' in combined
     assert "jsdnrs/ICDAR2019-SROIE" in combined
+    assert '"expected_test_examples": 361' in combined
+    assert '"expected_total_examples": 987' in combined
     assert "bffe40c26759f3376ec2b3ae9031dbba54cd587c" in combined
     assert "expected_train_examples" in combined
     assert "safe_extract_zip" in combined

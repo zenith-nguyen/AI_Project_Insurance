@@ -5,7 +5,7 @@ Ngày cập nhật: 2026-10-10
 ## Trạng thái hiện tại
 
 - Nhánh ảnh CarDD: đã khóa YOLOv8s-seg, hoàn tất final test đúng một lần và có checkpoint kiểm chứng bằng SHA-256.
-- Nhánh chứng từ: đã intake CORD v2, FUNSD và XFUND; SROIE đang chờ archive; MIDV đang ở mức registry; RVL-CDIP sample cần chạy lại bằng loader compatibility fix.
+- Nhánh chứng từ: đã intake và audit CORD v2, FUNSD canonical, XFUND, SROIE mirror pin commit và RVL-CDIP sample 1.600 ảnh. Audit phát hiện tám SROIE train/test duplicate; processed notebook đã chuyển sang group split SHA-256 và chờ một lần rerun PASS. MIDV hoãn theo scope.
 - Nhánh đồ thị: mới ở mức hợp đồng tích hợp; chưa tạo graph feature khi chưa có thực thể và quan hệ bảo hiểm thật.
 
 ## Kiến trúc mục tiêu
@@ -33,7 +33,7 @@ Các nhánh chỉ hợp nhất khi có `claim_id` hợp lệ. Dataset công khai
 
 - Lưu dữ liệu gốc bất biến trong Bronze.
 - Ghi source, version, license, checksum và run record.
-- Kết quả hiện tại: đang thực hiện, ba nguồn chính đã tải.
+- Kết quả hiện tại: hoàn tất registry/intake cho các nguồn trong scope; CORD, FUNSD, XFUND, SROIE và RVL-CDIP sample đã audit file thật.
 
 ### G1 — Data audit
 
@@ -98,8 +98,8 @@ Mỗi task có train/validation/test riêng và model card riêng.
 
 ## Thứ tự triển khai tiếp theo
 
-1. Hoàn tất SROIE/RVL sample và data audit cho các nguồn đã tải.
-2. Chọn schema chứng từ bảo hiểm v1 và ground-truth policy.
+1. Rerun SROIE processed group split để xác minh overlap bằng 0.
+2. Dùng schema và ground-truth policy v1 đã soạn để chuẩn hóa task chứng từ.
 3. Xây baseline OCR/KIE/classification trên validation, chưa mở test cuối.
 4. Chuẩn hóa inference code cho checkpoint CarDD hiện tại.
 5. Tạo FastAPI contract và một UI demo dùng model thật.

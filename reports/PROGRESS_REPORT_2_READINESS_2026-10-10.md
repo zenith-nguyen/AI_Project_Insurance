@@ -5,7 +5,7 @@
 
 ## Tình hình chung
 
-Phần kỹ thuật cốt lõi cho báo cáo lần 2 đã có: audit dữ liệu tabular, data dictionary, leakage check, baseline rule, bốn model tabular, model selection, metrics và phân tích hạn chế. Nhánh CarDD đã hoàn tất training, model selection và final test đúng một lần. YOLOv8s được chọn bằng validation; final-test artifact verification PASS với mask mAP50-95 `0,513978`. Không chạy final test lần hai.
+Phần kỹ thuật cốt lõi cho báo cáo lần 2 đã có: audit dữ liệu tabular và document, data dictionary, leakage check, baseline rule, bốn model tabular, model selection, metrics và phân tích hạn chế. Nhánh CarDD đã hoàn tất training, model selection và final test đúng một lần. YOLOv8s được chọn bằng validation; final-test artifact verification PASS với mask mAP50-95 `0,513978`. Không chạy final test lần hai. Nhánh document đã hoàn tất full audit; processed SROIE đang chờ rerun bản group-aware để đóng data gate.
 
 ## Checklist deliverable
 
@@ -17,17 +17,17 @@ Phần kỹ thuật cốt lõi cho báo cáo lần 2 đã có: audit dữ liệu
 | Stakeholder Map | Nhóm xác nhận đã có ngoài repo kỹ thuật | Artifact business do nhóm quản lý | Không làm lại trong nhánh kỹ thuật |
 | KPI Tree | Một phần | AP, ROC-AUC, Recall@K, Precision@K, queue rate, calibration | Nối business KPI → operation KPI → model metric |
 | Competitor/Product Comparison | Nhóm xác nhận đã có ngoài repo kỹ thuật | Artifact business do nhóm quản lý | Không làm lại trong nhánh kỹ thuật |
-| Data Source Plan | Đã có v1 và audit link | `DOCUMENT_DATA_SOURCE_PLAN_V1.md`, `DOCUMENT_SOURCE_LINK_AUDIT_V1.md` | Audit sáu thư mục dữ liệu thật |
+| Data Source Plan | Hoàn thành v1 và audit file thật | `DOCUMENT_DATA_SOURCE_PLAN_V1.md`, `DOCUMENT_SOURCE_LINK_AUDIT_V1.md`, `DOCUMENT_DATA_AUDIT_RUN_2026-10-11.md` | Chạy lại SROIE processed group split |
 | Risk Register | Có phần kỹ thuật v2 | `risk_register_v2_additions.md` | Ghép với Risk Register v1 của nhóm thành một bảng |
 | Backlog + Sprint Plan | Nhóm xác nhận đã có ngoài repo kỹ thuật | Artifact business do nhóm quản lý | Không làm lại trong nhánh kỹ thuật |
 | Mockup/user workflow | Nhóm xác nhận đã có ngoài repo kỹ thuật | Artifact business do nhóm quản lý | Không làm lại trong nhánh kỹ thuật |
-| Data Audit Report | Hoàn thành v1 | `data_audit_report.md`, CarDD audit | Thêm audit document sau inventory |
-| Data Dictionary/KB Audit | Tabular đã hoàn thành; document integration schema v1 đã có | `data_dictionary.md`, `DOCUMENT_CLAIM_INTEGRATION_CONTRACT_V1.md` | Audit field dictionary trên dữ liệu document thật |
-| EDA/source analysis | Hoàn thành cho tabular và CarDD | status report, leakage/robustness, CarDD reports | Chưa có EDA sáu nguồn document |
-| Ground Truth Definition | Một phần | Fraud target và CarDD annotation đã mô tả | Viết protocol OCR/KIE; RAG citation policy chỉ khi dùng RAG |
-| Data Leakage Check | Hoàn thành v1 | `reports/leakage/`, feature policy, split near-duplicate CarDD | Document split leakage chưa audit |
+| Data Audit Report | Hoàn thành tabular, CarDD và document v1 | `data_audit_report.md`, `DOCUMENT_DATA_AUDIT_RUN_2026-10-11.md` | Bổ sung processed PASS khi rerun |
+| Data Dictionary/KB Audit | Hoàn thành trong scope hiện tại | `data_dictionary.md`, `DOCUMENT_CLAIM_INTEGRATION_CONTRACT_V1.md`, `GROUND_TRUTH_DEFINITION_V1.md` | Mở rộng khi có schema chứng từ bảo hiểm thật |
+| EDA/source analysis | Hoàn thành v1 | `DOCUMENT_EDA_SOURCE_ANALYSIS_V1.md`, source audit và CarDD reports | Bổ sung gallery nếu cần trình bày |
+| Ground Truth Definition | Hoàn thành v1 | `GROUND_TRUTH_DEFINITION_V1.md` | RAG citation policy chỉ mở nếu chọn RAG |
+| Data Leakage Check | Hoàn thành audit và remediation | `DATA_LEAKAGE_CHECK_V1.md`, SROIE diagnostic, CarDD split audit | Rerun processed group split; near-duplicate review trước benchmark cuối |
 | Baseline process/model | Hoàn thành | Rule + XGBoost tabular; YOLOv8n/YOLOv8s CarDD; final test đã khóa | Không chạy lại CarDD test |
-| Model Selection Matrix | Hoàn thành tabular; CarDD đã khóa | `model_selection_matrix.md`, `CARDD_MODEL_SELECTION_V1.md` | Thêm document build/buy matrix sau audit |
+| Model Selection Matrix | Hoàn thành tabular/CarDD; document protocol đã có | `model_selection_matrix.md`, `CARDD_MODEL_SELECTION_V1.md`, `DOCUMENT_MODEL_BASELINE_PLAN_V1.md` | Điền metric document sau baseline run |
 | Metrics v1 | Hoàn thành tabular và CarDD | `metrics_v1.md`, `CARDD_FINAL_TEST_V1.md`, CarDD JSON reports trên Drive | Bổ sung error gallery/model card nếu cần trình bày |
 | RAG prompt/retrieval test | Chưa áp dụng | Chưa chọn RAG làm baseline | Chỉ làm nếu scope chính thức có RAG |
 
@@ -62,8 +62,8 @@ Phần kỹ thuật cốt lõi cho báo cáo lần 2 đã có: audit dữ liệu
 
 ## Ưu tiên tiếp theo
 
-1. Inventory sáu nguồn document đã có; kiểm tra license, schema, split và dung lượng.
-2. Chọn một baseline document nhỏ, tránh tải/chạy toàn bộ RVL-CDIP khi chưa cần.
+1. Chạy lại SROIE processed group split và lưu report PASS.
+2. Chạy baseline document nhỏ trên split đã khóa; không tải/chạy toàn bộ RVL-CDIP khi chưa cần.
 3. Hoàn thiện model card/error gallery CarDD nếu cần cho buổi trình bày; không mở lại model selection.
 4. Không làm lại các artifact business mà nhóm đã xác nhận đang có; chỉ tham chiếu chúng khi trình bày.
 5. Chỉ mở nhánh NetworkX khi có entity-edge và `event_time`; dữ liệu document công khai không tạo được graph fraud claim-level.

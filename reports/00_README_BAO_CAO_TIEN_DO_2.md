@@ -19,6 +19,8 @@ Mở tài liệu theo thứ tự sau để trình bày trực tiếp:
 15. `DATA_LEAKAGE_CHECK_V1.md` — kết quả leakage và remediation.
 16. `DOCUMENT_EDA_SOURCE_ANALYSIS_V1.md` — EDA/phân tích nguồn.
 17. `REPORT_REQUIREMENTS_COVERAGE_V1.md` — đối chiếu từng yêu cầu mục 6.2.
+18. `PRODUCT_MODEL_AND_USAGE_V1.md` — sản phẩm, model stack và cách đưa model vào sử dụng.
+19. `CARDD_PICLAB_CONSENT_ACTION_V1.md` — kế hoạch đóng bằng chứng prior consent.
 
 ## Trạng thái cần nói rõ
 

@@ -2,7 +2,7 @@
 
 **Ngày chạy:** 07/10/2026  
 **Nguồn:** log Colab và `cardd_yolo_validation_before_training_v2.json` / `cardd_yolov8n_seg_val_v2.json` trên Google Drive  
-**Trạng thái test:** chưa sử dụng; `RUN_FINAL_TEST = False`
+**Trạng thái tại thời điểm baseline:** test chưa được sử dụng; `RUN_FINAL_TEST = False`. Sau model selection, YOLOv8s được khóa và final test đã chạy đúng một lần; xem `CARDD_FINAL_TEST_V1.md`.
 
 ## Dữ liệu và môi trường
 
@@ -42,7 +42,7 @@ Baseline đã học được tín hiệu segmentation rõ ràng và pipeline GPU
 
 Confusion matrix chuẩn hóa và ba batch prediction được xem ngày 07/10/2026 cho thấy tỷ lệ đúng trên đường chéo lần lượt khoảng 0,64 (`crack`), 0,71 (`dent`), 0,96 (`glass shatter`), 0,79 (`lamp broken`), 0,74 (`scratch`) và 0,76 (`tire flat`) tại cấu hình vẽ confusion matrix của Ultralytics. Cột background cho thấy false positive tập trung nhiều ở `scratch`, `dent` và `crack`. Prediction mẫu cũng có các mask `scratch`/`dent` phủ rộng hoặc chồng lấn, trong khi vết nứt nhỏ có confidence và chất lượng biên thấp. Đây là quan sát định tính từ validation, không phải metric test.
 
-Kết quả trên là validation để chọn mô hình. Chưa có metric test và không được dùng các con số này để tuyên bố production readiness hay khả năng phát hiện gian lận. CarDD chỉ đo nhận diện hư hại; chưa có `claim_id` chung với dữ liệu fraud tabular.
+Kết quả trên là validation lịch sử của baseline để chọn mô hình. Metric test hiện đã có cho checkpoint YOLOv8s được chọn, nhưng không làm thay đổi kết quả baseline này. Không dùng các con số CarDD để tuyên bố production readiness hay khả năng phát hiện gian lận. CarDD chỉ đo nhận diện hư hại; chưa có `claim_id` chung với dữ liệu fraud tabular.
 
 ## Quyết định trước final test
 
