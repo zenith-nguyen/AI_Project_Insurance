@@ -24,7 +24,30 @@ Hệ thống trả về vùng hư hỏng, nội dung trích xuất từ chứng 
 | Trích xuất ngày và tổng tiền | LayoutLMv3 đạt validation F1 0,9214, cao hơn rule baseline 0,6834 | Đã chọn candidate; chưa mở final test |
 | Kiểm tra nhất quán | Đã có rule so sánh số tiền, ngày và biển số | Demo kỹ thuật PASS |
 | Quan hệ NetworkX | Đã tính được degree, shared entity, component và two-hop claim theo point-in-time | Demo kỹ thuật PASS |
-| Giao diện | Đã chọn phương án hợp nhất Workbench + Evidence Ledger + Triage Map | Prototype hợp nhất đã có |
+| Giao diện | Hợp nhất xử lý claim, evidence/audit và relationship view | Prototype v2 có hướng dẫn thao tác đã có |
+
+## Chúng ta đang dùng model và công nghệ nào?
+
+Dự án không phải một model duy nhất. Đây là một chuỗi module, mỗi module xử lý một loại bằng chứng:
+
+| Nhu cầu | Công nghệ/model hiện tại | Đầu ra cho sản phẩm |
+| --- | --- | --- |
+| Xếp hạng rủi ro từ dữ liệu hồ sơ | XGBoost, so với Logistic Regression/Random Forest/LightGBM | Điểm ưu tiên và explanation; không phải kết luận fraud |
+| Nhận diện vùng hư hỏng | YOLOv8s-seg | Mask và loại hư hỏng trên ảnh xe |
+| Nhận biết loại chứng từ | Microsoft DiT fine-tuned RVL-CDIP | Invoice, form, letter, ID-like và các loại tài liệu khác |
+| Đọc chữ | PaddleOCR | Text và vị trí chữ trên trang |
+| Trích xuất trường | LayoutLMv3 token classification | Ngày và tổng tiền; sẽ mở rộng khi có nhãn nghiệp vụ |
+| Đối chiếu dữ liệu | Python consistency rules | Cờ lệch số tiền, ngày, biển số và trường bắt buộc |
+| Phân tích quan hệ | NetworkX | Shared entity, degree, component và two-hop claims |
+| Cung cấp cho UI | FastAPI theo kế hoạch | Một response thống nhất theo `claim_id` |
+
+XGBoost là model tổng hợp hiện tại cho nhánh tabular. Các tín hiệu ảnh, chứng từ và graph chưa được phép ghép giả theo từng dòng vì public datasets không có `claim_id` chung. Khi có dữ liệu liên kết thật, output của các module mới trở thành feature/evidence cho bước xếp hạng tổng hợp.
+
+## Kết quả XGBoost cần nói đúng
+
+Trong cross-validation dùng để chọn model, XGBoost đạt AP 0,706 và Recall@10% 30,3%. Sau khi chọn, kết quả frozen test là AP 0,559 và Recall@10% 22,4%; rule baseline đạt 16,3%. Vì vậy model tăng 6,1 điểm phần trăm so với rule nhưng chưa đạt mục tiêu tương đối +10 điểm.
+
+Không dùng KPI tuyệt đối Recall@10% ≥ 60% trên dataset prevalence 24,7%, vì trần toán học chỉ khoảng 40,5%. KPI phải được xác nhận lại theo prevalence và review capacity thực tế.
 
 ## Các phát hiện quan trọng
 

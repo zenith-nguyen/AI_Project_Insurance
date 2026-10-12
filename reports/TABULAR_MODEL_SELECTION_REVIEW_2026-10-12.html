@@ -1,0 +1,124 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Rà soát lựa chọn mô hình XGBoost</title><style>
+:root{--ink:#172326;--muted:#647579;--line:#d9e1e0;--navy:#142d33;--teal:#17877f;--paper:#f5f7f7;--warn:#fff4df}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.62 "Segoe UI",Arial,sans-serif}
+header{background:var(--navy);color:white;padding:34px max(28px,calc((100vw - 1100px)/2))}header b{font-size:14px;letter-spacing:.11em;color:#8fd0c7}header h1{margin:7px 0 0;font-size:34px}
+main{max-width:1100px;margin:28px auto;background:white;border:1px solid var(--line);padding:42px 52px}h1{font-size:32px}h2{font-size:23px;margin-top:38px;padding-top:8px;border-top:2px solid var(--navy)}h3{font-size:18px;margin-top:28px;color:#174f52}p,li{max-width:92ch}table{width:100%;border-collapse:collapse;margin:18px 0 25px;font-size:14px}th,td{padding:11px 12px;border:1px solid var(--line);vertical-align:top}th{background:#eaf2f1;text-align:left}blockquote{margin:18px 0;padding:14px 18px;border-left:4px solid var(--teal);background:#eff8f6}code{background:#eef2f1;padding:2px 5px;border-radius:3px}strong{color:#102f32}a{color:#08756e}.footer{max-width:1100px;margin:0 auto 30px;color:var(--muted);font-size:12px}@media print{body{background:white}header{padding:20px 0;color:#172326;background:white;border-bottom:3px solid #142d33}main{border:0;margin:0 auto;padding:25px 0}h2{break-after:avoid}table{break-inside:avoid}.footer{display:none}}@media(max-width:760px){main{margin:0;padding:24px 18px;border:0}header{padding:25px 18px}table{font-size:12px;display:block;overflow:auto}}
+</style></head><body><header><b>AI PROJECT INSURANCE · 12/10/2026</b><h1>Rà soát lựa chọn mô hình XGBoost</h1></header><main><h1>Rà soát nội dung lựa chọn mô hình tabular</h1>
+<h2>Nhận xét chung</h2>
+<p>Bản thảo của nhóm có bố cục và lập luận đúng hướng: xuất phát từ năng lực review giới hạn, dùng metric phù hợp với bài toán xếp hạng, so sánh baseline với ứng viên phức tạp hơn và không đồng nhất “tốt nhất trong số đã thử” với “đã đạt KPI”. Tuy nhiên cần sửa một số điểm để khớp với bằng chứng đã chạy.</p>
+<h2>Các điểm cần sửa</h2>
+<h3>1. Tách kết quả cross-validation và frozen test</h3>
+<p><code>Recall@10% = 30,3%</code> là trung bình từ repeated cross-validation trên 700 dòng train. Đây là số dùng để <strong>chọn model</strong>.</p>
+<p>Sau khi chọn XGBoost, kết quả trên frozen test 200 hồ sơ là:</p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th style="text-align: right;">XGBoost</th>
+<th style="text-align: right;">Rule baseline</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Average Precision</td>
+<td style="text-align: right;">0,559</td>
+<td style="text-align: right;">0,424</td>
+</tr>
+<tr>
+<td>ROC-AUC</td>
+<td style="text-align: right;">0,825</td>
+<td style="text-align: right;">0,721</td>
+</tr>
+<tr>
+<td>Recall@10%</td>
+<td style="text-align: right;">22,4%</td>
+<td style="text-align: right;">16,3%</td>
+</tr>
+<tr>
+<td>Precision@10%</td>
+<td style="text-align: right;">55,0%</td>
+<td style="text-align: right;">40,0%</td>
+</tr>
+</tbody>
+</table>
+<p>Vì vậy không được dùng 30,3% như kết quả cuối cùng của model.</p>
+<h3>2. KPI Recall@10% ≥ 60% không khả thi trên dataset hiện tại</h3>
+<p>Dataset có prevalence fraud khoảng 24,7%. Nếu chỉ được review 10% hồ sơ thì ngay cả khi xếp hạng hoàn hảo, Recall@10% tối đa chỉ là:</p>
+<p><code>10% / 24,7% ≈ 40,5%</code>.</p>
+<p>Trên frozen test prevalence 24,5%, trần tương ứng khoảng 40,8%. KPI tuyệt đối 60% chỉ có thể đánh giá trong một bối cảnh prevalence thấp hơn hoặc khi tăng review capacity. Ví dụ, với prevalence 24,7%, muốn Recall 60% thì queue tối thiểu về mặt toán học đã khoảng 14,8%, kể cả khi model hoàn hảo.</p>
+<p>Đề xuất thay KPI hiện tại bằng một trong hai cách:</p>
+<ul>
+<li>KPI tương đối: XGBoost phải tăng Recall@10% ít nhất 10 điểm phần trăm so với rule baseline; hoặc</li>
+<li>KPI vận hành theo scenario: đặt Recall@K cho prevalence và review capacity đã được nghiệp vụ xác nhận.</li>
+</ul>
+<p>Theo KPI tương đối đang dùng, XGBoost tăng 6,1 điểm phần trăm và <strong>chưa đạt mục tiêu +10 điểm</strong>.</p>
+<h3>3. Hold-out test và calibration đã được thực hiện</h3>
+<p>Bản thảo không nên viết “giai đoạn tiếp theo sẽ đánh giá trên hold-out test” vì frozen test đã được chạy. Calibration cũng đã được đo:</p>
+<ul>
+<li>Brier score: 0,139;</li>
+<li>ECE 10 bins: 0,095.</li>
+</ul>
+<p>Frozen test đã được dùng lại cho một phân tích feature-policy, nên không còn untouched cho lựa chọn feature tiếp theo. Sau khi thêm S1–S5 hoặc thay feature policy, phải dùng <code>train_fs</code>/<code>val_fs</code> để phát triển và một external test mới để đánh giá cuối.</p>
+<h3>4. Mức cải thiện so với Logistic Regression còn nhỏ</h3>
+<p>XGBoost có AP 0,706 so với Logistic Regression 0,671, chênh lệch 0,035. XGBoost là model tốt nhất quan sát được trong bốn cấu hình, nhưng chưa có paired confidence interval hoặc statistical comparison giữa hai model trên cùng fold. Vì vậy nên viết “đạt trung bình cao nhất” thay cho “chứng minh vượt trội ổn định”.</p>
+<h3>5. Làm rõ nguyên tắc chọn model</h3>
+<p>Trong protocol hiện tại, Average Precision là tiêu chí lựa chọn chính; Recall@10% và ROC-AUC là metric hỗ trợ. Nếu nhóm tuyên bố Recall@10% là KPI quan trọng nhất, nên viết rõ quy tắc theo thứ tự:</p>
+<ol>
+<li>loại model không đáp ứng data/leakage gate;</li>
+<li>chọn model có AP trung bình cao nhất;</li>
+<li>dùng Recall@10% và độ ổn định giữa folds để kiểm tra khả năng vận hành;</li>
+<li>chỉ chọn model phức tạp hơn khi mức tăng đủ lớn và rủi ro bias được chấp nhận.</li>
+</ol>
+<p>Trong lần chạy hiện tại, cả AP và Recall@10% đều cùng chọn XGBoost nên quyết định không thay đổi.</p>
+<h2>Phiên bản nội dung đề xuất</h2>
+<h3>Mục tiêu và protocol</h3>
+<p>Mô hình tabular tạo điểm ưu tiên để xếp hạng hồ sơ cho hàng đợi rà soát, không tự kết luận gian lận. Do năng lực rà soát giới hạn ở khoảng 10% số hồ sơ, nhóm theo dõi Recall@10% và Precision@10%. Average Precision được khóa làm tiêu chí lựa chọn chính vì đánh giá chất lượng xếp hạng trên toàn dải threshold trong bài toán mất cân bằng.</p>
+<p>Bốn mô hình Logistic Regression, Random Forest, XGBoost và LightGBM được đánh giá bằng Repeated Stratified 5-fold Cross-Validation × 5 repeats trên 700 dòng train. Preprocessing được fit riêng trong từng fold.</p>
+<table>
+<thead>
+<tr>
+<th>Mô hình</th>
+<th style="text-align: right;">CV Average Precision</th>
+<th style="text-align: right;">CV Recall@10%</th>
+<th style="text-align: right;">CV ROC-AUC</th>
+<th>Quyết định</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Logistic Regression</td>
+<td style="text-align: right;">0,671</td>
+<td style="text-align: right;">29,7%</td>
+<td style="text-align: right;">0,867</td>
+<td>Baseline</td>
+</tr>
+<tr>
+<td>Random Forest</td>
+<td style="text-align: right;">0,599</td>
+<td style="text-align: right;">24,8%</td>
+<td style="text-align: right;">0,840</td>
+<td>Không chọn</td>
+</tr>
+<tr>
+<td>XGBoost</td>
+<td style="text-align: right;"><strong>0,706</strong></td>
+<td style="text-align: right;"><strong>30,3%</strong></td>
+<td style="text-align: right;"><strong>0,870</strong></td>
+<td><strong>Được chọn</strong></td>
+</tr>
+<tr>
+<td>LightGBM</td>
+<td style="text-align: right;">0,653</td>
+<td style="text-align: right;">29,6%</td>
+<td style="text-align: right;">0,837</td>
+<td>Không chọn</td>
+</tr>
+</tbody>
+</table>
+<p>XGBoost có trung bình cao nhất trên cả ba metric và được chọn làm candidate tabular v1. Logistic Regression được giữ làm baseline đơn giản. Chênh lệch AP giữa XGBoost và Logistic Regression là 0,035; do chưa có paired uncertainty comparison, kết luận phù hợp là XGBoost tốt nhất trong các cấu hình đã thử, không phải đã chứng minh ưu thế ổn định trong production.</p>
+<h3>Kết quả frozen test</h3>
+<p>Sau khi lựa chọn bằng CV, XGBoost đạt AP 0,559, ROC-AUC 0,825, Recall@10% 22,4% và Precision@10% 55,0% trên frozen test 200 hồ sơ. Rule baseline đạt Recall@10% 16,3%, vì vậy model cải thiện 6,1 điểm phần trăm nhưng chưa đạt KPI tương đối +10 điểm.</p>
+<p>KPI tuyệt đối Recall@10% ≥ 60% không thể áp trực tiếp cho dataset prevalence 24,7%, vì trần lý thuyết chỉ khoảng 40,5%. Nhóm cần xác nhận lại KPI theo production prevalence và review capacity.</p>
+<h3>Giới hạn và bước tiếp theo</h3>
+<p>Nhãn <code>fraud_reported</code> được dùng như observed fraud status; provenance chưa đủ để xem là verified actual fraud. Model hiện có thể học khả năng một hồ sơ bị báo cáo/phát hiện là gian lận, chưa chứng minh xác suất gian lận thực tế.</p>
+<p>Frozen test đã được dùng lại cho sensitivity analysis và không còn được dùng để chọn feature. Các đặc trưng S1–S5 mới sẽ được phát triển trên <code>train_fs</code>/<code>val_fs</code>. Sau khi khóa feature policy, model và calibration, nhóm cần một external test mới có provenance rõ hơn.</p></main><div class="footer">Bản trình bày được tạo từ tài liệu nguồn trong repository; số liệu nghiên cứu không phải cam kết production.</div></body></html>

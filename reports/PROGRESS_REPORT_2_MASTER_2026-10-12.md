@@ -35,6 +35,23 @@ Hai phát hiện quan trọng nhất:
 
 ## 4. Baseline và evaluation v1
 
+### 4.0. Mô hình xếp hạng rủi ro tabular
+
+Bốn model được so sánh bằng Repeated Stratified 5-fold Cross-Validation × 5 repeats trên 700 dòng train. Preprocessing được fit riêng trong từng fold. Average Precision là tiêu chí chọn chính; Recall@10% và ROC-AUC là metric hỗ trợ.
+
+| Model | CV AP | CV Recall@10% | CV ROC-AUC | Quyết định |
+| --- | ---: | ---: | ---: | --- |
+| Logistic Regression | 0,671 | 29,7% | 0,867 | Baseline đơn giản |
+| Random Forest | 0,599 | 24,8% | 0,840 | Không chọn |
+| XGBoost | **0,706** | **30,3%** | **0,870** | **Được chọn** |
+| LightGBM | 0,653 | 29,6% | 0,837 | Không chọn |
+
+Sau khi chọn bằng CV, XGBoost đạt AP 0,559, ROC-AUC 0,825, Recall@10% 22,4% và Precision@10% 55,0% trên frozen test 200 hồ sơ. Rule baseline đạt Recall@10% 16,3%, nên mức tăng thực tế là 6,1 điểm phần trăm và chưa đạt KPI tương đối +10 điểm.
+
+KPI tuyệt đối Recall@10% ≥ 60% không thể dùng trực tiếp trên dataset prevalence 24,7%; ngay cả model xếp hạng hoàn hảo cũng chỉ có trần khoảng 40,5%. Nhóm phải xác nhận KPI theo prevalence và review capacity của bối cảnh vận hành.
+
+XGBoost là model tốt nhất quan sát được trong bốn cấu hình, nhưng chênh lệch CV AP so với Logistic Regression chỉ là 0,035 và chưa có paired uncertainty comparison. Vì vậy báo cáo không tuyên bố XGBoost đã chứng minh ưu thế ổn định trong production.
+
 ### 4.1. Ảnh hư hỏng xe
 
 YOLOv8n-seg được dùng làm baseline. YOLOv8s-seg tăng validation mask mAP50-95 từ 0,5175 lên 0,5284, đạt quy tắc tăng tối thiểu 0,01 đã đặt trước. Checkpoint được khóa bằng SHA-256 trước khi mở test.
@@ -68,6 +85,32 @@ Sản phẩm là một reviewer console gồm bốn màn hình trong cùng ứng
 
 UI dùng fixture JSON trong giai đoạn prototype và chuyển sang FastAPI khi inference service hoàn thành. Model chỉ đưa ra evidence và đề xuất route; người duyệt giữ quyền quyết định.
 
+### Model và công nghệ trong hệ thống
+
+| Module | Công nghệ | Hiệu quả hiện tại | Vai trò trong UI |
+| --- | --- | --- | --- |
+| Tabular risk | XGBoost + sigmoid calibration | Frozen-test AP 0,559; Recall@10% 22,4% | Sắp xếp hàng chờ và explanation |
+| Damage image | Ultralytics YOLOv8s-seg | Final-test mask mAP50-95 0,5140 | Hiển thị mask và cảnh báo lớp yếu |
+| Document type | Microsoft DiT | Independent macro-F1 0,9283 | Điều hướng tài liệu vào đúng pipeline |
+| OCR | PaddleOCR | CER 0,4097; WER 0,5592 | Text và bounding boxes để GĐV đối chiếu |
+| KIE | LayoutLMv3 | Validation field F1 0,9214 | Trích xuất `date` và `total` |
+| Consistency | Python rules | Engineering demo PASS | Cờ lệch số tiền, ngày, biển số |
+| Relationships | NetworkX | Point-in-time demo PASS | Shared entity và liên kết claim |
+| Serving | FastAPI, dự kiến Docker | Chưa đóng gói | Hợp nhất response theo `claim_id` |
+
+Đây là kiến trúc nhiều model. Không có một “siêu model” duy nhất đọc toàn bộ ảnh, tài liệu và graph ở giai đoạn hiện tại. Cách tách module giúp kiểm tra từng nguồn bằng chứng, thay model độc lập và hiển thị provenance cho người duyệt.
+
+### Luồng sử dụng của GĐV trong prototype v2
+
+1. Mở hồ sơ từ hàng chờ ưu tiên.
+2. Đọc lý do hồ sơ được ưu tiên bằng ngôn ngữ nghiệp vụ.
+3. Mở ảnh, chứng từ hoặc quan hệ tương ứng với từng cảnh báo.
+4. Đối chiếu bằng chứng gốc; sửa trường OCR/KIE nếu cần.
+5. Chọn tiếp tục xử lý, yêu cầu bổ sung hoặc chuyển rà soát chuyên sâu.
+6. Ghi lý do; hệ thống lưu người thực hiện, thời gian, model version và thay đổi.
+
+Điểm rủi ro không được gọi là xác suất gian lận nếu chưa được calibration trên prevalence production. UI không có nút “từ chối tự động”.
+
 ## 6. Giới hạn cần trình bày trung thực
 
 - Public datasets chưa đại diện đầy đủ cho bảo hiểm xe tại Việt Nam.
@@ -79,13 +122,39 @@ UI dùng fixture JSON trong giai đoạn prototype và chuyển sang FastAPI khi
 
 ## 7. Kế hoạch giai đoạn kế tiếp
 
-1. Review checkpoint/report rồi chạy LayoutLMv3 final test đúng một lần.
-2. Đăng ký tất cả model và schema trong model registry.
-3. Đóng gói inference bằng FastAPI.
-4. Nối prototype hợp nhất với fixture rồi với live API.
-5. Tạo golden set end-to-end theo `claim_id`.
-6. Cải thiện OCR và các lớp CarDD yếu bằng error analysis trên train/validation hoặc dữ liệu miền mới.
-7. Thu thập dữ liệu nghiệp vụ có consent, PII policy và quy trình xác lập ground truth.
+### Mốc A — Khóa bằng chứng model hiện tại
+
+1. Tạo protocol final test LayoutLMv3, xác minh checkpoint hash và chạy đúng một lần trên 361 SROIE test.
+2. Không dùng kết quả test để quay lại chọn epoch, sửa alignment hoặc thay hyperparameter.
+3. Chốt model card và error analysis theo `date`/`total`.
+
+### Mốc B — Đóng gói model cho prototype
+
+1. Tạo model registry chứa model name, version, checkpoint SHA-256, schema, metric và trạng thái gate.
+2. Đóng gói adapter riêng cho XGBoost, YOLO, DiT/OCR/LayoutLMv3, consistency và NetworkX.
+3. Tạo FastAPI `/health`, `/version` và `/claims/{claim_id}/analyze`.
+4. Dùng fixture adapter để nhóm UI phát triển độc lập với GPU; live adapter giữ cùng response schema.
+
+### Mốc C — Clickable MVP
+
+1. Dùng `prototype/insurance_review_console_v2.html` làm UX reference.
+2. Hoàn thiện hàng chờ, bằng chứng, corrections, quyết định và audit log.
+3. Tạo 5–10 golden claims giả lập hoặc đã ẩn danh có cùng `claim_id` xuyên suốt mọi nguồn.
+4. Chạy contract test và end-to-end test trên golden set.
+
+### Mốc D — Cải thiện chất lượng
+
+1. OCR: phân loại lỗi theo ảnh mờ, xoay, chữ nhỏ, dấu phân cách tiền; thử preprocessing và cấu hình OCR trên cùng validation.
+2. CarDD: tạo error gallery cho `crack`, `dent`, `scratch`; chỉ cải thiện bằng train/validation hoặc dữ liệu miền mới, không tối ưu theo final test.
+3. Tabular: phát triển feature S1–S5 trên `train_fs`/`val_fs`; không dùng lại frozen test để chọn feature.
+4. Graph: thu thập entity/edge có timestamp thật rồi mới đánh giá fraud lift.
+
+### Mốc E — Điều kiện trước pilot
+
+1. Dữ liệu bảo hiểm Việt Nam có consent và chính sách PII.
+2. Ground-truth/adjudication protocol và external test mới.
+3. Security, load, monitoring, rollback và UAT.
+4. KPI được xác nhận lại theo prevalence, review capacity, SIU capacity và chi phí thực tế.
 
 ## 8. Kết luận
 

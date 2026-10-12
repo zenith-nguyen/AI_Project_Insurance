@@ -1,0 +1,166 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cập nhật dự án cho nhóm</title><style>
+:root{--ink:#172326;--muted:#647579;--line:#d9e1e0;--navy:#142d33;--teal:#17877f;--paper:#f5f7f7;--warn:#fff4df}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.62 "Segoe UI",Arial,sans-serif}
+header{background:var(--navy);color:white;padding:34px max(28px,calc((100vw - 1100px)/2))}header b{font-size:14px;letter-spacing:.11em;color:#8fd0c7}header h1{margin:7px 0 0;font-size:34px}
+main{max-width:1100px;margin:28px auto;background:white;border:1px solid var(--line);padding:42px 52px}h1{font-size:32px}h2{font-size:23px;margin-top:38px;padding-top:8px;border-top:2px solid var(--navy)}h3{font-size:18px;margin-top:28px;color:#174f52}p,li{max-width:92ch}table{width:100%;border-collapse:collapse;margin:18px 0 25px;font-size:14px}th,td{padding:11px 12px;border:1px solid var(--line);vertical-align:top}th{background:#eaf2f1;text-align:left}blockquote{margin:18px 0;padding:14px 18px;border-left:4px solid var(--teal);background:#eff8f6}code{background:#eef2f1;padding:2px 5px;border-radius:3px}strong{color:#102f32}a{color:#08756e}.footer{max-width:1100px;margin:0 auto 30px;color:var(--muted);font-size:12px}@media print{body{background:white}header{padding:20px 0;color:#172326;background:white;border-bottom:3px solid #142d33}main{border:0;margin:0 auto;padding:25px 0}h2{break-after:avoid}table{break-inside:avoid}.footer{display:none}}@media(max-width:760px){main{margin:0;padding:24px 18px;border:0}header{padding:25px 18px}table{font-size:12px;display:block;overflow:auto}}
+</style></head><body><header><b>AI PROJECT INSURANCE · 12/10/2026</b><h1>Cập nhật dự án cho nhóm</h1></header><main><h1>Cập nhật dự án cho cả nhóm — 12/10/2026</h1>
+<h2>Dự án đang làm sản phẩm gì?</h2>
+<p>Nhóm đang xây dựng <strong>Insurance Review Console</strong>: một công cụ hỗ trợ nhân viên bảo hiểm tiếp nhận và rà soát hồ sơ bồi thường xe.</p>
+<p>Hệ thống nhận bốn nhóm thông tin:</p>
+<ol>
+<li>thông tin khai báo của hồ sơ;</li>
+<li>ảnh hư hỏng xe;</li>
+<li>hóa đơn, biên bản và giấy tờ;</li>
+<li>mối quan hệ giữa claim, khách hàng, xe và đơn vị sửa chữa.</li>
+</ol>
+<p>Hệ thống trả về vùng hư hỏng, nội dung trích xuất từ chứng từ, các điểm không nhất quán và hồ sơ cần ưu tiên xem xét. <strong>Hệ thống không tự kết luận gian lận và không tự từ chối bồi thường.</strong> Quyết định cuối cùng vẫn thuộc về người duyệt.</p>
+<h2>Những phần đã hoàn thành</h2>
+<table>
+<thead>
+<tr>
+<th>Phần việc</th>
+<th>Kết quả dễ hiểu</th>
+<th>Trạng thái</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Quản lý dữ liệu</td>
+<td>Đã lập danh mục nguồn, kiểm tra file hỏng, bản trùng và rò rỉ giữa các tập dữ liệu</td>
+<td>Hoàn thành cho phạm vi báo cáo</td>
+</tr>
+<tr>
+<td>Ảnh hư hỏng xe</td>
+<td>Đã chọn YOLOv8s, khóa checkpoint và chạy final test đúng một lần</td>
+<td>Hoàn thành bản nghiên cứu v1</td>
+</tr>
+<tr>
+<td>Phân loại chứng từ</td>
+<td>DiT đạt macro-F1 0,9283 trên tập validation độc lập 320 ảnh</td>
+<td>Hoàn thành validation v1</td>
+</tr>
+<tr>
+<td>Đọc chữ</td>
+<td>PaddleOCR đã chạy đủ baseline; CER 0,4097 và WER 0,5592</td>
+<td>Chạy được nhưng cần cải thiện</td>
+</tr>
+<tr>
+<td>Trích xuất ngày và tổng tiền</td>
+<td>LayoutLMv3 đạt validation F1 0,9214, cao hơn rule baseline 0,6834</td>
+<td>Đã chọn candidate; chưa mở final test</td>
+</tr>
+<tr>
+<td>Kiểm tra nhất quán</td>
+<td>Đã có rule so sánh số tiền, ngày và biển số</td>
+<td>Demo kỹ thuật PASS</td>
+</tr>
+<tr>
+<td>Quan hệ NetworkX</td>
+<td>Đã tính được degree, shared entity, component và two-hop claim theo point-in-time</td>
+<td>Demo kỹ thuật PASS</td>
+</tr>
+<tr>
+<td>Giao diện</td>
+<td>Hợp nhất xử lý claim, evidence/audit và relationship view</td>
+<td>Prototype v2 có hướng dẫn thao tác đã có</td>
+</tr>
+</tbody>
+</table>
+<h2>Chúng ta đang dùng model và công nghệ nào?</h2>
+<p>Dự án không phải một model duy nhất. Đây là một chuỗi module, mỗi module xử lý một loại bằng chứng:</p>
+<table>
+<thead>
+<tr>
+<th>Nhu cầu</th>
+<th>Công nghệ/model hiện tại</th>
+<th>Đầu ra cho sản phẩm</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Xếp hạng rủi ro từ dữ liệu hồ sơ</td>
+<td>XGBoost, so với Logistic Regression/Random Forest/LightGBM</td>
+<td>Điểm ưu tiên và explanation; không phải kết luận fraud</td>
+</tr>
+<tr>
+<td>Nhận diện vùng hư hỏng</td>
+<td>YOLOv8s-seg</td>
+<td>Mask và loại hư hỏng trên ảnh xe</td>
+</tr>
+<tr>
+<td>Nhận biết loại chứng từ</td>
+<td>Microsoft DiT fine-tuned RVL-CDIP</td>
+<td>Invoice, form, letter, ID-like và các loại tài liệu khác</td>
+</tr>
+<tr>
+<td>Đọc chữ</td>
+<td>PaddleOCR</td>
+<td>Text và vị trí chữ trên trang</td>
+</tr>
+<tr>
+<td>Trích xuất trường</td>
+<td>LayoutLMv3 token classification</td>
+<td>Ngày và tổng tiền; sẽ mở rộng khi có nhãn nghiệp vụ</td>
+</tr>
+<tr>
+<td>Đối chiếu dữ liệu</td>
+<td>Python consistency rules</td>
+<td>Cờ lệch số tiền, ngày, biển số và trường bắt buộc</td>
+</tr>
+<tr>
+<td>Phân tích quan hệ</td>
+<td>NetworkX</td>
+<td>Shared entity, degree, component và two-hop claims</td>
+</tr>
+<tr>
+<td>Cung cấp cho UI</td>
+<td>FastAPI theo kế hoạch</td>
+<td>Một response thống nhất theo <code>claim_id</code></td>
+</tr>
+</tbody>
+</table>
+<p>XGBoost là model tổng hợp hiện tại cho nhánh tabular. Các tín hiệu ảnh, chứng từ và graph chưa được phép ghép giả theo từng dòng vì public datasets không có <code>claim_id</code> chung. Khi có dữ liệu liên kết thật, output của các module mới trở thành feature/evidence cho bước xếp hạng tổng hợp.</p>
+<h2>Kết quả XGBoost cần nói đúng</h2>
+<p>Trong cross-validation dùng để chọn model, XGBoost đạt AP 0,706 và Recall@10% 30,3%. Sau khi chọn, kết quả frozen test là AP 0,559 và Recall@10% 22,4%; rule baseline đạt 16,3%. Vì vậy model tăng 6,1 điểm phần trăm so với rule nhưng chưa đạt mục tiêu tương đối +10 điểm.</p>
+<p>Không dùng KPI tuyệt đối Recall@10% ≥ 60% trên dataset prevalence 24,7%, vì trần toán học chỉ khoảng 40,5%. KPI phải được xác nhận lại theo prevalence và review capacity thực tế.</p>
+<h2>Các phát hiện quan trọng</h2>
+<ul>
+<li>Audit phát hiện tám ảnh SROIE trùng giữa train và test. Nhóm giữ nguyên test, loại bản train trùng và chia lại train/validation theo nhóm SHA-256. Split mới 525/93/361 không còn trùng chéo.</li>
+<li>FUNSD từng bị đếm thành 398 mẫu vì lưu hai bản giống nhau. Dataset chuẩn thực tế có 199 mẫu.</li>
+<li>YOLOv8s tốt ở <code>glass shatter</code> và <code>tire flat</code>, nhưng còn yếu ở <code>crack</code>, <code>dent</code> và <code>scratch</code>.</li>
+<li>OCR đang là điểm nghẽn chính của nhánh chứng từ.</li>
+<li>Dataset bảng chỉ phù hợp để dựng baseline. Nhãn <code>fraud_reported</code> chưa có bằng chứng đầy đủ rằng mọi trường hợp đã được điều tra và xác nhận.</li>
+</ul>
+<h2>Số liệu nên dùng khi trình bày</h2>
+<ul>
+<li>CarDD final test: mask mAP50-95 <strong>0,5140</strong> trên 419 ảnh và 931 đối tượng.</li>
+<li>DiT independent validation: macro-F1 <strong>0,9283</strong>.</li>
+<li>PaddleOCR validation: CER <strong>0,4097</strong>, WER <strong>0,5592</strong>.</li>
+<li>LayoutLMv3 validation: field micro-F1 <strong>0,9214</strong>; rule baseline <strong>0,6834</strong>.</li>
+<li>Consistency và NetworkX: demo code <strong>PASS</strong>, chưa phải metric phát hiện gian lận trên dữ liệu thật.</li>
+</ul>
+<h2>Sản phẩm hiện đang ở đâu?</h2>
+<p>Hiện tại dự án là <strong>technical PoC theo từng module</strong> và đã đủ bằng chứng cho Báo cáo tiến độ lần 2. Dự án chưa phải MVP end-to-end và chưa sẵn sàng go-live.</p>
+<p>Các model đã chạy được riêng lẻ. Bước tiếp theo là khóa final test của LayoutLMv3, đăng ký model, đóng gói API, nối prototype UI và tạo một bộ hồ sơ mẫu có chung <code>claim_id</code> để kiểm thử toàn bộ luồng.</p>
+<h2>Việc tiếp theo đã thống nhất</h2>
+<ol>
+<li>Chạy LayoutLMv3 final test đúng một lần bằng checkpoint đã chọn.</li>
+<li>Tạo model registry chứa tên, phiên bản, SHA-256, metric và input/output schema.</li>
+<li>Đóng gói FastAPI với <code>/health</code>, <code>/version</code> và <code>/claims/{claim_id}/analyze</code>.</li>
+<li>Nối UI hợp nhất với fixture JSON trước, sau đó thay bằng live API.</li>
+<li>Cải thiện OCR và phân tích lỗi ba lớp ảnh yếu trên train/validation hoặc dữ liệu miền mới; không chỉnh model theo final test.</li>
+<li>Tạo golden set end-to-end có <code>claim_id</code>, evidence và expected outputs.</li>
+<li>Thu thập dữ liệu nghiệp vụ có consent, PII policy và ground-truth protocol trước pilot.</li>
+</ol>
+<h2>Những việc cần team hỗ trợ</h2>
+<ul>
+<li>Nhóm prototype: dùng file <code>prototype/insurance_review_console_unified.html</code> làm định hướng màn hình.</li>
+<li>Nhóm nghiệp vụ: xác nhận trường nào có ở intake, sau giám định và khi đủ chứng từ.</li>
+<li>Nhóm dữ liệu: chuẩn bị một số hồ sơ giả lập hoặc đã ẩn danh có cùng <code>claim_id</code> xuyên suốt ảnh, chứng từ và dữ liệu bảng.</li>
+<li>Nhóm báo cáo: dùng số liệu trong tài liệu này; không dùng lại metric DiT smoke 0,9626 làm kết quả chính.</li>
+<li>Người phụ trách pháp lý/dữ liệu: bổ sung bằng chứng quyền sử dụng CarDD và đánh giá license/PII cho dữ liệu chứng từ.</li>
+</ul>
+<h2>Câu kết luận ngắn để báo cáo</h2>
+<blockquote>
+<p>Nhóm đã hoàn thành data audit, baseline và validation v1 cho các nhánh ảnh xe, chứng từ và dữ liệu bảng; đồng thời chứng minh được consistency rules và graph features có thể chạy. Giai đoạn tiếp theo chuyển từ các module nghiên cứu sang một prototype end-to-end có model registry, API, giao diện reviewer và human-in-the-loop.</p>
+</blockquote></main><div class="footer">Bản trình bày được tạo từ tài liệu nguồn trong repository; số liệu nghiên cứu không phải cam kết production.</div></body></html>
