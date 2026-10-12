@@ -12,13 +12,13 @@ Tên mô tả dùng trong báo cáo: **AI-assisted Motor Insurance Claim Review 
 |---|---|---|
 | Tabular risk ranking | XGBoost baseline nghiên cứu đã chạy | Risk score và explanation cho hồ sơ bảng |
 | Damage understanding | YOLOv8s-seg đã khóa/final-test | Mask, loại hư hại, confidence |
-| Document classification | DiT baseline dự kiến | Loại chứng từ |
-| OCR | PaddleOCR baseline dự kiến | Text và vị trí |
+| Document classification | DiT baseline đã smoke-test; independent validation chờ chạy | Loại chứng từ |
+| OCR | PaddleOCR baseline đã đo trên SROIE validation | Text và vị trí |
 | Key Information Extraction | Rule baseline; LayoutLMv3 candidate | Trường ngày, tiền, tổ chức, mã chứng từ |
-| Consistency checks | Rules/versioned code | Cờ sai lệch giữa form, hóa đơn và claim |
-| Relationship risk | NetworkX trước; GNN chỉ khi đủ dữ liệu | Đặc trưng quan hệ và cảnh báo pattern |
+| Consistency checks | Rules/versioned code; synthetic demo PASS | Cờ sai lệch giữa form, hóa đơn và claim |
+| Relationship risk | NetworkX point-in-time demo PASS; GNN chỉ khi đủ dữ liệu | Đặc trưng quan hệ và cảnh báo pattern |
 
-Hiện tại chỉ nhánh tabular và CarDD có metric model. Nhánh chứng từ mới hoàn tất data audit/protocol, chưa có metric baseline. NetworkX chưa mở vì public datasets không có quan hệ claim-level thật.
+Hiện nhánh tabular, CarDD và document baseline đều đã có metric module-level. Document baseline gồm DiT smoke macro-F1 0,9626, PaddleOCR CER 0,4097/WER 0,5592 và rule KIE F1 0,6776. LayoutLMv3 candidate chưa có kết quả; NetworkX mới chứng minh logic bằng synthetic demo vì public datasets không có quan hệ claim-level thật.
 
 ## Luồng sử dụng sau này
 
@@ -44,7 +44,7 @@ Hiện tại chỉ nhánh tabular và CarDD có metric model. Nhánh chứng t�
     ]
   },
   "documents": {
-    "status": "planned_baseline",
+    "status": "baseline_validated_candidate_pending",
     "fields": []
   },
   "risk": {

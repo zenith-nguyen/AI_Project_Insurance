@@ -3,11 +3,11 @@
 | Yêu cầu | Artifact trong gói | Trạng thái |
 |---|---|---|
 | Data Audit Report | `data_audit_report.md`, `DOCUMENT_DATA_AUDIT_RUN_2026-10-11.md` | Có kết quả thật |
-| Data Dictionary / KB Audit | `data_dictionary.md` | Có; KB/RAG chưa thuộc baseline |
+| Data Dictionary / KB Audit | `data_dictionary.md`, `LAYER_B_STAGE_RELIABILITY_DICTIONARY_V1.md`, `layer_b_field_governance_v1.csv` | Có đủ 39 cột; KB/RAG chưa thuộc baseline |
 | EDA / phân tích tài liệu nguồn | `DOCUMENT_EDA_SOURCE_ANALYSIS_V1.md`, `DOCUMENT_SOURCE_LINK_AUDIT_V1.md` | Có |
 | Ground Truth Definition / Citation Policy | `GROUND_TRUTH_DEFINITION_V1.md` | Có; RAG ghi N/A hiện tại |
 | Data Leakage Check | `DATA_LEAKAGE_CHECK_V1.md`, `SROIE_PROCESSED_SPLIT_DIAGNOSTIC_2026-10-11.md` | Có kết quả và remediation |
-| Baseline model/process | `CARDD_BASELINE_V2_RESULTS.md`, `DOCUMENT_MODEL_BASELINE_PLAN_V1.md`, `DOCUMENT_GRAPH_IMPLEMENTATION_V1.md` | CarDD hoàn tất; document source/notebook/test đã sẵn sàng, metric chờ chạy Colab |
+| Baseline model/process | `CARDD_BASELINE_V2_RESULTS.md`, `DOCUMENT_MODEL_BASELINE_PLAN_V1.md`, `DOCUMENT_GRAPH_IMPLEMENTATION_V1.md` | CarDD hoàn tất; document baseline đã có metric, LayoutLMv3 candidate chờ GPU |
 | Model Selection Matrix | `model_selection_matrix.md`, `CARDD_MODEL_SELECTION_V1.md` | Có |
 | Metrics v1 | `metrics_v1.md`, `CARDD_FINAL_TEST_V1.md`, `DOCUMENT_BASELINE_VALIDATION_V1.md` | Có CarDD và document baseline validation |
 | Risk Register v2 | `risk_register_v2_additions.md` | Có |

@@ -49,4 +49,4 @@ Bronze giữ cùng kiểu numeric/date như bảng dưới; các cột categoric
 | `fraud_reported` | string | `fraud_reported` | Nhãn gốc Y/N; không dùng làm feature | Original target |
 | `fraud_label` | Int64 | — | Nhãn số: Y→1, N→0 | Engineered target |
 
-Thời điểm có sẵn của từng trường tại intake/sau giám định/đủ chứng từ vẫn cần nghiệp vụ xác nhận trước khi chốt feature theo stage.
+Rubric và đánh giá stage/reliability cho đủ 39 cột nguồn đã được lập tại `reports/LAYER_B_STAGE_RELIABILITY_DICTIONARY_V1.md`; bản máy đọc nằm tại `configs/layer_b_field_governance_v1.csv`. Các dòng stage-confidence Thấp vẫn cần nghiệp vụ xác nhận trước pilot.

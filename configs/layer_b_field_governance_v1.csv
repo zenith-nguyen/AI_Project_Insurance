@@ -1,0 +1,40 @@
+﻿ordinal,field,meaning,source,available_stage,stage_confidence,stage_reason,missing_rate_percent,reliability_score_8,reliability_level,feature_policy
+1,months_as_customer,Số tháng khách hàng gắn với doanh nghiệp,Original,Intake,Cao,Theo hợp đồng/FNOL và benchmark vòng đời claim,0.0,8,Cao,Chỉ dùng khi có tại scoring snapshot và qua feature policy
+2,age,Tuổi người được bảo hiểm,Original,Intake,Cao,Theo hợp đồng/FNOL và benchmark vòng đời claim,0.0,8,Cao,Chỉ dùng khi có tại scoring snapshot và qua feature policy
+3,policy_number,"Mã hợp đồng; identifier, không dùng làm feature",Original,Intake,Cao,Theo hợp đồng/FNOL và benchmark vòng đời claim,0.0,8,Cao,Loại: identifier
+4,policy_bind_date,Ngày hợp đồng bắt đầu hiệu lực,Original,Intake,Cao,Theo hợp đồng/FNOL và benchmark vòng đời claim,0.0,8,Cao,Chỉ dùng để tạo policy_age_days
+5,policy_state,Bang phát hành hợp đồng,Original,Intake,Cao,Theo hợp đồng/FNOL và benchmark vòng đời claim,0.0,8,Cao,Chỉ dùng khi có tại scoring snapshot và qua feature policy
+6,policy_csl,Mức giới hạn trách nhiệm kết hợp của hợp đồng,Original,Intake,Cao,Theo hợp đồng/FNOL và benchmark vòng đời claim,0.0,8,Cao,Chỉ dùng khi có tại scoring snapshot và qua feature policy
+7,policy_deductable,Mức khấu trừ; giữ chính tả của nguồn,Original,Intake,Cao,Theo hợp đồng/FNOL và benchmark vòng đời claim,0.0,8,Cao,Chỉ dùng khi có tại scoring snapshot và qua feature policy
+8,policy_annual_premium,Phí bảo hiểm năm,Original,Intake,Cao,Theo hợp đồng/FNOL và benchmark vòng đời claim,0.0,8,Cao,Chỉ dùng khi có tại scoring snapshot và qua feature policy
+9,umbrella_limit,Hạn mức bảo hiểm bổ sung,Original,Intake,Cao,Theo hợp đồng/FNOL và benchmark vòng đời claim,0.0,8,Cao,Chỉ dùng khi có tại scoring snapshot và qua feature policy
+10,insured_zip,"Mã ZIP; proxy địa lý, đã loại khỏi model",Original,Intake,Cao,Theo hợp đồng/FNOL và benchmark vòng đời claim,0.0,5,Trung bình,Loại: proxy địa lý/cardinality cao
+11,insured_sex,Giới tính khai báo,Original,Intake,Cao,Theo hợp đồng/FNOL và benchmark vòng đời claim,0.0,6,Trung bình,"Nhạy cảm; fairness audit, không dùng để tự động từ chối"
+12,insured_education_level,Trình độ học vấn,Original,Intake,Cao,Theo hợp đồng/FNOL và benchmark vòng đời claim,0.0,3,Thấp,Proxy nhân khẩu học; sensitivity/fairness review
+13,insured_occupation,Nghề nghiệp,Original,Intake,Cao,Theo hợp đồng/FNOL và benchmark vòng đời claim,0.0,5,Trung bình,Proxy nhân khẩu học; sensitivity/fairness review
+14,insured_hobbies,"Sở thích; proxy cần xem xét, đã loại trong một sensitivity check",Original,Intake,Cao,Theo hợp đồng/FNOL và benchmark vòng đời claim,0.0,2,Thấp,Loại ở biến thể bias-aware; provenance/nghiệp vụ yếu
+15,insured_relationship,Quan hệ của người được bảo hiểm với chủ hợp đồng,Original,Intake,Cao,Theo hợp đồng/FNOL và benchmark vòng đời claim,0.0,5,Trung bình,Chỉ dùng khi có tại scoring snapshot và qua feature policy
+16,capital_gains,Giá trị capital gains trong dữ liệu nguồn,"Original, renamed",Intake,Thấp,Giả định có tại intake nhưng ngữ nghĩa nguồn chưa xác minh,0.0,2,Thấp,Loại cho production đến khi xác minh ngữ nghĩa
+17,capital_loss,Giá trị capital loss trong dữ liệu nguồn,"Original, renamed",Intake,Thấp,Giả định có tại intake nhưng ngữ nghĩa nguồn chưa xác minh,0.0,2,Thấp,Loại cho production đến khi xác minh ngữ nghĩa
+18,incident_date,Ngày xảy ra sự cố,Original,Intake,Trung bình,Theo hợp đồng/FNOL và benchmark vòng đời claim,0.0,6,Trung bình,Chỉ dùng để tạo policy_age_days; stage theo snapshot
+19,incident_type,Loại sự cố,Original,Intake,Trung bình,Theo hợp đồng/FNOL và benchmark vòng đời claim,0.0,6,Trung bình,Chỉ dùng khi có tại scoring snapshot và qua feature policy
+20,collision_type,Loại va chạm; 178 giá trị thiếu,Original,Intake,Trung bình,Theo hợp đồng/FNOL và benchmark vòng đời claim,17.8,5,Trung bình,Chỉ dùng khi có tại scoring snapshot và qua feature policy
+21,incident_severity,Mức độ nghiêm trọng khai báo/đánh giá,Original,Sau giám định,Thấp,Giá trị chính thức cần giám định; FNOL có thể chỉ là ước tính,0.0,5,Trung bình,Chỉ dùng khi có tại scoring snapshot và qua feature policy
+22,authorities_contacted,Cơ quan chức năng được liên hệ; 91 thiếu,Original,Intake,Trung bình,Theo hợp đồng/FNOL và benchmark vòng đời claim,9.1,5,Trung bình,Chỉ dùng khi có tại scoring snapshot và qua feature policy
+23,incident_state,Bang xảy ra sự cố,Original,Intake,Trung bình,Theo hợp đồng/FNOL và benchmark vòng đời claim,0.0,6,Trung bình,Chỉ dùng khi có tại scoring snapshot và qua feature policy
+24,incident_city,Thành phố xảy ra sự cố,Original,Intake,Trung bình,Theo hợp đồng/FNOL và benchmark vòng đời claim,0.0,6,Trung bình,Chỉ dùng khi có tại scoring snapshot và qua feature policy
+25,incident_location,"Địa điểm chi tiết; cardinality cao, đã loại",Original,Intake,Trung bình,Theo hợp đồng/FNOL và benchmark vòng đời claim,0.0,4,Trung bình,Loại: proxy địa lý/cardinality cao
+26,incident_hour_of_the_day,"Giờ xảy ra sự cố, 0–23",Original,Intake,Trung bình,Theo hợp đồng/FNOL và benchmark vòng đời claim,0.0,6,Trung bình,Chỉ dùng khi có tại scoring snapshot và qua feature policy
+27,number_of_vehicles_involved,Số xe liên quan,Original,Intake,Trung bình,Theo hợp đồng/FNOL và benchmark vòng đời claim,0.0,6,Trung bình,Chỉ dùng khi có tại scoring snapshot và qua feature policy
+28,property_damage,Có thiệt hại tài sản hay không; 360 thiếu,Original,Intake,Trung bình,Theo hợp đồng/FNOL và benchmark vòng đời claim,36.0,3,Thấp,Chỉ dùng khi có tại scoring snapshot và qua feature policy
+29,bodily_injuries,Số người bị thương,Original,Intake,Trung bình,Theo hợp đồng/FNOL và benchmark vòng đời claim,0.0,6,Trung bình,Chỉ dùng khi có tại scoring snapshot và qua feature policy
+30,witnesses,Số nhân chứng,Original,Đủ chứng từ,Thấp,Chọn bảo thủ: cần biên bản/lời khai hoàn chỉnh,0.0,6,Trung bình,Chỉ dùng khi có tại scoring snapshot và qua feature policy
+31,police_report_available,Có báo cáo cảnh sát hay không; 343 thiếu,Original,Đủ chứng từ,Trung bình,Chỉ xác nhận khi hồ sơ đã nhận biên bản,34.3,4,Trung bình,Chỉ dùng khi có tại scoring snapshot và qua feature policy
+32,total_claim_amount,Tổng tiền claim; bằng tổng ba component trên 100% train,Original,Sau giám định,Thấp,Giá trị đánh giá cần báo giá/giám định,0.0,6,Trung bình,Loại ở baseline do dư thừa với ba claim component
+33,injury_claim,Phần claim cho thương tích,Original,Sau giám định,Thấp,Giá trị đánh giá cần hồ sơ y tế/giám định,0.0,6,Trung bình,Chỉ dùng khi có tại scoring snapshot và qua feature policy
+34,property_claim,Phần claim cho tài sản,Original,Sau giám định,Thấp,Giá trị đánh giá cần báo giá/chứng từ,0.0,6,Trung bình,Chỉ dùng khi có tại scoring snapshot và qua feature policy
+35,vehicle_claim,Phần claim cho xe,Original,Sau giám định,Thấp,Giá trị đánh giá cần báo giá gara/giám định,0.0,6,Trung bình,Chỉ dùng khi có tại scoring snapshot và qua feature policy
+36,auto_make,Hãng xe,Original,Intake,Cao,Theo hợp đồng/FNOL và benchmark vòng đời claim,0.0,8,Cao,Chỉ dùng khi có tại scoring snapshot và qua feature policy
+37,auto_model,Model xe; Silver ép string để tránh mixed type,Original,Intake,Cao,Theo hợp đồng/FNOL và benchmark vòng đời claim,0.0,8,Cao,Chỉ dùng khi có tại scoring snapshot và qua feature policy
+38,auto_year,Năm sản xuất xe,Original,Intake,Cao,Theo hợp đồng/FNOL và benchmark vòng đời claim,0.0,8,Cao,Chỉ dùng khi có tại scoring snapshot và qua feature policy
+39,fraud_reported,Nhãn gốc Y/N; không dùng làm feature,Original target,Sau điều tra,Thấp,Kết quả quan sát sau điều tra; không có tại thời điểm scoring,0.0,3,Thấp,Target only; cấm làm feature

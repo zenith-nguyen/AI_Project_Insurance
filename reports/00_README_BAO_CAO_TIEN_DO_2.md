@@ -27,6 +27,10 @@ Mở tài liệu theo thứ tự sau để trình bày trực tiếp:
 23. `Document_DiT_Independent_Validation_Acc2_v1.ipynb` — kiểm tra DiT trên upstream RVL validation độc lập với sample train intake.
 24. `LAYOUTLMV3_ALIGNMENT_REMEDIATION_V1.md` — giải thích data gate 0,1290 và thuật toán căn chỉnh đã sửa trong notebook v3.
 25. `Document_LayoutLMv3_Candidate_Acc2_v3.ipynb` — candidate KIE mới; vẫn khóa test và giữ nguyên quy tắc chọn model.
+26. `LAYER_B_STAGE_RELIABILITY_DICTIONARY_V1.md` — data dictionary theo stage, rubric reliability và feature policy cho đủ 39 cột nguồn.
+27. `FRAUD_LABEL_PROVENANCE_V1.md` — cách diễn giải target quan sát và giới hạn label provenance.
+28. `DATA_MODEL_SYSTEM_CARD_V2.md` — Data Card, Model Card đa module và kiến trúc hệ thống đã cập nhật.
+29. `COLAB_CROSS_ACCOUNT_RUNBOOK_V1.md` — quy trình chạy notebook qua nhiều tài khoản mà vẫn dùng chung artifact.
 
 ## Trạng thái cần nói rõ
 
