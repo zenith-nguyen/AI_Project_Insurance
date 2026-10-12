@@ -3,7 +3,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-NOTEBOOK = ROOT / "notebooks/Document_LayoutLMv3_Final_Test_Acc2_v2.ipynb"
+NOTEBOOK = ROOT / "notebooks/Document_LayoutLMv3_Final_Test_Acc2_v3.ipynb"
 
 
 def notebook_source() -> str:
@@ -27,3 +27,10 @@ def test_final_test_notebook_is_checkpoint_locked_and_evaluation_only():
     assert "trainer.evaluate()" in source
     assert "trainer.train()" not in source
     assert "final_report_sha256" in source
+
+
+def test_every_code_cell_compiles_before_colab_upload():
+    payload = json.loads(NOTEBOOK.read_text(encoding="utf-8"))
+    for index, cell in enumerate(payload["cells"]):
+        if cell["cell_type"] == "code":
+            compile("".join(cell.get("source", [])), f"cell-{index}", "exec")

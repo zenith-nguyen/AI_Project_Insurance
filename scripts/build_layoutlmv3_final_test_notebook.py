@@ -7,7 +7,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CANDIDATE_NOTEBOOK = ROOT / "notebooks/Document_LayoutLMv3_Candidate_Acc2_v3.ipynb"
-OUTPUT = ROOT / "notebooks/Document_LayoutLMv3_Final_Test_Acc2_v2.ipynb"
+OUTPUT = ROOT / "notebooks/Document_LayoutLMv3_Final_Test_Acc2_v3.ipynb"
 
 
 def lines(value: str) -> list[str]:
@@ -53,7 +53,7 @@ def main() -> None:
     definitions, metrics = candidate_fragments()
     cells = [
         markdown(
-            """# LayoutLMv3 SROIE — Final Test Acc 2 v2
+            """# LayoutLMv3 SROIE — Final Test Acc 2 v3
 
 Notebook này chỉ đánh giá **checkpoint đã được chọn trên validation**. Nó không train, không chọn lại epoch và không sửa threshold/alignment theo test. Test gồm 361 ảnh và chỉ được mở sau khi checkpoint hash, selection report và processed split đều hợp lệ. Execution lock ngăn chạy final test lần hai. Bản v2 tự tìm project trong `MyDrive` hoặc Google Drive shortcut để hỗ trợ chạy chéo tài khoản."""
         ),
@@ -87,11 +87,11 @@ if shortcut_root.is_dir():
 project_candidates = list(dict.fromkeys(path.resolve() for path in project_candidates if path.is_dir()))
 matching_projects = [path for path in project_candidates if (path / CANDIDATE_REPORT_REL).is_file()]
 if not matching_projects:
-    checked = "\n".join(f"- {path}" for path in project_candidates) or "- Không thấy project/shortcut nào"
+    checked = ", ".join(str(path) for path in project_candidates) or "Không thấy project/shortcut nào"
     raise FileNotFoundError(
         "Không tìm thấy candidate report trong Drive của tài khoản hiện tại. "
-        "Hãy mở notebook bằng tài khoản đã train LayoutLMv3 hoặc share toàn bộ project từ tài khoản đó.\n"
-        f"Đã kiểm tra:\n{checked}\nFile cần có: {CANDIDATE_REPORT_REL}"
+        "Hãy mở notebook bằng tài khoản đã train LayoutLMv3 hoặc share toàn bộ project từ tài khoản đó. "
+        f"Đã kiểm tra: {checked}. File cần có: {CANDIDATE_REPORT_REL}"
     )
 PROJECT = matching_projects[0]
 DATA_ROOT = PROJECT / "data/processed/documents/sroie/v1"
