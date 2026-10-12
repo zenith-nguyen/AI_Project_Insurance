@@ -35,10 +35,10 @@ Các rủi ro chưa đóng: provenance của `fraud_reported`, stage availabilit
 |---|---|---|---|
 | Tabular risk | XGBoost v1 + sigmoid calibration | AP 0,559; ROC-AUC 0,825; Recall@10% 22,4%; Precision@10% 55,0% trên frozen test 200 | KPI +10 điểm Recall@10% chưa đạt; test đã tái sử dụng cho sensitivity; label provenance thấp |
 | Damage segmentation | YOLOv8s-seg candidate đã chọn | Validation mask mAP50-95 0,5284; final test 0,5140 trên 419 ảnh | `crack`, `dent`, `scratch` còn yếu; domain public |
-| Document classifier | DiT pretrained baseline | Smoke macro-F1 0,9626 trên RVL sample từ upstream train | Không phải independent validation; notebook official validation đang chờ chạy |
+| Document classifier | DiT pretrained baseline | Smoke macro-F1 0,9626 trên RVL sample từ upstream train | Không phải independent validation; notebook v2 dùng pinned Parquet mirror đang chờ chạy |
 | OCR | PaddleOCR | CER 0,4097; WER 0,5592; 28,17 giây/trang trên 93 SROIE validation | Chất lượng và tốc độ chưa đạt production |
 | KIE baseline | Rule KIE v1 | date/total micro-F1 0,6776 | Recall thấp |
-| KIE candidate | LayoutLMv3 v3 | Bản v2 dừng an toàn tại alignment 0,1290; v3 chờ GPU | Chưa có checkpoint/metric candidate |
+| KIE candidate | LayoutLMv3 v3 | Validation field micro-F1 0,9214; rule baseline 0,6834; coverage 0,9892 | Được chọn theo rule khóa trước; SROIE test vẫn khóa; mới có `date`/`total` |
 | Consistency | Versioned rules | Synthetic demo PASS | Chưa benchmark trên claim-document thật |
 | Relationship | NetworkX features | Point-in-time synthetic demo PASS | Không phải fraud model; chưa có graph nghiệp vụ thật |
 
@@ -84,8 +84,8 @@ flowchart LR
 
 ## 5. Bước tiếp theo
 
-1. Chạy LayoutLMv3 v3 trên GPU và chọn/loại candidate bằng validation rule đã khóa.
-2. Chạy DiT independent validation; không dùng smoke metric làm bằng chứng tổng quát hóa.
+1. Giữ checkpoint LayoutLMv3 đã chọn, chưa mở SROIE test; bổ sung error analysis cho hai total OCR không align.
+2. Chạy DiT independent validation bằng notebook v2; không dùng smoke metric làm bằng chứng tổng quát hóa.
 3. Tạo golden claim set thật có ảnh, chứng từ, field truth, timestamp và reviewer outcome.
 4. Tích hợp API/UI theo `claim_id`, chạy end-to-end test và UAT human-in-the-loop.
 5. Chỉ pilot sau legal/PII/license review, label contract, monitoring và rollback plan.

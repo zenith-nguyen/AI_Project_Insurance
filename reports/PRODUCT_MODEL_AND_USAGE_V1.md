@@ -14,11 +14,11 @@ Tên mô tả dùng trong báo cáo: **AI-assisted Motor Insurance Claim Review 
 | Damage understanding | YOLOv8s-seg đã khóa/final-test | Mask, loại hư hại, confidence |
 | Document classification | DiT baseline đã smoke-test; independent validation chờ chạy | Loại chứng từ |
 | OCR | PaddleOCR baseline đã đo trên SROIE validation | Text và vị trí |
-| Key Information Extraction | Rule baseline; LayoutLMv3 candidate | Trường ngày, tiền, tổ chức, mã chứng từ |
+| Key Information Extraction | Rule baseline; LayoutLMv3 candidate đã chọn trên validation | Hiện mới hỗ trợ trường ngày và tổng tiền |
 | Consistency checks | Rules/versioned code; synthetic demo PASS | Cờ sai lệch giữa form, hóa đơn và claim |
 | Relationship risk | NetworkX point-in-time demo PASS; GNN chỉ khi đủ dữ liệu | Đặc trưng quan hệ và cảnh báo pattern |
 
-Hiện nhánh tabular, CarDD và document baseline đều đã có metric module-level. Document baseline gồm DiT smoke macro-F1 0,9626, PaddleOCR CER 0,4097/WER 0,5592 và rule KIE F1 0,6776. LayoutLMv3 candidate chưa có kết quả; NetworkX mới chứng minh logic bằng synthetic demo vì public datasets không có quan hệ claim-level thật.
+Hiện nhánh tabular, CarDD và document đều đã có metric module-level. Document gồm DiT smoke macro-F1 0,9626, PaddleOCR CER 0,4097/WER 0,5592, rule KIE F1 0,6834 và LayoutLMv3 validation F1 0,9214. LayoutLMv3 mới được chọn trên validation và test vẫn khóa; NetworkX mới chứng minh logic bằng synthetic demo vì public datasets không có quan hệ claim-level thật.
 
 ## Luồng sử dụng sau này
 
@@ -44,7 +44,7 @@ Hiện nhánh tabular, CarDD và document baseline đều đã có metric module
     ]
   },
   "documents": {
-    "status": "baseline_validated_candidate_pending",
+    "status": "candidate_selected_on_validation_final_test_locked",
     "fields": []
   },
   "risk": {

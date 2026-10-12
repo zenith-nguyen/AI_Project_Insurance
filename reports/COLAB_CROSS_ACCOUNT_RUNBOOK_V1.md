@@ -50,7 +50,7 @@ print("GPU:", torch.cuda.get_device_name(0))
 | Notebook | Có thể dùng tài khoản nào | Đầu ra dùng chung |
 |---|---|---|
 | `Document_LayoutLMv3_Candidate_Acc2_v3.ipynb` | Tài khoản bất kỳ còn GPU | `artifacts/document/layoutlmv3_sroie_candidate_v2/` và candidate report v2 |
-| `Document_DiT_Independent_Validation_Acc2_v1.ipynb` | Có thể quay lại `hoanganhthu.01230`; GPU khuyến nghị | `reports/metrics/documents/dit_rvl_official_validation_v1.json` |
+| `Document_DiT_Independent_Validation_Acc2_v2.ipynb` | Tài khoản bất kỳ đọc được project; GPU khuyến nghị | `reports/metrics/documents/dit_rvl_official_validation_v1.json` |
 | `Claim_Consistency_NetworkX_Demo_Acc2_v1.ipynb` | Bất kỳ tài khoản nào; CPU đủ | Report/demo output trên Drive |
 
 Các notebook sau không cần cùng runtime hoặc cùng tài khoản với LayoutLMv3. Chúng chỉ cần đọc được project và các artifact đầu vào đã hoàn tất.

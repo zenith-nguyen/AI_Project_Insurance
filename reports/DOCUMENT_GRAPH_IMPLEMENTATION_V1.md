@@ -10,12 +10,12 @@
 | Document classifier DiT | Adapter inference + notebook validation | Có, kiểm tra contract bằng mock | Smoke metric 0,9626 trên sample từ upstream train; independent validation chờ chạy |
 | PaddleOCR | Adapter chuẩn hóa output v2/v3 + notebook CER/WER | Có | Có: CER 0,4097; WER 0,5592 trên 93 SROIE validation |
 | Rule KIE | Trích xuất ngày, tổng tiền, số chứng từ, biển số | Có | Có: F1 0,6776 cho date/total trên validation |
-| LayoutLMv3 KIE | Adapter checkpoint + notebook fine-tune | Có preflight; v2 đã chặn coverage 0,1290 | Bản v3 chờ train |
+| LayoutLMv3 KIE | Adapter checkpoint + notebook fine-tune | Có preflight; v3 coverage 0,9892 | Validation F1 0,9214; candidate được chọn; test khóa |
 | Consistency rules | Amount/date/plate với pass/fail/unknown | Có | Chưa có claim-document thật |
 | NetworkX | Graph point-in-time và sáu feature v1 | Có | Chỉ demo synthetic; chưa có graph thật |
 | Reviewer result contract | JSON hợp nhất damage/document/rules/graph/risk | Có | Chưa tích hợp API/UI |
 
-Baseline document validation đã có metric thật. Không dùng từ “hoàn thành model chứng từ” trước khi LayoutLMv3 được train, so sánh và khóa. Không dùng kết quả synthetic NetworkX như bằng chứng phát hiện fraud.
+Baseline document validation và LayoutLMv3 candidate validation đã có metric thật. Không dùng từ “hoàn thành model chứng từ” trước khi candidate được final-test trên protocol đã duyệt và có dữ liệu bảo hiểm phù hợp. Không dùng kết quả synthetic NetworkX như bằng chứng phát hiện fraud.
 
 ## Source code đã tạo
 
@@ -43,8 +43,8 @@ Notebook cài PaddlePaddle 3.2.0 từ index CPU chính thức để tránh lệc
 
 Quy tắc đã khóa trước khi xem kết quả LayoutLMv3: candidate chỉ được chọn nếu field exact-match micro-F1 cho `date`/`total` tăng ít nhất **0,02** so với rule isolated baseline và weak-alignment coverage đạt ít nhất **0,85**. Nếu không đạt, giữ rule baseline và ghi candidate là không được chọn.
 3. Gửi file `reports/metrics/documents/document_baselines_validation_v1.json` để review. Test vẫn khóa.
-4. Chạy `Document_DiT_Independent_Validation_Acc2_v1.ipynb` để thay smoke metric từ upstream train bằng metric trên upstream RVL validation.
-5. Chạy `Document_LayoutLMv3_Candidate_Acc2_v3.ipynb`. Bản v3 xử lý đúng token theo dòng OCR và chỉ học `date`/`total`. Notebook fine-tune trên 525 train, chọn checkpoint theo field exact-match F1 trên 93 validation, ghi hash cây checkpoint và không đọc test.
+4. Chạy `Document_DiT_Independent_Validation_Acc2_v2.ipynb` để thay smoke metric từ upstream train bằng metric trên RVL validation mirror đã pin. Bản v2 không dùng dataset loader script đã bị `datasets>=3` loại bỏ.
+5. `Document_LayoutLMv3_Candidate_Acc2_v3.ipynb` đã hoàn tất. Bản v3 chỉ học `date`/`total`, fine-tune trên 525 train, chọn best checkpoint bằng field exact-match F1 trên 93 validation và không đọc test. Candidate đạt F1 0,9214 so với isolated rule 0,6834.
 6. Chỉ đặt quy tắc chọn model và duyệt validation xong mới tạo notebook final test riêng.
 7. `Claim_Consistency_NetworkX_Demo_Acc2_v1.ipynb` chạy CPU được. Đây là demo logic; benchmark graph thật chỉ mở khi có bảng claim/entity/edge hợp lệ.
 
@@ -86,12 +86,12 @@ Mọi nhánh chỉ hợp nhất bằng `claim_id` thật. Tất cả node/edge/f
 - Toàn bộ suite: **51 passed, 1 skipped**.
 - Notebook JSON: hợp lệ.
 - Tất cả code cell trong ba notebook mới: compile PASS.
-- Phần chưa có bằng chứng: LayoutLMv3 checkpoint, graph metric trên dữ liệu nghiệp vụ thật, API/UI/UAT.
+- Phần chưa có bằng chứng: LayoutLMv3 final-test, graph metric trên dữ liệu nghiệp vụ thật, API/UI/UAT.
 
 ## Các giới hạn phải trình bày
 
 - RVL sample có thể thuộc cùng nguồn upstream dùng để fine-tune DiT, nên metric chỉ là kiểm tra kỹ thuật, chưa chứng minh generalization cho hồ sơ bảo hiểm Việt Nam.
 - SROIE là receipt tiếng Anh; không đại diện cho toàn bộ chứng từ bảo hiểm Việt Nam.
-- LayoutLMv3 v2 dừng trước training vì exact alignment chỉ đạt 0,1290. Bản v3 dùng chuẩn hóa ngày/số tiền, context tie-break và log mẫu không match; vẫn phải review coverage trên processed validation trước khi tin metric.
+- LayoutLMv3 v2 dừng trước training vì exact alignment chỉ đạt 0,1290. Bản v3 dùng chuẩn hóa ngày/số tiền và context tie-break; coverage đạt 0,9892. Hai total không align đã được log để audit. Metric hiện chỉ áp dụng cho processed validation và hai field `date`/`total`.
 - Consistency và NetworkX cần dữ liệu claim thật có khóa và timestamp. Hiện mới chứng minh thuật toán bằng test/synthetic demo.
 - Public data và model có license khác nhau; production vẫn khóa tới khi legal/PII review hoàn tất.

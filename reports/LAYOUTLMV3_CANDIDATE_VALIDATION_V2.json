@@ -1,0 +1,50 @@
+{
+  "evidence_status": "transcribed_from_completed_colab_output",
+  "run_date": "2026-10-12",
+  "notebook": "Document_LayoutLMv3_Candidate_Acc2_v3.ipynb",
+  "source_report": "/content/drive/MyDrive/AI_Project_Insurance_Acc 2/reports/metrics/documents/layoutlmv3_sroie_candidate_validation_v2.json",
+  "artifact_directory": "/content/drive/MyDrive/AI_Project_Insurance_Acc 2/artifacts/document/layoutlmv3_sroie_candidate_v2",
+  "data": {
+    "train_rows": 525,
+    "validation_rows": 93,
+    "test_rows": 361,
+    "test_read": false
+  },
+  "alignment": {
+    "date_expected": 93,
+    "date_matched": 93,
+    "total_expected": 93,
+    "total_matched": 91,
+    "coverage": 0.989247311827957,
+    "minimum_coverage": 0.85,
+    "methods": {
+      "date:exact_compact": 14,
+      "date:equal_date": 73,
+      "date:date_digits": 6,
+      "total:equal_amount": 16,
+      "total:exact_compact": 74,
+      "total:candidate_contained": 1
+    }
+  },
+  "comparable_isolated_rule_baseline": {
+    "precision": 0.8195488721804511,
+    "recall": 0.5860215053763441,
+    "field_micro_f1": 0.6833855799373042
+  },
+  "candidate_best_checkpoint": {
+    "epoch": 4,
+    "validation_loss": 0.029946165159344673,
+    "bio_span_precision": 0.907103825136612,
+    "bio_span_recall": 0.9021739130434783,
+    "bio_span_f1": 0.904632152588556,
+    "field_precision": 0.9289617486338798,
+    "field_recall": 0.9139784946236559,
+    "field_micro_f1": 0.9214092140921409
+  },
+  "selection": {
+    "minimum_field_f1_gain": 0.02,
+    "actual_field_f1_gain": 0.2380236341548367,
+    "selected_by_locked_rule": true,
+    "final_test_locked": true
+  }
+}

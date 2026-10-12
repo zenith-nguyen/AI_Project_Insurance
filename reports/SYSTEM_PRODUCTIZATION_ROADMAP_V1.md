@@ -5,7 +5,7 @@ Ngày cập nhật: 2026-10-10
 ## Trạng thái hiện tại
 
 - Nhánh ảnh CarDD: đã khóa YOLOv8s-seg, hoàn tất final test đúng một lần và có checkpoint kiểm chứng bằng SHA-256.
-- Nhánh chứng từ: đã intake/audit CORD v2, FUNSD canonical, XFUND, SROIE và RVL-CDIP sample 1.600 ảnh. SROIE processed group split đã PASS với exact overlap bằng 0. DiT, PaddleOCR và rule KIE đã có validation metric; LayoutLMv3 v2 đã chặn mapping không đạt, bản v3 chờ train. MIDV hoãn theo scope.
+- Nhánh chứng từ: đã intake/audit CORD v2, FUNSD canonical, XFUND, SROIE và RVL-CDIP sample 1.600 ảnh. SROIE processed group split đã PASS với exact overlap bằng 0. DiT smoke, PaddleOCR và rule KIE đã có metric; LayoutLMv3 v3 đạt validation F1 0,9214 và được chọn, test vẫn khóa. DiT independent validation đang chờ notebook v2. MIDV hoãn theo scope.
 - Nhánh đồ thị: mới ở mức hợp đồng tích hợp; chưa tạo graph feature khi chưa có thực thể và quan hệ bảo hiểm thật.
 
 ## Kiến trúc mục tiêu

@@ -24,9 +24,10 @@ Mở tài liệu theo thứ tự sau để trình bày trực tiếp:
 20. `DOCUMENT_GRAPH_IMPLEMENTATION_V1.md` — code, notebook, trạng thái và cách dùng nhánh document/graph.
 21. `SROIE_PROCESSED_SPLIT_RESULT_V1.md` — data gate SROIE đã PASS và không còn cross-split overlap.
 22. `DOCUMENT_BASELINE_VALIDATION_V1.md` — metric DiT, PaddleOCR và rule KIE trên validation.
-23. `Document_DiT_Independent_Validation_Acc2_v1.ipynb` — kiểm tra DiT trên upstream RVL validation độc lập với sample train intake.
+23. `Document_DiT_Independent_Validation_Acc2_v2.ipynb` — kiểm tra DiT trên RVL validation mirror đã pin, tương thích `datasets>=3` và độc lập với sample train intake.
 24. `LAYOUTLMV3_ALIGNMENT_REMEDIATION_V1.md` — giải thích data gate 0,1290 và thuật toán căn chỉnh đã sửa trong notebook v3.
-25. `Document_LayoutLMv3_Candidate_Acc2_v3.ipynb` — candidate KIE mới; vẫn khóa test và giữ nguyên quy tắc chọn model.
+25. `Document_LayoutLMv3_Candidate_Acc2_v3.ipynb` — candidate KIE đã chạy; vẫn khóa test và giữ nguyên quy tắc chọn model.
+26. `LAYOUTLMV3_CANDIDATE_VALIDATION_V2.md` — kết quả validation, model selection và giới hạn của LayoutLMv3.
 26. `LAYER_B_STAGE_RELIABILITY_DICTIONARY_V1.md` — data dictionary theo stage, rubric reliability và feature policy cho đủ 39 cột nguồn.
 27. `FRAUD_LABEL_PROVENANCE_V1.md` — cách diễn giải target quan sát và giới hạn label provenance.
 28. `DATA_MODEL_SYSTEM_CARD_V2.md` — Data Card, Model Card đa module và kiến trúc hệ thống đã cập nhật.
@@ -37,6 +38,6 @@ Mở tài liệu theo thứ tự sau để trình bày trực tiếp:
 - CarDD: đã hoàn tất baseline, candidate comparison, model lock và final test đúng một lần.
 - Document data: registry, intake và audit tự động đã hoàn tất; SROIE raw có tám cặp leakage đã được ghi nhận.
 - SROIE processed: PASS với 525/93/361 và exact overlap bằng 0.
-- Document baseline: đã có validation metric cho DiT, PaddleOCR và rule KIE; LayoutLMv3 v2 dừng an toàn tại data gate, bản v3 chờ chạy.
+- Document baseline: đã có metric cho DiT smoke, PaddleOCR và rule KIE. LayoutLMv3 v3 đạt field micro-F1 0,9214 so với rule 0,6834 và được chọn theo quy tắc khóa trước; SROIE test vẫn khóa. DiT independent validation đang chờ chạy lại bằng notebook v2.
 - RAG prompt/retrieval test: chưa áp dụng vì chưa chọn RAG làm baseline.
 - Production/go-live: chưa mở; còn cần dữ liệu bảo hiểm thật, PII/license review, API, UI integration, monitoring và UAT.
