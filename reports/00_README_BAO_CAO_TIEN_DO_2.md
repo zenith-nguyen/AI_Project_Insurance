@@ -28,6 +28,9 @@ Mở tài liệu theo thứ tự sau để trình bày trực tiếp:
 24. `LAYOUTLMV3_ALIGNMENT_REMEDIATION_V1.md` — giải thích data gate 0,1290 và thuật toán căn chỉnh đã sửa trong notebook v3.
 25. `Document_LayoutLMv3_Candidate_Acc2_v3.ipynb` — candidate KIE đã chạy; vẫn khóa test và giữ nguyên quy tắc chọn model.
 26. `LAYOUTLMV3_CANDIDATE_VALIDATION_V2.md` — kết quả validation, model selection và giới hạn của LayoutLMv3.
+27. `DIT_INDEPENDENT_VALIDATION_V1.md` — DiT trên 320 ảnh validation độc lập với sample train intake.
+28. `CLAIM_CONSISTENCY_NETWORKX_DEMO_V1.md` — kết quả engineering demo consistency và graph point-in-time.
+29. `CURRENT_PRODUCT_STATUS_2026-10-12.md` — trạng thái module, product gate và thứ tự triển khai tiếp theo.
 26. `LAYER_B_STAGE_RELIABILITY_DICTIONARY_V1.md` — data dictionary theo stage, rubric reliability và feature policy cho đủ 39 cột nguồn.
 27. `FRAUD_LABEL_PROVENANCE_V1.md` — cách diễn giải target quan sát và giới hạn label provenance.
 28. `DATA_MODEL_SYSTEM_CARD_V2.md` — Data Card, Model Card đa module và kiến trúc hệ thống đã cập nhật.
@@ -38,6 +41,7 @@ Mở tài liệu theo thứ tự sau để trình bày trực tiếp:
 - CarDD: đã hoàn tất baseline, candidate comparison, model lock và final test đúng một lần.
 - Document data: registry, intake và audit tự động đã hoàn tất; SROIE raw có tám cặp leakage đã được ghi nhận.
 - SROIE processed: PASS với 525/93/361 và exact overlap bằng 0.
-- Document baseline: đã có metric cho DiT smoke, PaddleOCR và rule KIE. LayoutLMv3 v3 đạt field micro-F1 0,9214 so với rule 0,6834 và được chọn theo quy tắc khóa trước; SROIE test vẫn khóa. DiT independent validation đang chờ chạy lại bằng notebook v2.
+- Document: DiT independent validation đạt macro-F1 0,9283; PaddleOCR và rule KIE đã có baseline. LayoutLMv3 v3 đạt field micro-F1 0,9214 so với rule 0,6834 và được chọn theo quy tắc khóa trước; SROIE test vẫn khóa.
+- Integration: consistency và NetworkX point-in-time engineering demo đều PASS; chưa có graph claim thật để đánh giá fraud lift.
 - RAG prompt/retrieval test: chưa áp dụng vì chưa chọn RAG làm baseline.
 - Production/go-live: chưa mở; còn cần dữ liệu bảo hiểm thật, PII/license review, API, UI integration, monitoring và UAT.

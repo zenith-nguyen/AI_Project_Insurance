@@ -6,7 +6,7 @@
 
 **Ngày cập nhật:** 11/10/2026
 
-**Trạng thái:** Đã hoàn thành baseline tabular v1; CarDD đã khóa YOLOv8s bằng validation và hoàn tất final test đúng một lần với artifact verification PASS; document intake/audit và SROIE processed split đã PASS; DiT/PaddleOCR/rule KIE đã có baseline; LayoutLMv3 v3 đạt validation field micro-F1 0,9214 và được chọn theo rule khóa trước, test vẫn khóa.
+**Trạng thái:** Đã hoàn thành baseline tabular v1; CarDD đã khóa YOLOv8s bằng validation và hoàn tất final test đúng một lần với artifact verification PASS; document intake/audit và SROIE processed split đã PASS; DiT independent validation đạt macro-F1 0,9283; LayoutLMv3 v3 đạt validation field micro-F1 0,9214 và được chọn theo rule khóa trước, test vẫn khóa; consistency và NetworkX engineering demo PASS.
 
 ## 1. Tóm tắt điều hành
 

@@ -5,8 +5,8 @@ Ngày cập nhật: 2026-10-10
 ## Trạng thái hiện tại
 
 - Nhánh ảnh CarDD: đã khóa YOLOv8s-seg, hoàn tất final test đúng một lần và có checkpoint kiểm chứng bằng SHA-256.
-- Nhánh chứng từ: đã intake/audit CORD v2, FUNSD canonical, XFUND, SROIE và RVL-CDIP sample 1.600 ảnh. SROIE processed group split đã PASS với exact overlap bằng 0. DiT smoke, PaddleOCR và rule KIE đã có metric; LayoutLMv3 v3 đạt validation F1 0,9214 và được chọn, test vẫn khóa. DiT independent validation đang chờ notebook v2. MIDV hoãn theo scope.
-- Nhánh đồ thị: mới ở mức hợp đồng tích hợp; chưa tạo graph feature khi chưa có thực thể và quan hệ bảo hiểm thật.
+- Nhánh chứng từ: đã intake/audit CORD v2, FUNSD canonical, XFUND, SROIE và RVL-CDIP sample. SROIE processed group split đã PASS với exact overlap bằng 0. DiT independent validation đạt macro-F1 0,9283; PaddleOCR và rule KIE đã có metric; LayoutLMv3 v3 đạt validation F1 0,9214 và được chọn, test vẫn khóa. MIDV hoãn theo scope.
+- Nhánh đồ thị: consistency và point-in-time NetworkX demo đã PASS; chưa có graph claim thật để đo fraud lift.
 
 ## Kiến trúc mục tiêu
 
@@ -98,11 +98,10 @@ Mỗi task có train/validation/test riêng và model card riêng.
 
 ## Thứ tự triển khai tiếp theo
 
-1. Rerun SROIE processed group split để xác minh overlap bằng 0.
-2. Dùng schema và ground-truth policy v1 đã soạn để chuẩn hóa task chứng từ.
-3. Xây baseline OCR/KIE/classification trên validation, chưa mở test cuối.
-4. Chuẩn hóa inference code cho checkpoint CarDD hiện tại.
-5. Tạo FastAPI contract và một UI demo dùng model thật.
-6. Bổ sung dữ liệu claim thật có `claim_id`, sau đó xây graph feature.
-7. Chạy end-to-end test, pilot, quan sát và mới quyết định go-live.
+1. Review checkpoint hash và mở LayoutLMv3 final test đúng một lần theo protocol khóa trước.
+2. Đăng ký checkpoint/schema/metric cho CarDD, DiT và LayoutLMv3.
+3. Chuẩn hóa inference service cho các model hiện tại.
+4. Tạo FastAPI contract và một UI reviewer demo dùng model thật.
+5. Bổ sung dữ liệu claim thật có `claim_id`, sau đó benchmark consistency và graph feature.
+6. Chạy golden end-to-end test, security/load test, pilot và mới quyết định go-live.
 

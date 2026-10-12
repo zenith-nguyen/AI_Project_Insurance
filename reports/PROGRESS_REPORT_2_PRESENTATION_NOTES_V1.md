@@ -16,7 +16,7 @@ Nhánh ảnh xe đã hoàn tất quy trình baseline/candidate/final-test:
 - YOLOv8s-seg final-test mask mAP50-95: 0.5140 trên 419 ảnh và 931 instances.
 - Checkpoint được khóa bằng SHA-256; final test có execution record và không chạy lần hai.
 
-Nhánh chứng từ chưa tuyên bố model cuối. Baseline protocol gồm DiT cho document classification, PaddleOCR cho OCR, rule-based extraction làm KIE baseline và LayoutLMv3 làm candidate nghiên cứu.
+Nhánh chứng từ đã hoàn tất validation v1 nhưng chưa tuyên bố model production. DiT independent validation đạt macro-F1 0,9283. PaddleOCR là baseline còn yếu với CER 0,4097/WER 0,5592. LayoutLMv3 đạt field micro-F1 0,9214 so với isolated rule 0,6834 và được chọn trên validation; final test vẫn khóa.
 
 ## 3. Metrics và lỗi chính
 
@@ -28,6 +28,8 @@ Document metrics đã khóa trước khi chạy:
 - OCR: CER, WER, exact match.
 - KIE: field/entity precision, recall, micro-F1, macro-F1.
 - Data quality: corrupt rate, exact/near duplicate rate, split leakage.
+
+Consistency và NetworkX point-in-time demo đều PASS. Đây là bằng chứng code/contract chạy đúng trên synthetic data, chưa phải metric phát hiện gian lận.
 
 ## 4. Leakage, license và giới hạn
 
@@ -43,8 +45,8 @@ Document metrics đã khóa trước khi chạy:
 
 ## 6. Công việc kế tiếp
 
-1. Hoàn tất audit XFUND/RVL và SROIE processed split.
-2. Chạy classification/OCR/KIE baseline trên train/validation đã khóa.
-3. Lập error analysis và model selection matrix bằng kết quả thật.
-4. Đóng gói inference pipeline thành API, thêm schema `claim_id`, logging và version metadata.
-5. Kết nối UI thử nghiệm, kiểm thử tích hợp và UAT trước go-live.
+1. Review và chạy LayoutLMv3 final test đúng một lần sau khi protocol được đóng.
+2. Đăng ký model/checkpoint/schema/metric và đóng gói inference ngoài notebook.
+3. Tạo FastAPI + UI reviewer tối thiểu có `claim_id`, evidence và audit trail.
+4. Thu thập golden set bảo hiểm thật và graph entity-edge có timestamp.
+5. Kiểm thử end-to-end, security/load, UAT và pilot trước go-live.

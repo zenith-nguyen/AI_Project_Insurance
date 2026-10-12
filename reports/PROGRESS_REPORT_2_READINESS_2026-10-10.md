@@ -1,11 +1,11 @@
 # Báo cáo mức sẵn sàng cho Tiến độ lần 2
 
-**Ngày rà soát:** 10/10/2026  
+**Ngày rà soát:** 12/10/2026
 **Trọng tâm yêu cầu:** Data + Baseline + Evaluation v1
 
 ## Tình hình chung
 
-Phần kỹ thuật cốt lõi cho báo cáo lần 2 đã có: audit dữ liệu tabular và document, data dictionary, leakage check, baseline rule, bốn model tabular, model selection, metrics và phân tích hạn chế. Nhánh CarDD đã hoàn tất training, model selection và final test đúng một lần. YOLOv8s được chọn bằng validation; final-test artifact verification PASS với mask mAP50-95 `0,513978`. Không chạy final test lần hai. Nhánh document đã hoàn tất full audit; processed SROIE đang chờ rerun bản group-aware để đóng data gate.
+Phần kỹ thuật cốt lõi cho báo cáo lần 2 đã hoàn tất: audit dữ liệu tabular/document, data dictionary, leakage remediation, baseline, model selection, metrics và giới hạn. CarDD đã hoàn tất final test đúng một lần với mask mAP50-95 `0,513978`. SROIE processed split đã PASS; DiT independent validation đạt macro-F1 `0,928260`; LayoutLMv3 đạt validation field micro-F1 `0,921409` và được chọn theo quy tắc khóa trước. Consistency và NetworkX engineering demo đều PASS. LayoutLMv3 final test vẫn khóa và sản phẩm chưa production-ready.
 
 ## Checklist deliverable
 
@@ -21,14 +21,14 @@ Phần kỹ thuật cốt lõi cho báo cáo lần 2 đã có: audit dữ liệu
 | Risk Register | Có phần kỹ thuật v2 | `risk_register_v2_additions.md` | Ghép với Risk Register v1 của nhóm thành một bảng |
 | Backlog + Sprint Plan | Nhóm xác nhận đã có ngoài repo kỹ thuật | Artifact business do nhóm quản lý | Không làm lại trong nhánh kỹ thuật |
 | Mockup/user workflow | Nhóm xác nhận đã có ngoài repo kỹ thuật | Artifact business do nhóm quản lý | Không làm lại trong nhánh kỹ thuật |
-| Data Audit Report | Hoàn thành tabular, CarDD và document v1 | `data_audit_report.md`, `DOCUMENT_DATA_AUDIT_RUN_2026-10-11.md` | Bổ sung processed PASS khi rerun |
+| Data Audit Report | Hoàn thành tabular, CarDD và document v1 | `data_audit_report.md`, `DOCUMENT_DATA_AUDIT_RUN_2026-10-11.md`, `SROIE_PROCESSED_SPLIT_RESULT_V1.md` | Duy trì registry và audit khi có dữ liệu mới |
 | Data Dictionary/KB Audit | Hoàn thành trong scope hiện tại | `data_dictionary.md`, `DOCUMENT_CLAIM_INTEGRATION_CONTRACT_V1.md`, `GROUND_TRUTH_DEFINITION_V1.md` | Mở rộng khi có schema chứng từ bảo hiểm thật |
 | EDA/source analysis | Hoàn thành v1 | `DOCUMENT_EDA_SOURCE_ANALYSIS_V1.md`, source audit và CarDD reports | Bổ sung gallery nếu cần trình bày |
 | Ground Truth Definition | Hoàn thành v1 | `GROUND_TRUTH_DEFINITION_V1.md` | RAG citation policy chỉ mở nếu chọn RAG |
-| Data Leakage Check | Hoàn thành audit và remediation | `DATA_LEAKAGE_CHECK_V1.md`, SROIE diagnostic, CarDD split audit | Rerun processed group split; near-duplicate review trước benchmark cuối |
-| Baseline process/model | Hoàn thành | Rule + XGBoost tabular; YOLOv8n/YOLOv8s CarDD; final test đã khóa | Không chạy lại CarDD test |
-| Model Selection Matrix | Hoàn thành tabular/CarDD; document protocol đã có | `model_selection_matrix.md`, `CARDD_MODEL_SELECTION_V1.md`, `DOCUMENT_MODEL_BASELINE_PLAN_V1.md` | Điền metric document sau baseline run |
-| Metrics v1 | Hoàn thành tabular và CarDD | `metrics_v1.md`, `CARDD_FINAL_TEST_V1.md`, CarDD JSON reports trên Drive | Bổ sung error gallery/model card nếu cần trình bày |
+| Data Leakage Check | Hoàn thành audit và remediation | `DATA_LEAKAGE_CHECK_V1.md`, SROIE diagnostic, CarDD split audit | Near-duplicate review khi có dữ liệu nghiệp vụ mới |
+| Baseline process/model | Hoàn thành research v1 | Rule + XGBoost; CarDD; DiT; PaddleOCR; rule KIE; LayoutLMv3 | Không chạy lại CarDD test; LayoutLMv3 test vẫn khóa |
+| Model Selection Matrix | Hoàn thành tabular/CarDD và LayoutLMv3 validation selection | `model_selection_matrix.md`, `CARDD_MODEL_SELECTION_V1.md`, `LAYOUTLMV3_CANDIDATE_VALIDATION_V2.md` | Bổ sung domain-data selection khi có dữ liệu thật |
+| Metrics v1 | Hoàn thành trong scope tiến độ 2 | `metrics_v1.md`, `CARDD_FINAL_TEST_V1.md`, `DOCUMENT_BASELINE_VALIDATION_V1.md`, `DIT_INDEPENDENT_VALIDATION_V1.md` | Bổ sung product/golden-set metric ở giai đoạn MVP |
 | RAG prompt/retrieval test | Chưa áp dụng | Chưa chọn RAG làm baseline | Chỉ làm nếu scope chính thức có RAG |
 
 ## Kết quả nên trình bày
@@ -51,6 +51,15 @@ Phần kỹ thuật cốt lõi cho báo cáo lần 2 đã có: audit dữ liệu
 - Final test 419 ảnh/931 instance: mask mAP50-95 `0,513978`, mask mAP50 `0,681571`, box mAP50-95 `0,539952`.
 - Artifact verification PASS; không chạy lại test hoặc tinh chỉnh theo test.
 
+### Document intelligence
+
+- DiT independent validation: macro-F1 `0,928260`, balanced accuracy `0,928125` trên 320 ảnh cân bằng từ RVL validation.
+- PaddleOCR: CER `0,4097`, WER `0,5592`; đây là baseline còn yếu.
+- Isolated rule KIE: field micro-F1 `0,6834` cho `date`/`total`.
+- LayoutLMv3: validation field micro-F1 `0,9214`, tăng `0,2380`; candidate được chọn theo rule khóa trước.
+- LayoutLMv3 test 361 ảnh vẫn khóa; chưa tuyên bố final-test metric.
+- Consistency và NetworkX point-in-time demo PASS nhưng chưa có graph claim thật.
+
 ## Cách kể câu chuyện khi trình bày trực tiếp
 
 1. Bắt đầu bằng quyết định hỗ trợ reviewer, không tự kết luận gian lận.
@@ -62,9 +71,9 @@ Phần kỹ thuật cốt lõi cho báo cáo lần 2 đã có: audit dữ liệu
 
 ## Ưu tiên tiếp theo
 
-1. Lưu và trình bày SROIE processed split PASS cùng document baseline validation.
-2. Chạy baseline document nhỏ trên split đã khóa; không tải/chạy toàn bộ RVL-CDIP khi chưa cần.
-3. Hoàn thiện model card/error gallery CarDD nếu cần cho buổi trình bày; không mở lại model selection.
-4. Không làm lại các artifact business mà nhóm đã xác nhận đang có; chỉ tham chiếu chúng khi trình bày.
-5. Chỉ mở nhánh NetworkX khi có entity-edge và `event_time`; dữ liệu document công khai không tạo được graph fraud claim-level.
+1. Trình bày evidence pack hiện tại; không chạy lại các experiment đã khóa.
+2. Review checkpoint/hash rồi chuẩn bị LayoutLMv3 final test đúng một lần.
+3. Đóng gói model registry, inference API và UI reviewer tối thiểu.
+4. Thu thập validation/golden set bảo hiểm thật có `claim_id`, consent và PII policy.
+5. Chỉ benchmark fraud lift của NetworkX khi có entity-edge, `event_time` và outcome thật.
 

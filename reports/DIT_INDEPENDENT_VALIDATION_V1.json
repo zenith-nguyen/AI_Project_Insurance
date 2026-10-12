@@ -1,0 +1,20 @@
+{
+  "evidence_status": "transcribed_from_completed_colab_output",
+  "run_date": "2026-10-12",
+  "notebook": "Document_DiT_Independent_Validation_Acc2_v2.ipynb",
+  "model": "microsoft/dit-base-finetuned-rvlcdip",
+  "model_revision": "23f8b03d130fb66bbc9a15df3c75d753e49240eb",
+  "source_dataset": "chainyo/rvl-cdip",
+  "source_revision": "66f430a1252ea1732413a80a56a1b6e8bc74264e",
+  "source_split": "val",
+  "validation_rows": 320,
+  "samples_per_class": 20,
+  "classes": 16,
+  "balanced_sample": true,
+  "unique_hash_manifest": true,
+  "test_used": false,
+  "macro_f1": 0.9282600937527126,
+  "balanced_accuracy": 0.928125,
+  "sample_manifest": "/content/drive/MyDrive/AI_Project_Insurance_Acc 2/data/bronze/documents/rvl_cdip/mirror_main/independent_validation_sample_v1/sample_manifest.jsonl",
+  "source_report": "/content/drive/MyDrive/AI_Project_Insurance_Acc 2/reports/metrics/documents/dit_rvl_official_validation_v1.json"
+}

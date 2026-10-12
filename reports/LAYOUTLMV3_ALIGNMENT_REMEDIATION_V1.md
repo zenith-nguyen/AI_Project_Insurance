@@ -1,7 +1,7 @@
 # Khắc phục data gate LayoutLMv3 v3
 
 **Ngày cập nhật:** 11/10/2026  
-**Trạng thái:** bản v2 dừng an toàn trước training; bản v3 đã sửa thuật toán căn chỉnh và chờ chạy trên Colab.
+**Trạng thái:** bản v2 dừng an toàn trước training; bản v3 đã sửa thuật toán, đạt alignment coverage 0,9892, hoàn tất training và được chọn trên validation với field micro-F1 0,9214. Test vẫn khóa.
 
 ## Sự cố quan sát được
 

@@ -1,0 +1,15 @@
+{
+  "evidence_status": "transcribed_from_completed_colab_output",
+  "run_date": "2026-10-12",
+  "notebook": "Claim_Consistency_NetworkX_Demo_Acc2_v1.ipynb",
+  "point_in_time_graph_demo_pass": true,
+  "consistency_demo_pass": true,
+  "synthetic_demo": true,
+  "features": {
+    "graph_degree": 1,
+    "shared_entity_count": 1,
+    "connected_component_size": 3,
+    "two_hop_claim_count": 1
+  },
+  "fraud_detection_metric": null
+}

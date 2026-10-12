@@ -12,7 +12,7 @@ Tên mô tả dùng trong báo cáo: **AI-assisted Motor Insurance Claim Review 
 |---|---|---|
 | Tabular risk ranking | XGBoost baseline nghiên cứu đã chạy | Risk score và explanation cho hồ sơ bảng |
 | Damage understanding | YOLOv8s-seg đã khóa/final-test | Mask, loại hư hại, confidence |
-| Document classification | DiT baseline đã smoke-test; independent validation chờ chạy | Loại chứng từ |
+| Document classification | DiT independent validation macro-F1 0,9283 | Loại chứng từ |
 | OCR | PaddleOCR baseline đã đo trên SROIE validation | Text và vị trí |
 | Key Information Extraction | Rule baseline; LayoutLMv3 candidate đã chọn trên validation | Hiện mới hỗ trợ trường ngày và tổng tiền |
 | Consistency checks | Rules/versioned code; synthetic demo PASS | Cờ sai lệch giữa form, hóa đơn và claim |

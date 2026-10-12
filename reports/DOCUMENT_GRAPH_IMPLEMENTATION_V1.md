@@ -7,12 +7,12 @@
 
 | Thành phần | Đã xây trong source code | Đã kiểm thử cục bộ | Đã chạy metric trên dữ liệu thật |
 |---|---:|---:|---:|
-| Document classifier DiT | Adapter inference + notebook validation | Có, kiểm tra contract bằng mock | Smoke metric 0,9626 trên sample từ upstream train; independent validation chờ chạy |
+| Document classifier DiT | Adapter inference + notebook validation | Có, kiểm tra contract bằng mock | Independent validation macro-F1 0,9283; balanced accuracy 0,9281 |
 | PaddleOCR | Adapter chuẩn hóa output v2/v3 + notebook CER/WER | Có | Có: CER 0,4097; WER 0,5592 trên 93 SROIE validation |
 | Rule KIE | Trích xuất ngày, tổng tiền, số chứng từ, biển số | Có | Có: F1 0,6776 cho date/total trên validation |
 | LayoutLMv3 KIE | Adapter checkpoint + notebook fine-tune | Có preflight; v3 coverage 0,9892 | Validation F1 0,9214; candidate được chọn; test khóa |
 | Consistency rules | Amount/date/plate với pass/fail/unknown | Có | Chưa có claim-document thật |
-| NetworkX | Graph point-in-time và sáu feature v1 | Có | Chỉ demo synthetic; chưa có graph thật |
+| NetworkX | Graph point-in-time và sáu feature v1 | Có | Synthetic demo PASS; chưa có graph thật |
 | Reviewer result contract | JSON hợp nhất damage/document/rules/graph/risk | Có | Chưa tích hợp API/UI |
 
 Baseline document validation và LayoutLMv3 candidate validation đã có metric thật. Không dùng từ “hoàn thành model chứng từ” trước khi candidate được final-test trên protocol đã duyệt và có dữ liệu bảo hiểm phù hợp. Không dùng kết quả synthetic NetworkX như bằng chứng phát hiện fraud.
