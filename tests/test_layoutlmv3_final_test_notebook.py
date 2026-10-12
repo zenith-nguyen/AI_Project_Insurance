@@ -3,7 +3,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-NOTEBOOK = ROOT / "notebooks/Document_LayoutLMv3_Final_Test_Acc2_v1.ipynb"
+NOTEBOOK = ROOT / "notebooks/Document_LayoutLMv3_Final_Test_Acc2_v2.ipynb"
 
 
 def notebook_source() -> str:
@@ -15,6 +15,8 @@ def test_final_test_notebook_is_checkpoint_locked_and_evaluation_only():
     source = notebook_source()
     assert "RUN_FINAL_TEST = True" in source
     assert "EXPECTED_TEST_ROWS = 361" in source
+    assert ".shortcut-targets-by-id" in source
+    assert "matching_projects" in source
     assert 'DATA_ROOT/"test.parquet"' in source
     assert 'selection.get("candidate_selected")' in source
     assert 'selection["checkpoint_tree_sha256"]' in source

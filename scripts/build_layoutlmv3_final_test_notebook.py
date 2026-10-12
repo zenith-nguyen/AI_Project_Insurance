@@ -7,7 +7,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CANDIDATE_NOTEBOOK = ROOT / "notebooks/Document_LayoutLMv3_Candidate_Acc2_v3.ipynb"
-OUTPUT = ROOT / "notebooks/Document_LayoutLMv3_Final_Test_Acc2_v1.ipynb"
+OUTPUT = ROOT / "notebooks/Document_LayoutLMv3_Final_Test_Acc2_v2.ipynb"
 
 
 def lines(value: str) -> list[str]:
@@ -53,19 +53,17 @@ def main() -> None:
     definitions, metrics = candidate_fragments()
     cells = [
         markdown(
-            """# LayoutLMv3 SROIE — Final Test Acc 2 v1
+            """# LayoutLMv3 SROIE — Final Test Acc 2 v2
 
-Notebook này chỉ đánh giá **checkpoint đã được chọn trên validation**. Nó không train, không chọn lại epoch và không sửa threshold/alignment theo test. Test gồm 361 ảnh và chỉ được mở sau khi checkpoint hash, selection report và processed split đều hợp lệ. Execution lock ngăn chạy final test lần hai."""
+Notebook này chỉ đánh giá **checkpoint đã được chọn trên validation**. Nó không train, không chọn lại epoch và không sửa threshold/alignment theo test. Test gồm 361 ảnh và chỉ được mở sau khi checkpoint hash, selection report và processed split đều hợp lệ. Execution lock ngăn chạy final test lần hai. Bản v2 tự tìm project trong `MyDrive` hoặc Google Drive shortcut để hỗ trợ chạy chéo tài khoản."""
         ),
         code(
             '''from pathlib import Path
 
-PROJECT = Path("/content/drive/MyDrive/AI_Project_Insurance_Acc 2")
-DATA_ROOT = PROJECT / "data/processed/documents/sroie/v1"
-CANDIDATE_REPORT = PROJECT / "reports/metrics/documents/layoutlmv3_sroie_candidate_validation_v2.json"
-SPLIT_REPORT = PROJECT / "reports/data_audit/documents/sroie_processed_split_v1.json"
-FINAL_REPORT = PROJECT / "reports/metrics/documents/layoutlmv3_sroie_final_test_v1.json"
-EXECUTION_LOCK = PROJECT / "reports/metrics/documents/layoutlmv3_sroie_final_test_v1.execution.json"
+PROJECT_NAME = "AI_Project_Insurance_Acc 2"
+CANDIDATE_REPORT_REL = Path("reports/metrics/documents/layoutlmv3_sroie_candidate_validation_v2.json")
+SPLIT_REPORT_REL = Path("reports/data_audit/documents/sroie_processed_split_v1.json")
+CHECKPOINT_REL = Path("artifacts/document/layoutlmv3_sroie_candidate_v2/best")
 RUN_FINAL_TEST = True
 EXPECTED_TEST_ROWS = 361
 SEED = 20261012'''
@@ -81,6 +79,28 @@ drive.mount("/content/drive")
 
 import hashlib, json, uuid
 from datetime import datetime, timezone
+
+project_candidates = [Path("/content/drive/MyDrive") / PROJECT_NAME]
+shortcut_root = Path("/content/drive/.shortcut-targets-by-id")
+if shortcut_root.is_dir():
+    project_candidates.extend(shortcut_root.glob(f"*/{PROJECT_NAME}"))
+project_candidates = list(dict.fromkeys(path.resolve() for path in project_candidates if path.is_dir()))
+matching_projects = [path for path in project_candidates if (path / CANDIDATE_REPORT_REL).is_file()]
+if not matching_projects:
+    checked = "\n".join(f"- {path}" for path in project_candidates) or "- Không thấy project/shortcut nào"
+    raise FileNotFoundError(
+        "Không tìm thấy candidate report trong Drive của tài khoản hiện tại. "
+        "Hãy mở notebook bằng tài khoản đã train LayoutLMv3 hoặc share toàn bộ project từ tài khoản đó.\n"
+        f"Đã kiểm tra:\n{checked}\nFile cần có: {CANDIDATE_REPORT_REL}"
+    )
+PROJECT = matching_projects[0]
+DATA_ROOT = PROJECT / "data/processed/documents/sroie/v1"
+CANDIDATE_REPORT = PROJECT / CANDIDATE_REPORT_REL
+SPLIT_REPORT = PROJECT / SPLIT_REPORT_REL
+FINAL_REPORT = PROJECT / "reports/metrics/documents/layoutlmv3_sroie_final_test_v1.json"
+EXECUTION_LOCK = PROJECT / "reports/metrics/documents/layoutlmv3_sroie_final_test_v1.execution.json"
+print("Resolved project:", PROJECT)
+print("Candidate report:", CANDIDATE_REPORT)
 
 def sha256_file(path):
     digest=hashlib.sha256()
@@ -104,7 +124,8 @@ split_report=json.loads(SPLIT_REPORT.read_text(encoding="utf-8"))
 if not selection.get("candidate_selected"): raise RuntimeError("Candidate chưa được chọn theo locked rule.")
 if not selection.get("final_test_locked") or selection.get("test_used"): raise RuntimeError("Selection protocol không hợp lệ.")
 if not split_report.get("valid") or any(split_report["cross_split_exact_duplicates"].values()): raise RuntimeError("Processed split chưa sạch.")
-CHECKPOINT=Path(selection["checkpoint"])
+reported_checkpoint=Path(selection["checkpoint"])
+CHECKPOINT=reported_checkpoint if reported_checkpoint.is_dir() else PROJECT/CHECKPOINT_REL
 if not CHECKPOINT.is_dir(): raise FileNotFoundError(f"Thiếu checkpoint: {CHECKPOINT}")
 checkpoint_hash=tree_hash(CHECKPOINT)
 if checkpoint_hash != selection["checkpoint_tree_sha256"]: raise RuntimeError("Checkpoint tree hash không khớp selection report.")
