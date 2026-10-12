@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0",
+  "claim_id": "CLM-2026-00418",
+  "trace_id": "fixture",
+  "created_at": "2026-10-12T09:16:09+07:00",
+  "mode": "fixture",
+  "human_review_required": true,
+  "priority": "high",
+  "research_risk_score": 0.68,
+  "risk_score_is_probability": false,
+  "evidence_completeness": 0.875,
+  "missing_evidence": ["rear_wide_angle_photo"],
+  "evidence": [
+    {"evidence_id": "claim-intake", "kind": "claim", "label": "Claim intake record", "observed_at": "2026-10-12T09:14:03+07:00"},
+    {"evidence_id": "damage-02", "kind": "image", "label": "Rear-quarter damage image", "observed_at": "2026-10-12T09:14:42+07:00"},
+    {"evidence_id": "repair-estimate", "kind": "document", "label": "Repair estimate", "observed_at": "2026-10-12T09:14:42+07:00"},
+    {"evidence_id": "repair-shop-link", "kind": "relationship", "label": "Prior repair-shop relationship", "observed_at": "2026-10-12T09:16:08+07:00"}
+  ],
+  "signals": [
+    {"signal_id": "amount-mismatch", "category": "consistency", "title": "Báo giá cao hơn 12,7%", "explanation": "Báo giá sửa chữa 18,45 triệu; số tiền xe khai báo 16,37 triệu.", "severity": "review", "evidence_ids": ["claim-intake", "repair-estimate"]},
+    {"signal_id": "shared-repair-shop", "category": "relationship", "title": "Trùng đơn vị sửa chữa", "explanation": "Một hồ sơ trước đó có cùng đơn vị sửa chữa tại thời điểm chấm.", "severity": "review", "evidence_ids": ["repair-shop-link"]},
+    {"signal_id": "damage-caution", "category": "damage", "title": "Cần kiểm tra ảnh thủ công", "explanation": "Dent và scratch là hai lớp có metric còn yếu.", "severity": "review", "evidence_ids": ["damage-02"], "model_name": "yolov8s-seg", "model_version": "cardd_candidate_v1"}
+  ],
+  "extracted_fields": {
+    "claim_amount": 16370000,
+    "repair_estimate_total": 18450000,
+    "incident_date": "2026-10-11",
+    "plate_number": "51H-•••.42"
+  },
+  "graph_features": {"graph_degree": 1, "shared_entity_count": 1, "connected_component_size": 3, "two_hop_claim_count": 1},
+  "model_versions": {"tabular_risk": "tabular_v1", "damage": "cardd_candidate_v1", "document_classifier": "23f8b03", "ocr": "ppocrv6_medium", "kie": "layoutlmv3_sroie_candidate_v2", "graph": "point_in_time_v1"},
+  "warnings": ["Research risk score is not a calibrated production fraud probability.", "Human review is required."]
+}

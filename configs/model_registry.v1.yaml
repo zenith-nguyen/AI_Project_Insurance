@@ -1,0 +1,81 @@
+schema_version: "1.0"
+product_version: "research-v1"
+generated_at: "2026-10-12"
+modules:
+  tabular_risk:
+    implementation: xgboost
+    version: tabular_v1
+    task: claim_priority_ranking
+    artifact_uri: artifacts/models/tabular_v1/bundle.joblib
+    artifact_hash: pending_local_artifact_registration
+    evidence: reports/RESULTS.md
+    primary_metric: average_precision
+    metric_value: 0.559
+    evaluation_split: frozen_test_200
+    status: research_validated
+  damage_segmentation:
+    implementation: yolov8s-seg
+    version: cardd_candidate_v1
+    task: vehicle_damage_segmentation
+    artifact_uri: "gdrive://AI_Project_Insurance_Acc 2/artifacts/image/cardd_yolov8s_seg_candidate_v1/weights/best.pt"
+    artifact_hash: 6c0d828760a427d48623653dcd6fffeb1cf591045d9ce8b8684a1d0f5f89420b
+    evidence: reports/CARDD_FINAL_TEST_V1.md
+    primary_metric: mask_map50_95
+    metric_value: 0.5139777576956092
+    evaluation_split: final_test_419
+    status: final_test_complete
+  document_classifier:
+    implementation: microsoft/dit-base-finetuned-rvlcdip
+    version: 23f8b03d130fb66bbc9a15df3c75d753e49240eb
+    task: document_classification
+    artifact_uri: "hf://microsoft/dit-base-finetuned-rvlcdip"
+    artifact_hash: huggingface_revision
+    evidence: reports/DIT_INDEPENDENT_VALIDATION_V1.md
+    primary_metric: macro_f1
+    metric_value: 0.9282600937527126
+    evaluation_split: independent_validation_320
+    status: research_validated
+  ocr:
+    implementation: paddleocr
+    version: ppocrv6_medium
+    task: document_ocr
+    artifact_uri: paddle_official_models
+    artifact_hash: pending_upstream_manifest
+    evidence: reports/DOCUMENT_BASELINE_VALIDATION_V1.md
+    primary_metric: character_error_rate
+    metric_value: 0.409656383653424
+    evaluation_split: sroie_validation_93
+    status: baseline_needs_improvement
+  document_kie:
+    implementation: layoutlmv3
+    version: layoutlmv3_sroie_candidate_v2
+    task: date_total_extraction
+    artifact_uri: "gdrive://AI_Project_Insurance_Acc 2/artifacts/document/layoutlmv3_sroie_candidate_v2/best"
+    artifact_hash: read_from_candidate_report_before_final_test
+    evidence: reports/LAYOUTLMV3_CANDIDATE_VALIDATION_V2.md
+    primary_metric: field_micro_f1
+    metric_value: 0.9214092140921409
+    evaluation_split: sroie_validation_93
+    status: selected_final_test_locked
+  consistency:
+    implementation: python_rules
+    version: consistency_v1
+    task: cross_source_consistency
+    artifact_uri: src/integration/consistency.py
+    artifact_hash: source_control_commit
+    evidence: reports/CLAIM_CONSISTENCY_NETWORKX_DEMO_V1.md
+    primary_metric: engineering_demo
+    metric_value: 1.0
+    evaluation_split: synthetic_demo
+    status: demo_only
+  relationships:
+    implementation: networkx
+    version: point_in_time_v1
+    task: claim_relationship_features
+    artifact_uri: src/graph/claim_graph.py
+    artifact_hash: source_control_commit
+    evidence: reports/CLAIM_CONSISTENCY_NETWORKX_DEMO_V1.md
+    primary_metric: engineering_demo
+    metric_value: 1.0
+    evaluation_split: synthetic_demo
+    status: demo_only

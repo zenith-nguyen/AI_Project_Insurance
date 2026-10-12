@@ -5,7 +5,7 @@
 
 ## 1. Kết quả chính
 
-Dự án đã hoàn thành data audit và baseline/evaluation v1 cho ba nhánh: dữ liệu bảng, ảnh hư hỏng xe và chứng từ. Nhóm cũng đã có demo consistency rules và NetworkX theo nguyên tắc point-in-time. Kết quả hiện đủ để chứng minh tính khả thi kỹ thuật, nhưng chưa đại diện cho hiệu quả trên dữ liệu bảo hiểm Việt Nam thực tế.
+Dự án đã hoàn thành data audit và baseline/evaluation v1 cho ba nhánh: dữ liệu bảng, ảnh hư hỏng xe và chứng từ. Nhóm cũng đã có demo consistency rules và NetworkX theo nguyên tắc point-in-time, model registry v1, API contract chạy ở fixture mode và giao diện Claim Review Workbench. Kết quả hiện đủ để chứng minh tính khả thi kỹ thuật và luồng tích hợp prototype, nhưng chưa đại diện cho hiệu quả trên dữ liệu bảo hiểm Việt Nam thực tế.
 
 ## 2. Đối chiếu yêu cầu báo cáo
 
@@ -96,7 +96,7 @@ UI dùng fixture JSON trong giai đoạn prototype và chuyển sang FastAPI khi
 | KIE | LayoutLMv3 | Validation field F1 0,9214 | Trích xuất `date` và `total` |
 | Consistency | Python rules | Engineering demo PASS | Cờ lệch số tiền, ngày, biển số |
 | Relationships | NetworkX | Point-in-time demo PASS | Shared entity và liên kết claim |
-| Serving | FastAPI, dự kiến Docker | Chưa đóng gói | Hợp nhất response theo `claim_id` |
+| Serving | FastAPI + Docker fixture | API contract và container smoke test PASS | Hợp nhất response theo `claim_id`; live adapters chưa nối |
 
 Đây là kiến trúc nhiều model. Không có một “siêu model” duy nhất đọc toàn bộ ảnh, tài liệu và graph ở giai đoạn hiện tại. Cách tách module giúp kiểm tra từng nguồn bằng chứng, thay model độc lập và hiển thị provenance cho người duyệt.
 
@@ -118,13 +118,13 @@ UI dùng fixture JSON trong giai đoạn prototype và chuyển sang FastAPI khi
 - CarDD còn ba lớp yếu và cần bằng chứng quyền sử dụng phù hợp.
 - `fraud_reported` là observed label có provenance chưa được xác minh đầy đủ.
 - NetworkX hiện mới là demo logic, chưa phải fraud model.
-- Chưa có model registry, inference API, security/load test và UAT hoàn chỉnh.
+- Model registry và fixture API đã có; live model adapters, security/load test và UAT chưa hoàn chỉnh.
 
 ## 7. Kế hoạch giai đoạn kế tiếp
 
 ### Mốc A — Khóa bằng chứng model hiện tại
 
-1. Tạo protocol final test LayoutLMv3, xác minh checkpoint hash và chạy đúng một lần trên 361 SROIE test.
+1. Notebook final test LayoutLMv3 đã được tạo với checkpoint hash và execution lock; chạy đúng một lần trên 361 SROIE test rồi cập nhật registry.
 2. Không dùng kết quả test để quay lại chọn epoch, sửa alignment hoặc thay hyperparameter.
 3. Chốt model card và error analysis theo `date`/`total`.
 
@@ -158,7 +158,7 @@ UI dùng fixture JSON trong giai đoạn prototype và chuyển sang FastAPI khi
 
 ## 8. Kết luận
 
-Dự án đã vượt khỏi giai đoạn ý tưởng và đã có các module AI chạy được, metric, audit và bằng chứng lựa chọn model. Mốc tiếp theo là biến các module này thành một prototype end-to-end có API, UI, model registry và human review workflow. Production/go-live chỉ được xem xét sau domain validation, security/load test và UAT.
+Dự án đã vượt khỏi giai đoạn ý tưởng và đã có các module AI chạy được, metric, audit, bằng chứng lựa chọn model, registry, fixture API và human-review UI. Mốc tiếp theo là chạy LayoutLMv3 final test, nối live adapters và tạo golden claims end-to-end. Production/go-live chỉ được xem xét sau domain validation, security/load test và UAT.
 
 ## 9. Nơi kiểm tra bằng chứng kỹ thuật
 

@@ -1,0 +1,179 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sản phẩm, bàn giao và kế hoạch nâng chất lượng</title><style>
+:root{--ink:#172326;--muted:#647579;--line:#d9e1e0;--navy:#142d33;--teal:#17877f;--paper:#f5f7f7;--warn:#fff4df}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.62 "Segoe UI",Arial,sans-serif}
+header{background:var(--navy);color:white;padding:34px max(28px,calc((100vw - 1100px)/2))}header b{font-size:14px;letter-spacing:.11em;color:#8fd0c7}header h1{margin:7px 0 0;font-size:34px}
+main{max-width:1100px;margin:28px auto;background:white;border:1px solid var(--line);padding:42px 52px}h1{font-size:32px}h2{font-size:23px;margin-top:38px;padding-top:8px;border-top:2px solid var(--navy)}h3{font-size:18px;margin-top:28px;color:#174f52}p,li{max-width:92ch}table{width:100%;border-collapse:collapse;margin:18px 0 25px;font-size:14px}th,td{padding:11px 12px;border:1px solid var(--line);vertical-align:top}th{background:#eaf2f1;text-align:left}blockquote{margin:18px 0;padding:14px 18px;border-left:4px solid var(--teal);background:#eff8f6}code{background:#eef2f1;padding:2px 5px;border-radius:3px}strong{color:#102f32}a{color:#08756e}.footer{max-width:1100px;margin:0 auto 30px;color:var(--muted);font-size:12px}@media print{body{background:white}header{padding:20px 0;color:#172326;background:white;border-bottom:3px solid #142d33}main{border:0;margin:0 auto;padding:25px 0}h2{break-after:avoid}table{break-inside:avoid}.footer{display:none}}@media(max-width:760px){main{margin:0;padding:24px 18px;border:0}header{padding:25px 18px}table{font-size:12px;display:block;overflow:auto}}
+</style></head><body><header><b>AI PROJECT INSURANCE · 12/10/2026</b><h1>Sản phẩm, bàn giao và kế hoạch nâng chất lượng</h1></header><main><h1>Product handoff và kế hoạch nâng chất lượng — 12/10/2026</h1>
+<h2>1. Nhóm đang làm sản phẩm gì?</h2>
+<p>Sản phẩm là <strong>Claim Review Workbench</strong>: màn hình làm việc cho nhân viên tiếp nhận, giám định viên và bộ phận kiểm tra đặc biệt. Người dùng mở một <code>claim_id</code>, xem hồ sơ, ảnh hư hỏng, chứng từ, quan hệ đáng chú ý và các lý do hệ thống đề nghị ưu tiên kiểm tra. Mọi quyết định cuối cùng vẫn do con người thực hiện.</p>
+<p>Ba ý tưởng UI trước đây được gộp thành một sản phẩm:</p>
+<ul>
+<li><strong>Operations Workbench</strong> là màn hình chính để xử lý claim.</li>
+<li><strong>Evidence Ledger</strong> là tab bằng chứng, nguồn dữ liệu, phiên bản model và audit trail.</li>
+<li><strong>Triage Map</strong> là tab quan hệ giữa claim, khách hàng, xe, số điện thoại, tài khoản và đơn vị sửa chữa.</li>
+</ul>
+<p>Đội UI không cần mở notebook hoặc tải checkpoint. Họ gọi API của nhóm model và nhận JSON có schema cố định. Trong lúc model live chưa sẵn sàng, API trả fixture JSON có cùng schema để đội UI triển khai song song.</p>
+<h2>2. Hệ thống hoạt động như thế nào?</h2>
+<pre><code class="language-mermaid">flowchart LR
+    A[Claim và dữ liệu bảng] --&gt; X[XGBoost risk ranking]
+    B[Ảnh xe] --&gt; Y[YOLOv8s-seg]
+    C[Chứng từ] --&gt; D[DiT phân loại]
+    D --&gt; O[PaddleOCR]
+    O --&gt; L[LayoutLMv3 trích ngày và tổng tiền]
+    X --&gt; R[Rules và orchestration]
+    Y --&gt; R
+    L --&gt; R
+    G[NetworkX point-in-time features] --&gt; R
+    R --&gt; API[Claim Review API]
+    API --&gt; UI[Claim Review Workbench]
+    UI --&gt; H[Reviewer quyết định và sửa kết quả]
+    H --&gt; AL[Audit log và feedback]
+</code></pre>
+<p>Đây là hệ thống nhiều module. <code>XGBoost</code> xếp hạng hồ sơ từ dữ liệu bảng; <code>YOLOv8s-seg</code> tìm vùng hư hỏng; <code>DiT → PaddleOCR → LayoutLMv3</code> xử lý chứng từ; rules so sánh dữ liệu; <code>NetworkX</code> tạo tín hiệu quan hệ. API hợp nhất chúng bằng <code>claim_id</code> và trả về evidence, confidence, model version, trace ID và cảnh báo.</p>
+<h2>3. Trạng thái model hiện tại</h2>
+<table>
+<thead>
+<tr>
+<th>Module</th>
+<th>Công nghệ</th>
+<th style="text-align: right;">Kết quả đáng dùng để báo cáo</th>
+<th>Trạng thái</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Risk ranking</td>
+<td>XGBoost</td>
+<td style="text-align: right;">Test AP 0,559; Recall@10% 22,4%</td>
+<td>Baseline nghiên cứu, chưa đạt KPI</td>
+</tr>
+<tr>
+<td>Damage segmentation</td>
+<td>YOLOv8s-seg</td>
+<td style="text-align: right;">Final-test mask mAP50-95 0,5140</td>
+<td>Final test hoàn tất; yếu ở crack/dent/scratch</td>
+</tr>
+<tr>
+<td>Document classification</td>
+<td>DiT</td>
+<td style="text-align: right;">Independent macro-F1 0,9283</td>
+<td>Research validation hoàn tất</td>
+</tr>
+<tr>
+<td>OCR</td>
+<td>PaddleOCR</td>
+<td style="text-align: right;">CER 0,4097; WER 0,5592</td>
+<td>Baseline còn yếu và chậm</td>
+</tr>
+<tr>
+<td>KIE</td>
+<td>LayoutLMv3</td>
+<td style="text-align: right;">Validation field micro-F1 0,9214</td>
+<td>Đã chọn; final test 361 ảnh chưa chạy</td>
+</tr>
+<tr>
+<td>Consistency</td>
+<td>Python rules</td>
+<td style="text-align: right;">Demo PASS</td>
+<td>Cần claim thật và rule nghiệp vụ</td>
+</tr>
+<tr>
+<td>Relationship</td>
+<td>NetworkX</td>
+<td style="text-align: right;">Point-in-time demo PASS</td>
+<td>Cần entity/edge thật có timestamp</td>
+</tr>
+</tbody>
+</table>
+<p>Metric cross-validation của XGBoost (<code>AP 0,706</code>, <code>Recall@10% 30,3%</code>) chỉ dùng để mô tả quá trình chọn model. Khi nói về khả năng tổng quát hóa hiện tại, dùng kết quả frozen test (<code>AP 0,559</code>, <code>Recall@10% 22,4%</code>).</p>
+<h2>4. Vì sao Recall@10% ≥ 60% không đạt được trên dataset hiện tại?</h2>
+<p>Dataset có 24,7% hồ sơ mang nhãn <code>Y</code>. Nếu chỉ xem 10% tổng số hồ sơ thì ngay cả xếp hạng hoàn hảo cũng chỉ chứa tối đa:</p>
+<p><code>Recall tối đa = min(100%, K / prevalence) = 10% / 24,7% = 40,5%</code>.</p>
+<p>Vì vậy 60% là <strong>bất khả thi về mặt toán học trên cohort này tại K=10%</strong>. Đây không phải lỗi riêng của XGBoost. Muốn đạt Recall 60%, ít nhất một điều kiện phải thay đổi:</p>
+<table>
+<thead>
+<tr>
+<th>Phương án</th>
+<th style="text-align: right;">Điều kiện để 60% khả thi</th>
+<th>Ý nghĩa nghiệp vụ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Giữ prevalence 24,7%</td>
+<td style="text-align: right;"><code>K ≥ 14,82%</code></td>
+<td>Cho reviewer xem ít nhất khoảng 15% hồ sơ</td>
+</tr>
+<tr>
+<td>Giữ K=10%</td>
+<td style="text-align: right;"><code>prevalence ≤ 16,67%</code></td>
+<td>Đánh giá trên dòng hồ sơ thực tế có tỷ lệ fraud thấp hơn</td>
+</tr>
+<tr>
+<td>Cascade hai tầng</td>
+<td style="text-align: right;">Tầng đầu tạo cohort phù hợp, tầng hai xếp hạng</td>
+<td>Phải báo cáo rõ mẫu số Recall và tải review thực tế</td>
+</tr>
+<tr>
+<td>Thay KPI</td>
+<td style="text-align: right;">Relative uplift, Recall@capacity hoặc Precision@K</td>
+<td>KPI gắn với ngân sách review và prevalence thật</td>
+</tr>
+</tbody>
+</table>
+<p>Không được hạ prevalence bằng cách xóa tùy ý hồ sơ dương/âm. Cần đo trên dữ liệu vận hành đại diện. Nếu production prevalence thực sự 5–10%, Recall@10% ≥ 60% có thể khả thi về trần toán học, nhưng vẫn cần external validation để chứng minh.</p>
+<h2>5. Kế hoạch nâng XGBoost đúng cách</h2>
+<ol>
+<li><strong>Đóng lại protocol:</strong> test 200 dòng cũ đã được dùng; mọi thử nghiệm tiếp theo chỉ chạy trên <code>train_fs</code>/<code>val_fs</code>. Chỉ đánh giá cuối trên external test mới.</li>
+<li><strong>Xác minh nhãn:</strong> coi <code>fraud_reported</code> là observed status, lập quy trình adjudication và thời gian trưởng thành nhãn. Tách hồ sơ chưa điều tra khỏi confirmed non-fraud nếu có dữ liệu thật.</li>
+<li><strong>Xác minh thời điểm feature:</strong> chỉ dùng trường có sẵn tại checkpoint chấm điểm. Xóa identifier, target leakage và proxy không có cơ sở nghiệp vụ.</li>
+<li><strong>Thêm S1–S5 có <code>claim_id</code>:</strong> tín hiệu ảnh, chứng từ, consistency, lịch sử và graph phải đến từ cùng claim thật; không ghép các public dataset theo hàng.</li>
+<li><strong>Tối ưu trực tiếp cho hàng đợi:</strong> theo dõi AP và Recall@capacity trên validation. Class weight chỉ là tham số thử nghiệm, không mặc định làm Recall@10 tốt hơn.</li>
+<li><strong>So sánh có kiểm soát:</strong> Logistic Regression, XGBoost hiện tại, XGBoost + feature hợp lệ, và cascade. Chỉ giữ thay đổi vượt ngưỡng đã đặt trước và ổn định qua bootstrap/fold.</li>
+<li><strong>Hiệu chuẩn theo prevalence thật:</strong> calibration và threshold/capacity được fit trên validation đại diện; không gọi raw score là xác suất khi chưa hiệu chuẩn.</li>
+<li><strong>Error analysis:</strong> chia false negative theo loại sự cố, mức tiền, stage, mức đầy đủ chứng từ và nhóm nhạy cảm. Cải thiện nguyên nhân cụ thể rồi mới train lại.</li>
+</ol>
+<p>Mốc hợp lý trước mắt là vượt rule baseline ít nhất 10 điểm phần trăm Recall@10 trên validation mới, giữ AP tốt hơn Logistic Regression, và không làm xấu fairness/stability. KPI 60% chỉ được kích hoạt khi cohort và review capacity làm nó khả thi.</p>
+<h2>6. Cách người khác dùng và nhận bàn giao</h2>
+<h3>Cách khuyến nghị: gọi API</h3>
+<p>Đội UI hoặc hệ thống claim gọi:</p>
+<pre><code class="language-http">POST /claims/CLM-2026-000123/analyze
+Content-Type: application/json
+
+{&quot;claim_amount&quot;:16000000,&quot;incident_date&quot;:&quot;2026-10-11&quot;,&quot;plate_number&quot;:&quot;51H-123.42&quot;}
+</code></pre>
+<p>Sau đó đọc kết quả bằng <code>GET /claims/{claim_id}/analysis</code> và ghi quyết định reviewer bằng <code>POST /claims/{claim_id}/review</code>. Swagger UI nằm tại <code>/docs</code>; OpenAPI contract nằm trong <code>contracts/claim_review_openapi.v1.json</code>.</p>
+<h3>Chạy local cho đội prototype</h3>
+<pre><code class="language-powershell">python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements-api.txt
+.\.venv\Scripts\python.exe -m uvicorn src.api.app:app --reload
+</code></pre>
+<p>Mở <code>http://127.0.0.1:8000/</code> để xem UI và <code>http://127.0.0.1:8000/docs</code> để thử API. Bản hiện tại chạy <code>fixture</code> mode nhằm khóa contract trước khi nối checkpoint thật.</p>
+<h3>Chạy bằng Docker</h3>
+<pre><code class="language-bash">docker build -f Dockerfile.api -t claim-review-api:research-v1 .
+docker run --rm -p 8000:8000 claim-review-api:research-v1
+</code></pre>
+<h3>Bộ bàn giao tối thiểu</h3>
+<ul>
+<li>source code và commit/tag;</li>
+<li>OpenAPI contract và JSON fixture;</li>
+<li>model registry gồm version, metric, trạng thái gate và artifact hash;</li>
+<li>container/API image;</li>
+<li>checkpoint trong kho artifact có quyền truy cập, không gửi qua Git;</li>
+<li>model/data card, giới hạn sử dụng và hướng dẫn rollback;</li>
+<li>golden claims, expected output và test report;</li>
+<li>audit log schema, owner và quy trình xử lý lỗi.</li>
+</ul>
+<p>Chỉ ML team cần nhận checkpoint trực tiếp. Đội UI, QA và hệ thống nghiệp vụ nên tích hợp qua API để model có thể nâng cấp mà không đổi giao diện.</p>
+<h2>7. Các gate còn lại trước khi pilot</h2>
+<ol>
+<li>Chạy <code>Document_LayoutLMv3_Final_Test_Acc2_v1.ipynb</code> đúng một lần và lưu report/lock.</li>
+<li>Cập nhật model registry bằng hash và final-test metric LayoutLMv3.</li>
+<li>Viết live adapters cho từng model phía sau API contract hiện tại.</li>
+<li>Tạo golden claims có <code>claim_id</code> xuyên suốt ảnh, chứng từ, tabular và graph.</li>
+<li>Chạy integration, security, privacy, latency/load test và UAT.</li>
+<li>Domain validation trên hồ sơ bảo hiểm Việt Nam có consent và ground truth.</li>
+<li>Pilot có human review, monitoring, rollback và không tự động từ chối claim.</li>
+</ol>
+<h2>8. Câu trả lời ngắn để trình bày</h2>
+<p>“Nhóm xây Claim Review Workbench, không phải một model duy nhất. Các model phân tích dữ liệu bảng, ảnh, chứng từ và quan hệ; API hợp nhất kết quả theo claim_id để nhân viên xem bằng chứng và quyết định. Recall@10% 60% không thể đạt trên bộ hiện tại vì tỷ lệ Y là 24,7%, làm trần toán học chỉ 40,5%. Nhóm sẽ xác lập KPI theo prevalence và capacity thật, bổ sung tín hiệu S1–S5 có linkage thật, đánh giá trên validation mới và external test, rồi bàn giao dưới dạng API có version, registry, audit trail và golden tests.”</p></main><div class="footer">Bản trình bày được tạo từ tài liệu nguồn trong repository; số liệu nghiên cứu không phải cam kết production.</div></body></html>

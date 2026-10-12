@@ -4,6 +4,17 @@ This repository reproduces a **tabular research baseline** for the UEH CPMAI pro
 
 Team-ready handoff documents for Progress Report 2 are indexed in `reports/handoff/README.md`.
 
+## Claim Review API and prototype
+
+The repository now includes a fixture-first FastAPI contract and reviewer prototype. This lets the UI team integrate before live model adapters are released.
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements-api.txt
+.\.venv\Scripts\python.exe -m uvicorn src.api.app:app --reload
+```
+
+Open `http://127.0.0.1:8000/` for the workbench and `http://127.0.0.1:8000/docs` for the API. The service intentionally starts only in `fixture` mode. Model artifacts remain gated until their registry entries, hashes, schemas and validation evidence are complete. See `reports/PRODUCT_HANDOFF_AND_METRIC_PLAN_2026-10-12.md` for the product, metric and transfer plan.
+
 ## Current data and scope
 
 The tabular source is Kaggle `arpan129/insurance-fraud-detection`, workbook `Worksheet in Case Study question 2.xlsx`, sheet `Fraud_Detection_decsion tree`. Bronze retains the workbook and a hash manifest. Silver normalizes names/missing values and adds trace IDs. Gold `dataset_v2` freezes a stratified 70/10/20 split with exact integer counts. DVC tracks Bronze/Silver and generates Gold. Raw files and model artifacts remain outside Git; no DVC remote is configured.
