@@ -49,8 +49,10 @@ python scripts/build_media_authenticity_benchmark.py <benchmark_root> <manifest.
 python scripts/evaluate_media_authenticity_benchmark.py <predictions.jsonl> --threshold <locked_threshold> --split test --output <report.json>
 ```
 
-## Lớp phòng thủ nên thêm ở pilot
+## Lớp guided capture đã có trong prototype
 
-Detector sau khi upload không thể bao phủ mọi kiểu giả. Ứng dụng thu thập ảnh nên tạo phiên chụp có thời hạn và yêu cầu ngẫu nhiên, ví dụ chụp toàn cảnh rồi cận cảnh theo thứ tự, nghiêng máy sang trái, hoặc quay video ngắn quanh xe. Server lưu nonce, thời gian, thứ tự ảnh và hash ngay khi nhận. Nếu thiết bị hỗ trợ provenance có chữ ký thì xác minh thêm C2PA. Ảnh tải từ thư viện vẫn có thể nhận, nhưng mang mức bảo đảm thấp hơn ảnh chụp trong phiên.
+Prototype hiện tạo phiên chụp 10 phút gồm ba bước theo thứ tự và một yêu cầu góc chụp ngẫu nhiên. Server gắn từng ảnh với `capture_session_id`, `challenge_step`, thời gian và hash; bước trùng bị từ chối. UI intake hỗ trợ gọi camera sau trên thiết bị di động qua `capture="environment"`.
+
+Trạng thái hiện mang tên `guided_unverified`: nó chứng minh server đã phát yêu cầu và nhận đủ bước, nhưng chưa chứng minh người dùng thật sự chụp trực tiếp thay vì chọn ảnh có sẵn. Pilot cần ứng dụng mobile kiểm soát camera, device attestation, nonce hiển thị trong cảnh hoặc video ngắn, và C2PA nếu thiết bị hỗ trợ.
 
 Nghiên cứu gần đây cũng xem khả năng tổng quát sang generator chưa thấy là thách thức chính; dữ liệu đa dạng và kiểm thử sau nén/biến đổi là bắt buộc. Tham khảo [Community Forensics, CVPR 2025](https://openaccess.thecvf.com/content/CVPR2025/html/Park_Community_Forensics_Using_Thousands_of_Generators_to_Train_Fake_Image_CVPR_2025_paper.html), [SPAI, CVPR 2025](https://openaccess.thecvf.com/content/CVPR2025/html/Karageorgiou_Any-Resolution_AI-Generated_Image_Detection_by_Spectral_Learning_CVPR_2025_paper.html), và [C2PA Content Credentials](https://spec.c2pa.org/specifications/specifications/2.3/specs/ContentCredentials.html).

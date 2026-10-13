@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
 
-from .schemas import AnalyzeRequest, ClaimAnalysis, ClaimIntakeRecord, ClaimIntakeRequest, CorrectionRecord, CorrectionRequest, EvidenceUploadRecord, MediaAuthenticityReport, ReviewRecord, ReviewRequest
+from .schemas import AnalyzeRequest, CaptureSessionRecord, ClaimAnalysis, ClaimIntakeRecord, ClaimIntakeRequest, CorrectionRecord, CorrectionRequest, EvidenceUploadRecord, MediaAuthenticityReport, ReviewRecord, ReviewRequest
 from .storage import RuntimeClaimStore
 
 
@@ -23,8 +23,16 @@ class FixtureClaimService:
     def intake(self, claim_id: str, request: ClaimIntakeRequest) -> ClaimIntakeRecord:
         return self.runtime_store.create(claim_id, request)
 
-    def upload(self, claim_id: str, kind: str, filename: str, content_type: str | None, content: bytes) -> EvidenceUploadRecord:
-        record = self.runtime_store.save_evidence(claim_id, kind, filename, content_type, content)
+    def start_capture(self, claim_id: str) -> CaptureSessionRecord:
+        return self.runtime_store.create_capture_session(claim_id)
+
+    def upload(
+        self, claim_id: str, kind: str, filename: str, content_type: str | None, content: bytes,
+        capture_session_id: str | None = None, challenge_step: int | None = None,
+    ) -> EvidenceUploadRecord:
+        record = self.runtime_store.save_evidence(
+            claim_id, kind, filename, content_type, content, capture_session_id, challenge_step,
+        )
         if kind == "image":
             try:
                 report = self.authenticity(claim_id, record.evidence_id)

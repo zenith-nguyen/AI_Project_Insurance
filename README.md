@@ -44,6 +44,8 @@ Uploaded images automatically pass through `media_authenticity_v2`: built-in EXI
 
 Live analysis is tolerant of missing modalities. If the required tabular fields are present, XGBoost can still return a research priority score when documents, vehicle images, or relationship data are missing. The response is marked `analysis_status: partial`, and every module reports `completed`, `skipped_missing_input`, `unavailable`, or `blocked_missing_input`. Missing relationship data is never represented as zero relationships. If required tabular model features are missing, the response is `blocked` and has no risk score while other available evidence checks may still run.
 
+The intake UI also supports a 10-minute guided-capture session. `POST /claims/{claim_id}/capture-sessions` returns three ordered instructions, including a random angle prompt. Each uploaded image is bound to a session and step, duplicate steps are rejected, and the analysis exposes whether all three steps were received. This is recorded as `guided_unverified`: it raises collection assurance but does not cryptographically prove that the pixels were captured live.
+
 The live orchestrator also activates the real YOLO adapter when `INSURANCE_YOLO_WEIGHTS` points to the registered checkpoint, and the DiT → PaddleOCR → LayoutLMv3 adapter when `INSURANCE_LAYOUTLM_CHECKPOINT` points to the registered checkpoint directory. Both adapters verify artifact hashes before loading. `scripts/setup_live.ps1 -ArtifactRoot <shared-artifacts>` copies and verifies available artifacts; `scripts/run_live.ps1` enables only modules whose dependencies are installed.
 
 ## Current data and scope

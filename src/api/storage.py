@@ -5,13 +5,15 @@ import hashlib
 import io
 import json
 import re
+import secrets
 from datetime import datetime, timezone
+from datetime import timedelta
 from pathlib import Path
 from uuid import uuid4
 
 from PIL import Image, ImageStat
 
-from .schemas import ClaimIntakeRequest, ClaimIntakeRecord, EvidenceUploadRecord
+from .schemas import CaptureSessionRecord, ClaimIntakeRequest, ClaimIntakeRecord, EvidenceUploadRecord
 
 
 CLAIM_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{2,63}$")
@@ -20,6 +22,13 @@ ALLOWED_EXTENSIONS = {
     "document": {".pdf", ".jpg", ".jpeg", ".png", ".tif", ".tiff"},
 }
 MAX_UPLOAD_BYTES = 15 * 1024 * 1024
+CAPTURE_TTL_MINUTES = 10
+CAPTURE_ANGLE_PROMPTS = [
+    "Chụp toàn cảnh xe từ góc trước bên trái.",
+    "Chụp toàn cảnh xe từ góc sau bên phải.",
+    "Chụp cận cảnh vùng hư hỏng và giữ một phần biển số trong khung hình.",
+    "Chụp vùng hư hỏng từ góc thấp hơn tay nắm cửa.",
+]
 
 
 def _valid_signature(extension: str, content: bytes) -> bool:
@@ -90,6 +99,7 @@ class RuntimeClaimStore:
         (root / "documents").mkdir()
         (root / "vehicle_images").mkdir()
         (root / "authenticity").mkdir()
+        (root / "capture_sessions").mkdir()
         claim_file.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         (root / "evidence_manifest.json").write_text("[]\n", encoding="utf-8")
         graph = {
@@ -102,12 +112,65 @@ class RuntimeClaimStore:
         (root / "entities.json").write_text(json.dumps(graph, indent=2) + "\n", encoding="utf-8")
         return ClaimIntakeRecord(claim_id=claim_id, created_at=created_at, status="stored")
 
-    def save_evidence(self, claim_id: str, kind: str, filename: str, content_type: str | None, content: bytes) -> EvidenceUploadRecord:
+    def create_capture_session(self, claim_id: str) -> CaptureSessionRecord:
+        root = self.claim_root(claim_id)
+        if not (root / "claim.json").is_file():
+            raise KeyError(claim_id)
+        created = datetime.now(timezone.utc)
+        random_prompt = secrets.choice(CAPTURE_ANGLE_PROMPTS)
+        session_id = f"CAP-{secrets.token_hex(8)}"
+        payload = {
+            "claim_id": claim_id,
+            "session_id": session_id,
+            "created_at": created.isoformat(),
+            "expires_at": (created + timedelta(minutes=CAPTURE_TTL_MINUTES)).isoformat(),
+            "status": "issued",
+            "instructions": [
+                {"step": 1, "instruction": "Chụp toàn cảnh xe và bối cảnh xung quanh."},
+                {"step": 2, "instruction": random_prompt},
+                {"step": 3, "instruction": "Chụp cận cảnh vùng hư hỏng từ một góc khác bước 2."},
+            ],
+            "submissions": {},
+            "assurance_level": "guided_unverified",
+        }
+        (root / "capture_sessions").mkdir(exist_ok=True)
+        target = root / "capture_sessions" / f"{session_id}.json"
+        target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        return CaptureSessionRecord.model_validate(payload)
+
+    def _capture_session(self, claim_id: str, session_id: str) -> tuple[Path, dict]:
+        if not re.fullmatch(r"CAP-[0-9a-f]{16}", session_id):
+            raise ValueError("Invalid capture session id.")
+        path = self.claim_root(claim_id) / "capture_sessions" / f"{session_id}.json"
+        if not path.is_file():
+            raise KeyError(session_id)
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        if datetime.now(timezone.utc) > datetime.fromisoformat(payload["expires_at"]):
+            payload["status"] = "expired"
+            path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            raise ValueError("Capture session has expired.")
+        return path, payload
+
+    def save_evidence(
+        self, claim_id: str, kind: str, filename: str, content_type: str | None, content: bytes,
+        capture_session_id: str | None = None, challenge_step: int | None = None,
+    ) -> EvidenceUploadRecord:
         root = self.claim_root(claim_id)
         if not (root / "claim.json").is_file():
             raise KeyError(claim_id)
         if kind not in ALLOWED_EXTENSIONS:
             raise ValueError("Evidence kind must be image or document.")
+        capture_path = None
+        capture_payload = None
+        if capture_session_id is not None:
+            if kind != "image" or challenge_step is None:
+                raise ValueError("Guided capture requires an image and challenge_step.")
+            capture_path, capture_payload = self._capture_session(claim_id, capture_session_id)
+            valid_steps = {int(item["step"]) for item in capture_payload["instructions"]}
+            if challenge_step not in valid_steps:
+                raise ValueError("challenge_step is not part of this capture session.")
+            if str(challenge_step) in capture_payload.get("submissions", {}):
+                raise ValueError("This capture step already has an uploaded image.")
         safe_name = Path(filename or "upload").name
         extension = Path(safe_name).suffix.lower()
         if extension not in ALLOWED_EXTENSIONS[kind]:
@@ -141,10 +204,18 @@ class RuntimeClaimStore:
             "sha256": digest,
             "perceptual_hash": perceptual_hash,
             "color_signature": color_signature,
+            "capture_session_id": capture_session_id,
+            "challenge_step": challenge_step,
+            "capture_assurance": "guided_unverified" if capture_session_id else None,
             "observed_at": observed_at,
         }
         manifest.append(item)
         manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        if capture_path is not None and capture_payload is not None:
+            capture_payload.setdefault("submissions", {})[str(challenge_step)] = evidence_id
+            if len(capture_payload["submissions"]) == len(capture_payload["instructions"]):
+                capture_payload["status"] = "completed"
+            capture_path.write_text(json.dumps(capture_payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         return EvidenceUploadRecord(claim_id=claim_id, **item)
 
     def find_image_reuse(self, claim_id: str, evidence_id: str, *, max_distance: int = 4) -> list[dict]:

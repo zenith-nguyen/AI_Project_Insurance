@@ -9,6 +9,7 @@ def test_openapi_has_claim_lifecycle_endpoints():
         "/readiness",
         "/claims/{claim_id}/intake",
         "/claims/{claim_id}/evidence",
+        "/claims/{claim_id}/capture-sessions",
         "/claims/{claim_id}/evidence/{evidence_id}/authenticity",
         "/claims/{claim_id}/analyze",
         "/claims/{claim_id}/analysis",

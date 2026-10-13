@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse
 
 from src.registry import load_registry
 
-from .schemas import AnalyzeRequest, ClaimAnalysis, ClaimIntakeRecord, ClaimIntakeRequest, CorrectionRecord, CorrectionRequest, EvidenceUploadRecord, HealthResponse, MediaAuthenticityReport, ReviewRecord, ReviewRequest
+from .schemas import AnalyzeRequest, CaptureSessionRecord, ClaimAnalysis, ClaimIntakeRecord, ClaimIntakeRequest, CorrectionRecord, CorrectionRequest, EvidenceUploadRecord, HealthResponse, MediaAuthenticityReport, ReviewRecord, ReviewRequest
 from .service import FixtureClaimService
 
 
@@ -75,15 +75,28 @@ def intake(claim_id: str, request: ClaimIntakeRequest) -> ClaimIntakeRecord:
 async def upload_evidence(
     claim_id: str,
     kind: str = Form(...),
+    capture_session_id: str | None = Form(default=None),
+    challenge_step: int | None = Form(default=None),
     file: UploadFile = File(...),
 ) -> EvidenceUploadRecord:
     try:
         content = await file.read(15 * 1024 * 1024 + 1)
-        return SERVICE.upload(claim_id, kind, file.filename or "upload", file.content_type, content)
+        return SERVICE.upload(
+            claim_id, kind, file.filename or "upload", file.content_type, content,
+            capture_session_id, challenge_step,
+        )
     except KeyError as error:
         raise HTTPException(status_code=404, detail="Create claim intake before uploading evidence.") from error
     except ValueError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
+
+
+@app.post("/claims/{claim_id}/capture-sessions", response_model=CaptureSessionRecord, status_code=201)
+def start_capture_session(claim_id: str) -> CaptureSessionRecord:
+    try:
+        return SERVICE.start_capture(claim_id)
+    except KeyError as error:
+        raise HTTPException(status_code=404, detail="Create claim intake before starting guided capture.") from error
 
 
 @app.get("/claims/{claim_id}/evidence/{evidence_id}/authenticity", response_model=MediaAuthenticityReport)

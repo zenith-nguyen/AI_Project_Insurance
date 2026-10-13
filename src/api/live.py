@@ -20,7 +20,7 @@ from src.image.inference import YOLODamageAdapter
 from src.media_authenticity import MediaAuthenticityAnalyzer
 from src.registry import ModelRegistry
 
-from .schemas import AnalyzeRequest, ClaimAnalysis, ClaimIntakeRecord, ClaimIntakeRequest, CorrectionRecord, CorrectionRequest, Evidence, EvidenceUploadRecord, MediaAuthenticityReport, ReviewRecord, ReviewRequest, Signal
+from .schemas import AnalyzeRequest, CaptureSessionRecord, ClaimAnalysis, ClaimIntakeRecord, ClaimIntakeRequest, CorrectionRecord, CorrectionRequest, Evidence, EvidenceUploadRecord, MediaAuthenticityReport, ReviewRecord, ReviewRequest, Signal
 from .storage import RuntimeClaimStore
 
 
@@ -123,8 +123,16 @@ class LiveClaimService:
     def intake(self, claim_id: str, request: ClaimIntakeRequest) -> ClaimIntakeRecord:
         return self.runtime_store.create(claim_id, request)
 
-    def upload(self, claim_id: str, kind: str, filename: str, content_type: str | None, content: bytes) -> EvidenceUploadRecord:
-        record = self.runtime_store.save_evidence(claim_id, kind, filename, content_type, content)
+    def start_capture(self, claim_id: str) -> CaptureSessionRecord:
+        return self.runtime_store.create_capture_session(claim_id)
+
+    def upload(
+        self, claim_id: str, kind: str, filename: str, content_type: str | None, content: bytes,
+        capture_session_id: str | None = None, challenge_step: int | None = None,
+    ) -> EvidenceUploadRecord:
+        record = self.runtime_store.save_evidence(
+            claim_id, kind, filename, content_type, content, capture_session_id, challenge_step,
+        )
         if kind == "image":
             try:
                 report = self.authenticity(claim_id, record.evidence_id)
@@ -200,6 +208,7 @@ class LiveClaimService:
         authenticity_failures = 0
         damage_failures = 0
         document_failures = 0
+        capture_steps: dict[str, set[int]] = {}
 
         for item in payload.get("uploaded_evidence", []):
             evidence.append(Evidence(
@@ -208,6 +217,8 @@ class LiveClaimService:
             ))
             if item["kind"] == "document":
                 document_count += 1
+            if item.get("capture_session_id") and item.get("challenge_step"):
+                capture_steps.setdefault(item["capture_session_id"], set()).add(int(item["challenge_step"]))
             if item["kind"] == "image":
                 image_count += 1
                 try:
@@ -342,6 +353,13 @@ class LiveClaimService:
         extracted["media_authenticity"] = authenticity_reports
         extracted["damage_detections"] = damage_detections
         extracted["document_results"] = document_results
+        extracted["guided_capture"] = {
+            "sessions": [
+                {"session_id": session_id, "submitted_steps": sorted(steps), "complete": len(steps) == 3}
+                for session_id, steps in sorted(capture_steps.items())
+            ],
+            "assurance": "guided_unverified" if capture_steps else "not_used",
+        }
         completeness = (len(required) - len(missing)) / len(required) if required else 1.0
         has_documents = document_count > 0
         document_fields_available = bool(documents or document_results)
@@ -365,6 +383,14 @@ class LiveClaimService:
         module_status["consistency"] = {
             "status": "completed" if document_fields_available else "skipped_missing_input",
             "reason": None if document_fields_available else "No document fields were available for comparison.",
+        }
+        module_status["guided_capture"] = {
+            "status": "completed" if any(len(steps) == 3 for steps in capture_steps.values()) else (
+                "partial" if capture_steps else "skipped_optional"
+            ),
+            "reason": None if any(len(steps) == 3 for steps in capture_steps.values()) else (
+                "A guided capture session has incomplete steps." if capture_steps else "Guided capture was not requested."
+            ),
         }
         analysis_status = "blocked" if risk is None else ("partial" if missing or any(
             item["status"] in {"skipped_missing_input", "unavailable", "blocked_missing_input", "error"}

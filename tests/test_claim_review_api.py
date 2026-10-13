@@ -102,3 +102,37 @@ def test_claim_intake_and_evidence_upload_contract():
     )
     assert authenticity.status_code == 200
     assert authenticity.json()["verdict"] in {"inconclusive", "review"}
+
+
+def test_guided_capture_session_links_ordered_images_to_claim():
+    claim_id = f"CLM-CAPTURE-{uuid4().hex[:8]}"
+    assert client.post(f"/claims/{claim_id}/intake", json={}).status_code == 201
+    session_response = client.post(f"/claims/{claim_id}/capture-sessions")
+    assert session_response.status_code == 201
+    session = session_response.json()
+    assert session["status"] == "issued"
+    assert session["assurance_level"] == "guided_unverified"
+    assert len(session["instructions"]) == 3
+
+    for instruction in session["instructions"]:
+        binary = BytesIO()
+        Image.new("RGB", (12, 12), (instruction["step"] * 20, 40, 60)).save(binary, format="JPEG")
+        upload = client.post(
+            f"/claims/{claim_id}/evidence",
+            data={
+                "kind": "image", "capture_session_id": session["session_id"],
+                "challenge_step": str(instruction["step"]),
+            },
+            files={"file": (f"step-{instruction['step']}.jpg", binary.getvalue(), "image/jpeg")},
+        )
+        assert upload.status_code == 201
+        assert upload.json()["capture_session_id"] == session["session_id"]
+        assert upload.json()["challenge_step"] == instruction["step"]
+        assert upload.json()["capture_assurance"] == "guided_unverified"
+
+    duplicate = client.post(
+        f"/claims/{claim_id}/evidence",
+        data={"kind": "image", "capture_session_id": session["session_id"], "challenge_step": "1"},
+        files={"file": ("duplicate.jpg", binary.getvalue(), "image/jpeg")},
+    )
+    assert duplicate.status_code == 422

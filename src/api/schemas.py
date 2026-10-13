@@ -29,6 +29,22 @@ class ClaimIntakeRecord(BaseModel):
     status: Literal["stored"] = "stored"
 
 
+class CaptureInstruction(BaseModel):
+    step: int = Field(ge=1)
+    instruction: str
+
+
+class CaptureSessionRecord(BaseModel):
+    claim_id: str
+    session_id: str
+    created_at: str
+    expires_at: str
+    status: Literal["issued", "completed", "expired"]
+    instructions: list[CaptureInstruction]
+    submissions: dict[str, str] = Field(default_factory=dict)
+    assurance_level: Literal["guided_unverified"] = "guided_unverified"
+
+
 class EvidenceUploadRecord(BaseModel):
     claim_id: str
     evidence_id: str
@@ -40,6 +56,9 @@ class EvidenceUploadRecord(BaseModel):
     sha256: str
     perceptual_hash: str | None = None
     color_signature: list[int] | None = None
+    capture_session_id: str | None = None
+    challenge_step: int | None = None
+    capture_assurance: Literal["guided_unverified"] | None = None
     observed_at: str
     authenticity_verdict: Literal["ai_provenance_detected", "provenance_problem", "review", "inconclusive", "error"] | None = None
 

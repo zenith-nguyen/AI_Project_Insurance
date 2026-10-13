@@ -19,6 +19,7 @@ Luồng live đầu tiên đã nối:
 7. Trang `/intake` tạo hồ sơ và tải ảnh/PDF lên kho runtime; API kiểm loại tệp, kích thước, chữ ký nội dung, SHA-256 và gắn mọi bằng chứng với `claim_id`.
 8. `media_authenticity_v2` chạy tự động khi upload: đọc EXIF/XMP, hỗ trợ ExifTool/C2PA, ghi rõ trạng thái SynthID, trích xuất pixel features và phát hiện ảnh tái sử dụng giữa các claim bằng SHA-256/perceptual hash.
 9. Luồng phân tích đã chịu được dữ liệu thiếu: đủ feature bảng thì vẫn trả risk score; thiếu chứng từ, ảnh hoặc graph được ghi `partial`. Thiếu feature bắt buộc của XGBoost được ghi `blocked`, không làm toàn API sập. Graph chưa được cung cấp không còn bị hiểu nhầm thành “0 quan hệ”.
+10. Intake đã có guided capture 10 phút với ba bước theo thứ tự và một góc chụp ngẫu nhiên. Ảnh được gắn session/step/hash; bước lặp bị từ chối. Assurance hiện là `guided_unverified`, chưa thay thế mobile attestation.
 
 ## Phần đã có adapter live, cần artifact/dependency trên máy chạy
 

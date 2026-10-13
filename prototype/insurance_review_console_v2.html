@@ -50,7 +50,25 @@ function renderAnalysis(analysis){
   const infoRows=[...document.querySelectorAll('.summary .box:nth-child(2) .row b')];
   if(infoRows[1]) infoRows[1].textContent=analysis.extracted_fields.plate_number||'Chưa có';
   if(infoRows[2]) infoRows[2].textContent=analysis.extracted_fields.incident_date||'Chưa có';
-  document.querySelector('.tech p').textContent=Object.entries(analysis.model_versions).map(([name,version])=>`${name}: ${version}`).join(' · ');
+  const documentRows=analysis.evidence.filter(item=>item.kind==='document');
+  const documentTable=document.querySelector('#documents .evidence-table');
+  const documentHeader=document.createElement('tr');
+  ['Tài liệu','Loại','Nguồn','Trạng thái'].forEach(text=>{const cell=document.createElement('th');cell.textContent=text;documentHeader.appendChild(cell)});
+  const renderedDocumentRows=documentRows.map(item=>{const row=document.createElement('tr');[item.label,'Document',item.source_uri||'Golden/precomputed','Đã đăng ký'].forEach((text,index)=>{const cell=document.createElement('td');cell.textContent=text;if(index===3)cell.className='status-ok';row.appendChild(cell)});return row});
+  if(!renderedDocumentRows.length){const row=document.createElement('tr'),cell=document.createElement('td');cell.colSpan=4;cell.className='status-warn';cell.textContent='Chưa có chứng từ để phân tích.';row.appendChild(cell);renderedDocumentRows.push(row)}
+  documentTable.replaceChildren(documentHeader,...renderedDocumentRows);
+  const detections=analysis.extracted_fields.damage_detections||[];
+  const classList=document.querySelector('#damage .classlist');
+  const renderedDetections=detections.map(item=>{const row=document.createElement('div');row.className='classitem';const detail=document.createElement('div'),label=document.createElement('b'),source=document.createElement('small'),score=document.createElement('b');label.textContent=item.class_name;source.textContent=item.evidence_id||'Ảnh xe';score.textContent=Number(item.confidence).toFixed(3);detail.append(label,source);row.append(detail,score);return row});
+  if(!renderedDetections.length){const notice=document.createElement('div');notice.className='notice';notice.textContent='Chưa có kết quả nhận diện hư hỏng cho hồ sơ này.';renderedDetections.push(notice)}
+  classList.replaceChildren(...renderedDetections);
+  if(analysis.graph_features?.data_status==='not_provided'){
+    const missingGraph=document.createElement('div');missingGraph.style.padding='28px';missingGraph.textContent='Chưa có dữ liệu thực thể và quan hệ cho claim này.';document.querySelector('#relations .graph').replaceChildren(missingGraph);
+    document.querySelector('#relations .notice').textContent='Không có dữ liệu graph không đồng nghĩa với không có quan hệ đáng chú ý.';
+  }
+  const modelText=Object.entries(analysis.model_versions).map(([name,version])=>`${name}: ${version}`).join(' · ');
+  const moduleText=Object.entries(analysis.module_status||{}).map(([name,value])=>`${name}: ${value.status}`).join(' · ');
+  document.querySelector('.tech p').textContent=`${modelText} | Trạng thái: ${moduleText}`;
   ensureCorrectionForm();
 }
 async function connectApi(){
