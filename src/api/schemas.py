@@ -41,6 +41,29 @@ class EvidenceUploadRecord(BaseModel):
     observed_at: str
 
 
+class AuthenticityFinding(BaseModel):
+    code: str
+    source: Literal["metadata", "exiftool", "c2pa", "synthid", "forensic_model"]
+    outcome: Literal["detected", "absent", "completed", "unavailable", "error"]
+    severity: Literal["info", "review", "high"]
+    explanation: str
+    confidence: float | None = Field(default=None, ge=0, le=1)
+
+
+class MediaAuthenticityReport(BaseModel):
+    schema_version: str = "1.0"
+    evidence_id: str | None = None
+    analyzer_version: str
+    sha256: str
+    verdict: Literal["ai_provenance_detected", "provenance_problem", "review", "inconclusive"]
+    human_review_required: bool
+    findings: list[AuthenticityFinding] = Field(default_factory=list)
+    metadata: dict[str, Any] = Field(default_factory=dict)
+    image_info: dict[str, Any] = Field(default_factory=dict)
+    c2pa_manifest: dict[str, Any] | None = None
+    limitations: list[str] = Field(default_factory=list)
+
+
 class Evidence(BaseModel):
     evidence_id: str
     kind: Literal["claim", "image", "document", "relationship"]
@@ -51,7 +74,7 @@ class Evidence(BaseModel):
 
 class Signal(BaseModel):
     signal_id: str
-    category: Literal["risk", "damage", "document", "consistency", "relationship"]
+    category: Literal["risk", "damage", "document", "consistency", "relationship", "authenticity"]
     title: str
     explanation: str
     severity: Literal["info", "review", "high"]

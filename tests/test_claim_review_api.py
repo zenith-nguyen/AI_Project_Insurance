@@ -1,4 +1,7 @@
+from io import BytesIO
+
 from fastapi.testclient import TestClient
+from PIL import Image
 from uuid import uuid4
 
 from src.api.app import app
@@ -80,11 +83,18 @@ def test_claim_intake_and_evidence_upload_contract():
         json={"claim_amount": 12000000, "incident_date": "2026-10-13", "plate_number": "51A-12345"},
     )
     assert intake.status_code == 201
+    binary = BytesIO()
+    Image.new("RGB", (8, 8), (20, 40, 60)).save(binary, format="PNG")
     upload = client.post(
         f"/claims/{claim_id}/evidence",
         data={"kind": "image"},
-        files={"file": ("damage.png", b"\x89PNG\r\n\x1a\nfixture", "image/png")},
+        files={"file": ("damage.png", binary.getvalue(), "image/png")},
     )
     assert upload.status_code == 201
     assert upload.json()["claim_id"] == claim_id
     assert upload.json()["sha256"]
+    authenticity = client.get(
+        f"/claims/{claim_id}/evidence/{upload.json()['evidence_id']}/authenticity"
+    )
+    assert authenticity.status_code == 200
+    assert authenticity.json()["verdict"] == "inconclusive"

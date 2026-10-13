@@ -17,6 +17,7 @@ Luồng live đầu tiên đã nối:
 5. Quyết định của người duyệt được ghi vào audit log JSONL.
 6. Reviewer có endpoint sửa trường OCR/KIE; giá trị cũ, giá trị mới, lý do, người sửa, `claim_id`, `trace_id` và thời gian được lưu cùng audit log.
 7. Trang `/intake` tạo hồ sơ và tải ảnh/PDF lên kho runtime; API kiểm loại tệp, kích thước, chữ ký nội dung, SHA-256 và gắn mọi bằng chứng với `claim_id`.
+8. `media_authenticity_v1` đã nối vào ảnh upload: đọc EXIF/XMP, hỗ trợ ExifTool/C2PA tùy chọn, ghi rõ trạng thái SynthID và phát tín hiệu review khi thấy provenance AI hoặc metadata đáng chú ý.
 
 ## Phần chưa gọi live trong API
 

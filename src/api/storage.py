@@ -2,11 +2,14 @@
 from __future__ import annotations
 
 import hashlib
+import io
 import json
 import re
 from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
+
+from PIL import Image
 
 from .schemas import ClaimIntakeRequest, ClaimIntakeRecord, EvidenceUploadRecord
 
@@ -92,6 +95,12 @@ class RuntimeClaimStore:
             raise ValueError("Evidence file must be between 1 byte and 15 MB.")
         if not _valid_signature(extension, content):
             raise ValueError("File content does not match its allowed extension.")
+        if extension != ".pdf":
+            try:
+                with Image.open(io.BytesIO(content)) as image:
+                    image.verify()
+            except Exception as error:
+                raise ValueError("Uploaded image cannot be decoded safely.") from error
         digest = hashlib.sha256(content).hexdigest()
         evidence_id = f"EV-{uuid4().hex[:12]}"
         folder = root / ("vehicle_images" if kind == "image" else "documents")
@@ -113,3 +122,18 @@ class RuntimeClaimStore:
         manifest.append(item)
         manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         return EvidenceUploadRecord(claim_id=claim_id, **item)
+
+    def evidence_path(self, claim_id: str, evidence_id: str) -> Path:
+        root = self.claim_root(claim_id)
+        manifest_path = root / "evidence_manifest.json"
+        if not manifest_path.is_file():
+            raise KeyError(evidence_id)
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        item = next((row for row in manifest if row.get("evidence_id") == evidence_id), None)
+        if item is None:
+            raise KeyError(evidence_id)
+        relative = item["stored_uri"].removeprefix(f"runtime://claims/{claim_id}/")
+        resolved = (root / relative).resolve()
+        if root.resolve() not in resolved.parents or not resolved.is_file():
+            raise ValueError("Stored evidence path is invalid.")
+        return resolved

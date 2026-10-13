@@ -1,12 +1,15 @@
 import json
+from io import BytesIO
 from pathlib import Path
 
 import pytest
+from PIL import Image
 
 pytest.importorskip("networkx")
 
 from src.api.live import LiveClaimService
 from src.api.schemas import AnalyzeRequest, ClaimIntakeRequest, CorrectionRequest, ReviewRequest
+from src.media_authenticity import MediaAuthenticityAnalyzer
 from src.registry import load_registry
 
 
@@ -36,6 +39,7 @@ def test_golden_claim_runs_real_tabular_rules_and_graph(tmp_path):
         "tabular_risk": "tabular_v1",
         "consistency": "consistency_v1",
         "relationships": "point_in_time_v1",
+        "media_authenticity": "media_authenticity_v1",
     }
     assert any("YOLO was not invoked" in warning for warning in result.warnings)
 
@@ -106,10 +110,41 @@ def test_runtime_claim_can_be_intaken_uploaded_and_analyzed(tmp_path):
             tabular_features=golden["tabular_features"],
         ),
     )
-    live.upload("CLM-RUNTIME-001", "image", "damage.png", "image/png", b"\x89PNG\r\n\x1a\nfixture")
+    image = BytesIO()
+    Image.new("RGB", (8, 8), (20, 40, 60)).save(image, format="PNG")
+    live.upload("CLM-RUNTIME-001", "image", "damage.png", "image/png", image.getvalue())
     live.upload("CLM-RUNTIME-001", "document", "estimate.pdf", "application/pdf", b"%PDF-1.4 fixture")
 
     result = live.analyze("CLM-RUNTIME-001", AnalyzeRequest())
     assert result.mode == "live"
     assert result.evidence_completeness == 1.0
     assert {item.kind for item in result.evidence}.issuperset({"claim", "image", "document"})
+    assert result.extracted_fields["media_authenticity"][0]["verdict"] == "inconclusive"
+
+
+def test_verified_ai_provenance_becomes_claim_signal(tmp_path):
+    live = service(tmp_path)
+    golden = json.loads((ROOT / "data/golden/claims/CLM-GOLD-001/claim.json").read_text(encoding="utf-8"))
+    live.intake(
+        "CLM-RUNTIME-AI",
+        ClaimIntakeRequest(
+            claim_amount=golden["claim_amount"], incident_date=golden["incident_date"],
+            plate_number="51A-12345", tabular_features=golden["tabular_features"],
+        ),
+    )
+    image = BytesIO()
+    Image.new("RGB", (8, 8), (20, 40, 60)).save(image, format="JPEG")
+    live.upload("CLM-RUNTIME-AI", "image", "damage.jpg", "image/jpeg", image.getvalue())
+    live.media_authenticity = MediaAuthenticityAnalyzer(
+        exiftool="",
+        c2pa_runner=lambda _: {
+            "active_manifest": "urn:test",
+            "claim_generator": "test",
+            "assertions": [{"digitalSourceType": "trainedAlgorithmicMedia"}],
+        },
+    )
+
+    result = live.analyze("CLM-RUNTIME-AI", AnalyzeRequest())
+    signal = next(item for item in result.signals if item.category == "authenticity")
+    assert signal.severity == "high"
+    assert signal.model_version == "media_authenticity_v1"

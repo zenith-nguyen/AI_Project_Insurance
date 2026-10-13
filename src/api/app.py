@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse
 
 from src.registry import load_registry
 
-from .schemas import AnalyzeRequest, ClaimAnalysis, ClaimIntakeRecord, ClaimIntakeRequest, CorrectionRecord, CorrectionRequest, EvidenceUploadRecord, HealthResponse, ReviewRecord, ReviewRequest
+from .schemas import AnalyzeRequest, ClaimAnalysis, ClaimIntakeRecord, ClaimIntakeRequest, CorrectionRecord, CorrectionRequest, EvidenceUploadRecord, HealthResponse, MediaAuthenticityReport, ReviewRecord, ReviewRequest
 from .service import FixtureClaimService
 
 
@@ -78,6 +78,16 @@ async def upload_evidence(
     except KeyError as error:
         raise HTTPException(status_code=404, detail="Create claim intake before uploading evidence.") from error
     except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+
+
+@app.get("/claims/{claim_id}/evidence/{evidence_id}/authenticity", response_model=MediaAuthenticityReport)
+def evidence_authenticity(claim_id: str, evidence_id: str) -> MediaAuthenticityReport:
+    try:
+        return SERVICE.authenticity(claim_id, evidence_id)
+    except KeyError as error:
+        raise HTTPException(status_code=404, detail="Evidence is not available for this claim.") from error
+    except (ValueError, OSError) as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
 
 

@@ -79,3 +79,14 @@ modules:
     metric_value: 1.0
     evaluation_split: synthetic_demo
     status: demo_only
+  media_authenticity:
+    implementation: layered_provenance_checks
+    version: media_authenticity_v1
+    task: ai_generated_and_tampered_media_triage
+    artifact_uri: src/media_authenticity/analyzer.py
+    artifact_hash: bdd60940fed6d56b7e029b51bbf6e0487e25310d50f61020e56622dbeaf38e0b
+    evidence: reports/MEDIA_AUTHENTICITY_MODULE_V1.md
+    primary_metric: engineering_contract_tests
+    metric_value: 1.0
+    evaluation_split: synthetic_unit_fixtures
+    status: engineering_v1_needs_domain_validation

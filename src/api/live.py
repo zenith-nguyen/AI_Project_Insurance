@@ -14,9 +14,10 @@ from src.document.schema import ExtractedField
 from src.features.preprocessing import features
 from src.graph.claim_graph import build_graph, claim_features
 from src.integration.consistency import check_amount, check_document_date, check_plate
+from src.media_authenticity import MediaAuthenticityAnalyzer
 from src.registry import ModelRegistry
 
-from .schemas import AnalyzeRequest, ClaimAnalysis, ClaimIntakeRecord, ClaimIntakeRequest, CorrectionRecord, CorrectionRequest, Evidence, EvidenceUploadRecord, ReviewRecord, ReviewRequest, Signal
+from .schemas import AnalyzeRequest, ClaimAnalysis, ClaimIntakeRecord, ClaimIntakeRequest, CorrectionRecord, CorrectionRequest, Evidence, EvidenceUploadRecord, MediaAuthenticityReport, ReviewRecord, ReviewRequest, Signal
 from .storage import RuntimeClaimStore
 
 
@@ -91,6 +92,7 @@ class LiveClaimService:
         if sha256(risk_artifact) != risk.artifact_hash:
             raise RuntimeError("Registered XGBoost artifact hash does not match the local bundle.")
         self.risk = TabularRiskAdapter(risk_artifact)
+        self.media_authenticity = MediaAuthenticityAnalyzer()
         self.store = JsonlAuditStore(audit_log)
         self.analyses: dict[str, ClaimAnalysis] = {}
 
@@ -99,6 +101,10 @@ class LiveClaimService:
 
     def upload(self, claim_id: str, kind: str, filename: str, content_type: str | None, content: bytes) -> EvidenceUploadRecord:
         return self.runtime_store.save_evidence(claim_id, kind, filename, content_type, content)
+
+    def authenticity(self, claim_id: str, evidence_id: str) -> MediaAuthenticityReport:
+        path = self.runtime_store.evidence_path(claim_id, evidence_id)
+        return self.media_authenticity.analyze(path, evidence_id=evidence_id)
 
     @staticmethod
     def _fields(document: dict) -> list[ExtractedField]:
@@ -114,12 +120,33 @@ class LiveClaimService:
         signals: list[Signal] = []
         evidence = [Evidence(evidence_id="claim-intake", kind="claim", label="Golden claim intake")]
         extracted: dict[str, object] = {"claim_amount": claim_amount, "incident_date": incident_date, "plate_number": plate_number}
+        authenticity_reports: list[dict] = []
 
         for item in payload.get("uploaded_evidence", []):
             evidence.append(Evidence(
                 evidence_id=item["evidence_id"], kind=item["kind"], label=item["original_filename"],
                 source_uri=item["stored_uri"], observed_at=item["observed_at"],
             ))
+            if item["kind"] == "image":
+                try:
+                    report = self.authenticity(claim_id, item["evidence_id"])
+                    authenticity_reports.append(report.model_dump())
+                    flagged = [finding for finding in report.findings if finding.outcome == "detected" and finding.severity in {"review", "high"}]
+                    if flagged:
+                        severity = "high" if any(finding.severity == "high" for finding in flagged) else "review"
+                        signals.append(Signal(
+                            signal_id=f"{item['evidence_id']}-authenticity", category="authenticity",
+                            title="Nguồn gốc ảnh cần được kiểm tra",
+                            explanation=" ".join(finding.explanation for finding in flagged),
+                            severity=severity, evidence_ids=[item["evidence_id"]],
+                            confidence=max((finding.confidence or 0.0) for finding in flagged),
+                            model_name="media_authenticity", model_version=MediaAuthenticityAnalyzer.version,
+                        ))
+                except Exception as error:
+                    authenticity_reports.append({
+                        "evidence_id": item["evidence_id"], "verdict": "error",
+                        "error": type(error).__name__,
+                    })
 
         for document in documents:
             document_id = document["document_id"]
@@ -168,6 +195,7 @@ class LiveClaimService:
         if any(item.kind == "document" for item in evidence):
             present.add("claim_document")
         missing = sorted(required - present)
+        extracted["media_authenticity"] = authenticity_reports
         completeness = (len(required) - len(missing)) / len(required) if required else 1.0
         priority = "high" if any(signal.severity == "high" for signal in signals) else ("review" if signals else "normal")
         analysis = ClaimAnalysis(
@@ -175,11 +203,12 @@ class LiveClaimService:
             priority=priority, research_risk_score=risk["score"], risk_score_is_probability=False,
             evidence_completeness=completeness, missing_evidence=missing, evidence=evidence, signals=signals,
             extracted_fields=extracted, graph_features=graph_values,
-            model_versions={"tabular_risk": "tabular_v1", "consistency": "consistency_v1", "relationships": "point_in_time_v1"},
+            model_versions={"tabular_risk": "tabular_v1", "consistency": "consistency_v1", "relationships": "point_in_time_v1", "media_authenticity": MediaAuthenticityAnalyzer.version},
             warnings=[
                 "Research risk score is not a calibrated production fraud probability.",
                 "Document fields are golden precomputed inputs; OCR and LayoutLMv3 were not invoked by this request.",
                 "Vehicle image binary is absent; YOLO was not invoked by this request.",
+                "No authenticity signal is proof that an image is camera-original; provenance may be absent or stripped.",
                 "Human review is required.",
             ],
         )

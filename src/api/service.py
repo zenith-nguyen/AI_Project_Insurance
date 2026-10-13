@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
 
-from .schemas import AnalyzeRequest, ClaimAnalysis, ClaimIntakeRecord, ClaimIntakeRequest, CorrectionRecord, CorrectionRequest, EvidenceUploadRecord, ReviewRecord, ReviewRequest
+from .schemas import AnalyzeRequest, ClaimAnalysis, ClaimIntakeRecord, ClaimIntakeRequest, CorrectionRecord, CorrectionRequest, EvidenceUploadRecord, MediaAuthenticityReport, ReviewRecord, ReviewRequest
 from .storage import RuntimeClaimStore
 
 
@@ -25,6 +25,12 @@ class FixtureClaimService:
 
     def upload(self, claim_id: str, kind: str, filename: str, content_type: str | None, content: bytes) -> EvidenceUploadRecord:
         return self.runtime_store.save_evidence(claim_id, kind, filename, content_type, content)
+
+    def authenticity(self, claim_id: str, evidence_id: str) -> MediaAuthenticityReport:
+        from src.media_authenticity import MediaAuthenticityAnalyzer
+
+        path = self.runtime_store.evidence_path(claim_id, evidence_id)
+        return MediaAuthenticityAnalyzer().analyze(path, evidence_id=evidence_id)
 
     def analyze(self, claim_id: str, request: AnalyzeRequest) -> ClaimAnalysis:
         payload = copy.deepcopy(self.template)

@@ -142,6 +142,54 @@
         }
       }
     },
+    "/claims/{claim_id}/evidence/{evidence_id}/authenticity": {
+      "get": {
+        "summary": "Evidence Authenticity",
+        "operationId": "evidence_authenticity_claims__claim_id__evidence__evidence_id__authenticity_get",
+        "parameters": [
+          {
+            "name": "claim_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Claim Id"
+            }
+          },
+          {
+            "name": "evidence_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Evidence Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaAuthenticityReport"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/claims/{claim_id}/analyze": {
       "post": {
         "summary": "Analyze",
@@ -377,6 +425,71 @@
         },
         "type": "object",
         "title": "AnalyzeRequest"
+      },
+      "AuthenticityFinding": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "metadata",
+              "exiftool",
+              "c2pa",
+              "synthid",
+              "forensic_model"
+            ],
+            "title": "Source"
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "detected",
+              "absent",
+              "completed",
+              "unavailable",
+              "error"
+            ],
+            "title": "Outcome"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "info",
+              "review",
+              "high"
+            ],
+            "title": "Severity"
+          },
+          "explanation": {
+            "type": "string",
+            "title": "Explanation"
+          },
+          "confidence": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "source",
+          "outcome",
+          "severity",
+          "explanation"
+        ],
+        "title": "AuthenticityFinding"
       },
       "Body_upload_evidence_claims__claim_id__evidence_post": {
         "properties": {
@@ -856,6 +969,92 @@
         ],
         "title": "HealthResponse"
       },
+      "MediaAuthenticityReport": {
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "title": "Schema Version",
+            "default": "1.0"
+          },
+          "evidence_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Id"
+          },
+          "analyzer_version": {
+            "type": "string",
+            "title": "Analyzer Version"
+          },
+          "sha256": {
+            "type": "string",
+            "title": "Sha256"
+          },
+          "verdict": {
+            "type": "string",
+            "enum": [
+              "ai_provenance_detected",
+              "provenance_problem",
+              "review",
+              "inconclusive"
+            ],
+            "title": "Verdict"
+          },
+          "human_review_required": {
+            "type": "boolean",
+            "title": "Human Review Required"
+          },
+          "findings": {
+            "items": {
+              "$ref": "#/components/schemas/AuthenticityFinding"
+            },
+            "type": "array",
+            "title": "Findings"
+          },
+          "metadata": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Metadata"
+          },
+          "image_info": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Image Info"
+          },
+          "c2pa_manifest": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "C2Pa Manifest"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Limitations"
+          }
+        },
+        "type": "object",
+        "required": [
+          "analyzer_version",
+          "sha256",
+          "verdict",
+          "human_review_required"
+        ],
+        "title": "MediaAuthenticityReport"
+      },
       "ReviewRecord": {
         "properties": {
           "reviewer_id": {
@@ -945,7 +1144,8 @@
               "damage",
               "document",
               "consistency",
-              "relationship"
+              "relationship",
+              "authenticity"
             ],
             "title": "Category"
           },

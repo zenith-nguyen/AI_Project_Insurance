@@ -40,6 +40,8 @@ powershell -ExecutionPolicy Bypass -File scripts/setup_live.ps1 -ArtifactRoot "D
 
 Then open the intake page at `http://127.0.0.1:8000/intake`, the workbench at `http://127.0.0.1:8000/`, or Swagger at `http://127.0.0.1:8000/docs`. Reviews and field corrections are persisted under `runtime/audit/`; uploaded claim evidence stays under `runtime/claims/`. Both remain outside Git.
 
+Uploaded images also pass through `media_authenticity_v1`: built-in EXIF/XMP marker checks always run, while ExifTool and signed C2PA Content Credentials checks activate when their command-line tools are installed. `GET /claims/{claim_id}/evidence/{evidence_id}/authenticity` returns the evidence report. A missing marker is reported as inconclusive, never as proof that an image is genuine; see `reports/MEDIA_AUTHENTICITY_MODULE_V1.md`.
+
 ## Current data and scope
 
 The tabular source is Kaggle `arpan129/insurance-fraud-detection`, workbook `Worksheet in Case Study question 2.xlsx`, sheet `Fraud_Detection_decsion tree`. Bronze retains the workbook and a hash manifest. Silver normalizes names/missing values and adds trace IDs. Gold `dataset_v2` freezes a stratified 70/10/20 split with exact integer counts. DVC tracks Bronze/Silver and generates Gold. Raw files and model artifacts remain outside Git; no DVC remote is configured.

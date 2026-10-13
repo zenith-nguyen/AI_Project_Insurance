@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from src.data.common import sha256
 from src.registry import load_registry
 
 
@@ -16,9 +17,12 @@ def test_registry_has_all_product_modules_and_public_summary_hides_artifact_loca
         "document_kie",
         "consistency",
         "relationships",
+        "media_authenticity",
     }
     summary = registry.public_summary()
     assert summary["product_version"] == "research-v1"
     assert "artifact_uri" not in summary["models"]["damage_segmentation"]
     assert summary["models"]["document_kie"]["status"] == "final_test_complete"
     assert summary["models"]["document_kie"]["metric_value"] == 0.86593707250342
+    authenticity = registry.modules["media_authenticity"]
+    assert sha256(ROOT / authenticity.artifact_uri) == authenticity.artifact_hash
