@@ -17,6 +17,9 @@ def test_fixture_claim_lifecycle_and_human_review_contract():
 
     version = client.get("/version").json()
     assert version["models"]["damage_segmentation"]["status"] == "final_test_complete"
+    readiness = client.get("/readiness").json()
+    assert readiness["mode"] == "fixture"
+    assert readiness["fully_live"] is False
 
     created = client.post(
         "/claims/CLM-TEST-001/analyze",
@@ -93,6 +96,7 @@ def test_claim_intake_and_evidence_upload_contract():
     assert upload.status_code == 201
     assert upload.json()["claim_id"] == claim_id
     assert upload.json()["sha256"]
+    assert upload.json()["authenticity_verdict"] == "inconclusive"
     authenticity = client.get(
         f"/claims/{claim_id}/evidence/{upload.json()['evidence_id']}/authenticity"
     )

@@ -19,10 +19,10 @@ Luồng live đầu tiên đã nối:
 7. Trang `/intake` tạo hồ sơ và tải ảnh/PDF lên kho runtime; API kiểm loại tệp, kích thước, chữ ký nội dung, SHA-256 và gắn mọi bằng chứng với `claim_id`.
 8. `media_authenticity_v1` đã nối vào ảnh upload: đọc EXIF/XMP, hỗ trợ ExifTool/C2PA tùy chọn, ghi rõ trạng thái SynthID và phát tín hiệu review khi thấy provenance AI hoặc metadata đáng chú ý.
 
-## Phần chưa gọi live trong API
+## Phần đã có adapter live, cần artifact/dependency trên máy chạy
 
-- YOLOv8s-seg: đã final test, cần adapter nhận ảnh và artifact store.
-- DiT, PaddleOCR và LayoutLMv3: đã có kết quả nghiên cứu; cần adapter xử lý file chứng từ thật.
+- YOLOv8s-seg: adapter nhận ảnh, kiểm SHA-256 và chuẩn hóa box/mask đã hoàn thành; tự bật khi checkpoint và `ultralytics` có trên máy.
+- DiT → PaddleOCR → LayoutLMv3: adapter ảnh/PDF, kiểm tree hash checkpoint, OCR, KIE và consistency đã hoàn thành; tự bật khi checkpoint cùng dependency có trên máy.
 - Golden claims hiện dùng trường chứng từ đã trích xuất trước và ảnh placeholder. API ghi rõ giới hạn này trong `warnings`.
 
 ## Cách chạy cho hai nhóm
@@ -31,10 +31,10 @@ Luồng live đầu tiên đã nối:
 
 ## Mốc tiếp theo
 
-1. Cho prototype render toàn bộ dữ liệu trả về từ API thay vì chữ tĩnh.
-2. Thêm document adapter theo chuỗi DiT → PaddleOCR → LayoutLMv3.
-3. Thêm YOLO adapter và binary image fixtures.
-4. Nối form sửa OCR/KIE trên UI vào correction endpoint đã có.
-5. Chạy golden end-to-end tests, latency test và kiểm tra dữ liệu nhạy cảm.
+1. Chép hai checkpoint đã khóa từ artifact store vào máy tích hợp và chạy golden binary fixtures qua adapter thật.
+2. Hiển thị mask YOLO, OCR box và provenance chi tiết trực tiếp trên UI.
+3. Thu thập benchmark media-authenticity theo manifest group-safe đã có.
+4. Đo latency/load, kiểm tra dữ liệu nhạy cảm, authentication và phân quyền.
+5. Thực hiện domain validation Việt Nam và UAT với người dùng nghiệp vụ.
 
 Đây là research prototype có thể demo luồng tích hợp. Nó chưa phải hệ thống production và chưa được phép tự động từ chối hồ sơ.

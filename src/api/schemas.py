@@ -39,6 +39,7 @@ class EvidenceUploadRecord(BaseModel):
     size_bytes: int = Field(gt=0)
     sha256: str
     observed_at: str
+    authenticity_verdict: Literal["ai_provenance_detected", "provenance_problem", "review", "inconclusive", "error"] | None = None
 
 
 class AuthenticityFinding(BaseModel):

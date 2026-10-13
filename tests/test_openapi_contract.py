@@ -6,6 +6,7 @@ def test_openapi_has_claim_lifecycle_endpoints():
     assert set(paths) >= {
         "/health",
         "/version",
+        "/readiness",
         "/claims/{claim_id}/intake",
         "/claims/{claim_id}/evidence",
         "/claims/{claim_id}/evidence/{evidence_id}/authenticity",

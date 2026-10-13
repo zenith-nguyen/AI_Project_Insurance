@@ -24,13 +24,32 @@ class FixtureClaimService:
         return self.runtime_store.create(claim_id, request)
 
     def upload(self, claim_id: str, kind: str, filename: str, content_type: str | None, content: bytes) -> EvidenceUploadRecord:
-        return self.runtime_store.save_evidence(claim_id, kind, filename, content_type, content)
+        record = self.runtime_store.save_evidence(claim_id, kind, filename, content_type, content)
+        if kind == "image":
+            try:
+                report = self.authenticity(claim_id, record.evidence_id)
+                return record.model_copy(update={"authenticity_verdict": report.verdict})
+            except Exception:
+                return record.model_copy(update={"authenticity_verdict": "error"})
+        return record
+
+    def readiness(self) -> dict:
+        return {
+            "mode": "fixture",
+            "fully_live": False,
+            "modules": {"fixture": {"active": True, "reason": "Static prototype response"}},
+        }
 
     def authenticity(self, claim_id: str, evidence_id: str) -> MediaAuthenticityReport:
         from src.media_authenticity import MediaAuthenticityAnalyzer
 
+        cached = self.runtime_store.load_authenticity(claim_id, evidence_id)
+        if cached is not None and cached.get("analyzer_version") == MediaAuthenticityAnalyzer.version:
+            return MediaAuthenticityReport.model_validate(cached)
         path = self.runtime_store.evidence_path(claim_id, evidence_id)
-        return MediaAuthenticityAnalyzer().analyze(path, evidence_id=evidence_id)
+        report = MediaAuthenticityAnalyzer().analyze(path, evidence_id=evidence_id)
+        self.runtime_store.save_authenticity(claim_id, evidence_id, report.model_dump())
+        return report
 
     def analyze(self, claim_id: str, request: AnalyzeRequest) -> ClaimAnalysis:
         payload = copy.deepcopy(self.template)

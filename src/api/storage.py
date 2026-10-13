@@ -70,6 +70,7 @@ class RuntimeClaimStore:
         root.mkdir(parents=True, exist_ok=False)
         (root / "documents").mkdir()
         (root / "vehicle_images").mkdir()
+        (root / "authenticity").mkdir()
         claim_file.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         (root / "evidence_manifest.json").write_text("[]\n", encoding="utf-8")
         graph = {
@@ -137,3 +138,14 @@ class RuntimeClaimStore:
         if root.resolve() not in resolved.parents or not resolved.is_file():
             raise ValueError("Stored evidence path is invalid.")
         return resolved
+
+    def save_authenticity(self, claim_id: str, evidence_id: str, report: dict) -> None:
+        root = self.claim_root(claim_id)
+        self.evidence_path(claim_id, evidence_id)
+        target = root / "authenticity" / f"{evidence_id}.json"
+        target.parent.mkdir(exist_ok=True)
+        target.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+    def load_authenticity(self, claim_id: str, evidence_id: str) -> dict | None:
+        target = self.claim_root(claim_id) / "authenticity" / f"{evidence_id}.json"
+        return json.loads(target.read_text(encoding="utf-8")) if target.is_file() else None

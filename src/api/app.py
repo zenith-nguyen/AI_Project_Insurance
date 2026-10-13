@@ -56,6 +56,11 @@ def version() -> dict:
     return REGISTRY.public_summary()
 
 
+@app.get("/readiness")
+def readiness() -> dict:
+    return SERVICE.readiness()
+
+
 @app.post("/claims/{claim_id}/intake", response_model=ClaimIntakeRecord, status_code=201)
 def intake(claim_id: str, request: ClaimIntakeRequest) -> ClaimIntakeRecord:
     try:

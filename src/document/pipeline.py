@@ -16,7 +16,7 @@ class DocumentPipeline:
     def process(self, image: Path, claim_id: str, document_id: str) -> DocumentResult:
         classification = self.classifier.predict([image])[0]
         tokens = self.ocr.predict(image)
-        fields = self.kie.extract(tokens)
+        fields = self.kie.extract(tokens, image=image)
         warnings = []
         if not tokens:
             warnings.append("ocr_no_text")

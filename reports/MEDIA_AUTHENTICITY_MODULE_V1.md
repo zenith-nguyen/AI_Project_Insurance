@@ -2,7 +2,7 @@
 
 ## Người dùng sẽ thấy gì?
 
-Khi ảnh được tải lên, hệ thống tạo SHA-256, đọc metadata, kiểm tra Content Credentials nếu máy chủ có `c2patool`, và trả các bằng chứng dưới nhóm `authenticity`. Kết quả dùng để ưu tiên kiểm tra thủ công; nó không tự kết luận gian lận và không tự từ chối hồ sơ.
+Ngay khi ảnh được tải lên, hệ thống tự tạo SHA-256, đọc metadata, kiểm tra Content Credentials nếu máy chủ có `c2patool`, rồi lưu báo cáo. Khi người dùng bấm **Phân tích**, báo cáo này tự được gộp vào nhóm `authenticity` cùng kết quả các model khác. Endpoint authenticity riêng chỉ phục vụ dev/audit; người dùng nghiệp vụ không phải gọi nó. Kết quả dùng để ưu tiên kiểm tra thủ công; nó không tự kết luận gian lận và không tự từ chối hồ sơ.
 
 | Tầng kiểm tra | Bản v1 | Cách hiểu |
 |---|---|---|
@@ -42,3 +42,5 @@ Meta mô tả việc gắn nhãn bằng C2PA/IPTC và watermark vô hình. Nhãn
 4. Tạo benchmark bảo hiểm Việt Nam gồm camera-original, chỉnh sáng/crop/nén, social-media re-encode, ảnh sinh AI và ảnh in/chụp lại.
 5. Đo precision/recall theo từng loại biến đổi; khóa threshold trên validation trước test.
 6. Hiển thị bằng chứng cho GĐV và luôn cho phép phản hồi/kháng nghị.
+
+Script `scripts/build_media_authenticity_benchmark.py` đã tạo sẵn manifest và chia train/validation/test theo `source_group`. Ảnh gốc và mọi biến thể crop, nén, social re-encode hoặc screen recapture của cùng một ảnh luôn nằm chung split để tránh leakage.

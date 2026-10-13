@@ -60,7 +60,7 @@ class RuleBasedKIE:
     model_name = "document-rule-kie"
     model_version = "v1"
 
-    def extract(self, tokens: list[OCRToken]) -> list[ExtractedField]:
+    def extract(self, tokens: list[OCRToken], image=None) -> list[ExtractedField]:
         text = " ".join(token.text for token in tokens)
         confidence = sum(token.confidence for token in tokens) / len(tokens) if tokens else 0.0
         evidence = tuple(range(len(tokens)))
@@ -90,14 +90,94 @@ class RuleBasedKIE:
 class LayoutLMv3KIE:
     """Lazy token-classification adapter for a fine-tuned LayoutLMv3 checkpoint."""
 
-    def __init__(self, checkpoint: str, revision: str = "main") -> None:
+    def __init__(self, checkpoint: str, revision: str = "main", device: str | None = None) -> None:
         if checkpoint == "microsoft/layoutlmv3-base":
             raise ValueError("Base LayoutLMv3 has no task head; provide a fine-tuned KIE checkpoint.")
         try:
+            import torch
             from transformers import AutoModelForTokenClassification, AutoProcessor
         except ImportError as error:
             raise RuntimeError("LayoutLMv3 requires transformers and torch.") from error
         self.model_name = checkpoint
         self.model_version = revision
+        self._torch = torch
+        self._device = device or ("cuda" if torch.cuda.is_available() else "cpu")
         self.processor = AutoProcessor.from_pretrained(checkpoint, revision=revision, apply_ocr=False)
-        self.model = AutoModelForTokenClassification.from_pretrained(checkpoint, revision=revision)
+        self.model = AutoModelForTokenClassification.from_pretrained(checkpoint, revision=revision).to(self._device)
+        self.model.eval()
+
+    @staticmethod
+    def _spans(labels: list[str]) -> list[tuple[str, int, int]]:
+        spans: list[tuple[str, int, int]] = []
+        active_name, active_start = None, None
+        for index, label in enumerate(labels + ["O"]):
+            prefix, name = label.split("-", 1) if "-" in label else (label, None)
+            if active_name is not None and (prefix != "I" or name != active_name):
+                spans.append((active_name, active_start, index))
+                active_name, active_start = None, None
+            if prefix == "B":
+                active_name, active_start = name, index
+            elif prefix == "I" and active_name is None:
+                active_name, active_start = name, index
+        return spans
+
+    def extract(self, tokens: list[OCRToken], image=None) -> list[ExtractedField]:
+        if image is None or not tokens:
+            return []
+        from PIL import Image
+
+        with Image.open(image) as opened:
+            rgb = opened.convert("RGB")
+            width, height = rgb.size
+            words = [token.text for token in tokens]
+            boxes = []
+            for token in tokens:
+                box = token.bbox
+                if box is None:
+                    boxes.append([0, 0, 0, 0])
+                else:
+                    boxes.append([
+                        max(0, min(1000, round(1000 * box.x1 / width))),
+                        max(0, min(1000, round(1000 * box.y1 / height))),
+                        max(0, min(1000, round(1000 * box.x2 / width))),
+                        max(0, min(1000, round(1000 * box.y2 / height))),
+                    ])
+            encoded = self.processor(
+                rgb, words, boxes=boxes, truncation=True, padding="max_length",
+                max_length=512, return_tensors="pt",
+            )
+        word_ids = encoded.word_ids(batch_index=0)
+        inputs = {key: value.to(self._device) for key, value in encoded.items()}
+        with self._torch.inference_mode():
+            probabilities = self.model(**inputs).logits.softmax(dim=-1)[0].cpu()
+        token_predictions = probabilities.argmax(dim=-1).tolist()
+        id2label = {int(key): value for key, value in self.model.config.id2label.items()}
+        word_labels = ["O"] * len(words)
+        word_confidence = [0.0] * len(words)
+        seen: set[int] = set()
+        for token_index, word_id in enumerate(word_ids):
+            if word_id is None or word_id in seen or word_id >= len(words):
+                continue
+            seen.add(word_id)
+            label_id = int(token_predictions[token_index])
+            word_labels[word_id] = str(id2label[label_id])
+            word_confidence[word_id] = float(probabilities[token_index, label_id])
+
+        fields: list[ExtractedField] = []
+        for name, start, end in self._spans(word_labels):
+            selected = tokens[start:end]
+            raw = " ".join(token.text for token in selected)
+            if name == "DATE":
+                normalized = _normalize_date(raw)
+                field_name = "document_date"
+            elif name == "TOTAL":
+                normalized = _normalize_amount(raw)
+                field_name = "total_amount"
+            else:
+                continue
+            confidence = sum(word_confidence[start:end]) / max(end - start, 1)
+            fields.append(ExtractedField(
+                field_name, raw, normalized, confidence, bbox=_union_box(selected),
+                evidence_token_indexes=tuple(range(start, end)), method="layoutlmv3",
+            ))
+        return fields

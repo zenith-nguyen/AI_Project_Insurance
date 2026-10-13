@@ -44,6 +44,26 @@
         }
       }
     },
+    "/readiness": {
+      "get": {
+        "summary": "Readiness",
+        "operationId": "readiness_readiness_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Readiness Readiness Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/claims/{claim_id}/intake": {
       "post": {
         "summary": "Intake",
@@ -913,6 +933,24 @@
           "observed_at": {
             "type": "string",
             "title": "Observed At"
+          },
+          "authenticity_verdict": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "ai_provenance_detected",
+                  "provenance_problem",
+                  "review",
+                  "inconclusive",
+                  "error"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Authenticity Verdict"
           }
         },
         "type": "object",

@@ -9,6 +9,7 @@ pytest.importorskip("networkx")
 
 from src.api.live import LiveClaimService
 from src.api.schemas import AnalyzeRequest, ClaimIntakeRequest, CorrectionRequest, ReviewRequest
+from src.document.schema import DocumentResult, ExtractedField, OCRToken
 from src.media_authenticity import MediaAuthenticityAnalyzer
 from src.registry import load_registry
 
@@ -42,6 +43,9 @@ def test_golden_claim_runs_real_tabular_rules_and_graph(tmp_path):
         "media_authenticity": "media_authenticity_v1",
     }
     assert any("YOLO was not invoked" in warning for warning in result.warnings)
+    readiness = live.readiness()
+    assert readiness["modules"]["tabular_risk"]["active"] is True
+    assert readiness["modules"]["damage_segmentation"]["active"] is False
 
 
 def test_review_is_persisted_as_jsonl(tmp_path):
@@ -100,6 +104,23 @@ def test_all_golden_claim_expectations_are_satisfied(tmp_path):
 
 def test_runtime_claim_can_be_intaken_uploaded_and_analyzed(tmp_path):
     live = service(tmp_path)
+    class Damage:
+        model_name = "yolov8s-seg"
+        model_version = "cardd_candidate_v1"
+        def predict(self, image):
+            return [{"class_id": 4, "class_name": "scratch", "confidence": 0.8, "box_xyxy": [1, 2, 3, 4], "mask_polygon": None}]
+
+    live.damage = Damage()
+    class Documents:
+        def process(self, path, claim_id, document_id):
+            return DocumentResult(
+                claim_id, document_id, "invoice", 0.92,
+                tokens=[OCRToken("Total 61680", 0.9)],
+                fields=[ExtractedField("total_amount", "61680", 61680.0, 0.9)],
+                model_versions={"classifier": "mock", "ocr": "mock", "kie": "mock"},
+            )
+
+    live.document_runtime = Documents()
     golden = json.loads((ROOT / "data/golden/claims/CLM-GOLD-001/claim.json").read_text(encoding="utf-8"))
     live.intake(
         "CLM-RUNTIME-001",
@@ -120,6 +141,10 @@ def test_runtime_claim_can_be_intaken_uploaded_and_analyzed(tmp_path):
     assert result.evidence_completeness == 1.0
     assert {item.kind for item in result.evidence}.issuperset({"claim", "image", "document"})
     assert result.extracted_fields["media_authenticity"][0]["verdict"] == "inconclusive"
+    assert result.extracted_fields["damage_detections"][0]["class_name"] == "scratch"
+    assert any(item.category == "damage" for item in result.signals)
+    assert result.extracted_fields["document_results"][0]["document_type"] == "invoice"
+    assert any(item.category == "document" for item in result.signals)
 
 
 def test_verified_ai_provenance_becomes_claim_signal(tmp_path):
@@ -132,9 +157,6 @@ def test_verified_ai_provenance_becomes_claim_signal(tmp_path):
             plate_number="51A-12345", tabular_features=golden["tabular_features"],
         ),
     )
-    image = BytesIO()
-    Image.new("RGB", (8, 8), (20, 40, 60)).save(image, format="JPEG")
-    live.upload("CLM-RUNTIME-AI", "image", "damage.jpg", "image/jpeg", image.getvalue())
     live.media_authenticity = MediaAuthenticityAnalyzer(
         exiftool="",
         c2pa_runner=lambda _: {
@@ -143,6 +165,9 @@ def test_verified_ai_provenance_becomes_claim_signal(tmp_path):
             "assertions": [{"digitalSourceType": "trainedAlgorithmicMedia"}],
         },
     )
+    image = BytesIO()
+    Image.new("RGB", (8, 8), (20, 40, 60)).save(image, format="JPEG")
+    live.upload("CLM-RUNTIME-AI", "image", "damage.jpg", "image/jpeg", image.getvalue())
 
     result = live.analyze("CLM-RUNTIME-AI", AnalyzeRequest())
     signal = next(item for item in result.signals if item.category == "authenticity")

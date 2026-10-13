@@ -39,6 +39,12 @@ def test_base_layoutlm_checkpoint_is_rejected_before_import():
         LayoutLMv3KIE("microsoft/layoutlmv3-base")
 
 
+def test_layoutlm_bio_span_recovery():
+    assert LayoutLMv3KIE._spans(["O", "B-DATE", "I-DATE", "O", "B-TOTAL"]) == [
+        ("DATE", 1, 3), ("TOTAL", 4, 5)
+    ]
+
+
 def test_document_metrics():
     assert character_error_rate(["abc"], ["adc"]) == pytest.approx(1 / 3)
     assert word_error_rate(["one two"], ["one too"]) == pytest.approx(0.5)

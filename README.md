@@ -40,7 +40,9 @@ powershell -ExecutionPolicy Bypass -File scripts/setup_live.ps1 -ArtifactRoot "D
 
 Then open the intake page at `http://127.0.0.1:8000/intake`, the workbench at `http://127.0.0.1:8000/`, or Swagger at `http://127.0.0.1:8000/docs`. Reviews and field corrections are persisted under `runtime/audit/`; uploaded claim evidence stays under `runtime/claims/`. Both remain outside Git.
 
-Uploaded images also pass through `media_authenticity_v1`: built-in EXIF/XMP marker checks always run, while ExifTool and signed C2PA Content Credentials checks activate when their command-line tools are installed. `GET /claims/{claim_id}/evidence/{evidence_id}/authenticity` returns the evidence report. A missing marker is reported as inconclusive, never as proof that an image is genuine; see `reports/MEDIA_AUTHENTICITY_MODULE_V1.md`.
+Uploaded images automatically pass through `media_authenticity_v1`: built-in EXIF/XMP marker checks always run, while ExifTool and signed C2PA Content Credentials checks activate when their command-line tools are installed. The claim analysis includes the cached result automatically. `GET /claims/{claim_id}/evidence/{evidence_id}/authenticity` is an audit/debug view of the same result. A missing marker is reported as inconclusive, never as proof that an image is genuine; see `reports/MEDIA_AUTHENTICITY_MODULE_V1.md`.
+
+The live orchestrator also activates the real YOLO adapter when `INSURANCE_YOLO_WEIGHTS` points to the registered checkpoint, and the DiT → PaddleOCR → LayoutLMv3 adapter when `INSURANCE_LAYOUTLM_CHECKPOINT` points to the registered checkpoint directory. Both adapters verify artifact hashes before loading. `scripts/setup_live.ps1 -ArtifactRoot <shared-artifacts>` copies and verifies available artifacts; `scripts/run_live.ps1` enables only modules whose dependencies are installed.
 
 ## Current data and scope
 
