@@ -55,6 +55,7 @@ Phiên hết hạn sau 10 phút. `guided_unverified` có nghĩa server nhận đ
 | `POST /claims/{id}/intake` | Có | Có | Tạo hồ sơ |
 | `POST /claims/{id}/capture-sessions` | Tùy chọn | Có | Tạo phiên chụp hướng dẫn |
 | `POST /claims/{id}/evidence` | Có | Có | Tải ảnh hoặc chứng từ |
+| `GET /claims/{id}/evidence/{evidence_id}/content` | Có | Có | Hiển thị file đã đăng ký để overlay mask/box |
 | `POST /claims/{id}/analyze` | Có | Có | Chạy orchestration tự động |
 | `GET /claims/{id}/analysis` | Có | Có | Đọc lại kết quả trong tiến trình hiện tại |
 | `POST /claims/{id}/review` | Có | Có | Lưu quyết định và lý do |
@@ -89,3 +90,5 @@ powershell -ExecutionPolicy Bypass -File scripts/run_live.ps1
 ```
 
 Swagger: `http://127.0.0.1:8000/docs`. Contract khóa để sinh client nằm tại `contracts/claim_review_openapi.v1.json`.
+
+UI không gửi đường dẫn máy local cho endpoint nội dung. API chỉ stream file đã đăng ký trong evidence manifest của đúng `claim_id`.

@@ -25,3 +25,4 @@ reports/leakage/*.md
 *.log
 # Runtime audit records contain reviewer input and stay outside source control.
 runtime/
+dist/

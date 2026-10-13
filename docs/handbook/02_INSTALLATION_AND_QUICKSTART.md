@@ -1,0 +1,39 @@
+# 02 — Cài đặt và chạy nhanh
+
+## Đội UI
+
+Không cần raw data, Google Drive, GPU hoặc checkpoint:
+
+```powershell
+git clone https://github.com/zenith-nguyen/AI_Project_Insurance.git
+cd AI_Project_Insurance
+docker compose up --build
+```
+
+Mở `http://127.0.0.1:8000/`; Swagger ở `http://127.0.0.1:8000/docs`.
+
+Không dùng Docker:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/setup_ui.ps1
+powershell -ExecutionPolicy Bypass -File scripts/run_ui.ps1
+```
+
+## ML/backend live
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/setup_live.ps1 `
+  -ArtifactRoot "D:\shared-model-artifacts"
+.\.venv\Scripts\python.exe scripts/check_live_readiness.py `
+  --output runtime/readiness.json
+powershell -ExecutionPolicy Bypass -File scripts/run_live.ps1
+```
+
+`core_live_ready=true` nghĩa nhánh risk bảng chạy được. `multimodal_live_ready=true` chỉ khi XGBoost, YOLO và document pipeline đều có artifact/dependency hợp lệ.
+
+## Kiểm thử
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q
+```
+

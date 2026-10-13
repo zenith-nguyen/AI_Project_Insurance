@@ -33,12 +33,14 @@ Luồng live đầu tiên đã nối:
 
 API đã có tài liệu quản lý tập trung tại `reports/API_HANDOFF_GUIDE_2026-10-13.md`, browser client tại `prototype/api-client.js`, và OpenAPI tại `contracts/claim_review_openapi.v1.json`. Kiểm tra máy live bằng `python scripts/check_live_readiness.py`.
 
+Workbench đã dùng client chung, đọc nội dung evidence qua endpoint an toàn, vẽ polygon/box YOLO khi có output thật, và hiển thị trường KIE cùng confidence/provenance ảnh. Bộ handbook bàn giao được chuẩn hóa từ `00` đến `07`; script packaging sinh cả Markdown, PDF, checksum và ZIP có nhãn DRAFT/FINAL.
+
 Kết quả preflight local ngày 13/10/2026: XGBoost và dependency lõi `PASS`; YOLO thiếu checkpoint cùng `ultralytics`; nhánh chứng từ thiếu checkpoint LayoutLMv3 và Paddle. Vì vậy core live đã chạy được, multimodal live trên máy local chưa đầy đủ.
 
 ## Mốc tiếp theo
 
 1. Chép hai checkpoint đã khóa từ artifact store vào máy tích hợp và chạy golden binary fixtures qua adapter thật.
-2. Hiển thị mask YOLO, OCR box và provenance chi tiết trực tiếp trên UI.
+2. Hoàn thiện overlay OCR token/field box theo trang PDF và kiểm thử bằng artifact thật; mask YOLO, field KIE và provenance cơ bản đã nối UI.
 3. Thu thập benchmark media-authenticity theo manifest group-safe đã có; khóa threshold trên validation rồi đo test theo generator và từng loại biến đổi.
 4. Đo latency/load, kiểm tra dữ liệu nhạy cảm, authentication và phân quyền.
 5. Thực hiện domain validation Việt Nam và UAT với người dùng nghiệp vụ.

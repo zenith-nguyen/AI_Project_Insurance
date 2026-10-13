@@ -6,6 +6,8 @@ Team-ready handoff documents for Progress Report 2 are indexed in `reports/hando
 
 The API lifecycle, UI/backend responsibilities, guided-capture example and error-handling rules are documented in `reports/API_HANDOFF_GUIDE_2026-10-13.md`. Browser clients can import `prototype/api-client.js` instead of duplicating raw `fetch` calls.
 
+The numbered handoff handbook starts at `docs/handbook/00_START_HERE.md`. Build a PDF + ZIP draft with `python scripts/build_handoff_bundle.py --status draft`; final packaging is deliberately gated by the release/UAT checklist.
+
 ## Claim Review API and prototype
 
 The repository now includes a fixture-first FastAPI contract and reviewer prototype. This lets the UI team integrate before live model adapters are released.
