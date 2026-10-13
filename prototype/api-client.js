@@ -60,6 +60,10 @@ export class ClaimReviewClient {
     return this.request(`/claims/${encodeURIComponent(claimId)}/evidence/${encodeURIComponent(evidenceId)}/authenticity`);
   }
 
+  evidenceContentUrl(claimId, evidenceId) {
+    return `${this.baseUrl}/claims/${encodeURIComponent(claimId)}/evidence/${encodeURIComponent(evidenceId)}/content`;
+  }
+
   saveReview(claimId, payload) {
     return this.request(`/claims/${encodeURIComponent(claimId)}/review`, {
       method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(payload),

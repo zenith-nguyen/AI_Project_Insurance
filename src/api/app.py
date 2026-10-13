@@ -114,6 +114,21 @@ def evidence_authenticity(claim_id: str, evidence_id: str) -> MediaAuthenticityR
         raise HTTPException(status_code=422, detail=str(error)) from error
 
 
+@app.get("/claims/{claim_id}/evidence/{evidence_id}/content")
+def evidence_content(claim_id: str, evidence_id: str) -> FileResponse:
+    """Stream one registered evidence file; never accept a filesystem path from the client."""
+    try:
+        path = SERVICE.runtime_store.evidence_path(claim_id, evidence_id)
+        return FileResponse(
+            path,
+            headers={"Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"},
+        )
+    except KeyError as error:
+        raise HTTPException(status_code=404, detail="Evidence is not available for this claim.") from error
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+
+
 @app.post("/claims/{claim_id}/analyze", response_model=ClaimAnalysis)
 def analyze(claim_id: str, request: AnalyzeRequest) -> ClaimAnalysis:
     try:

@@ -106,6 +106,11 @@ def test_claim_intake_and_evidence_upload_contract():
     assert upload.json()["claim_id"] == claim_id
     assert upload.json()["sha256"]
     assert upload.json()["authenticity_verdict"] in {"inconclusive", "review"}
+    content = client.get(f"/claims/{claim_id}/evidence/{upload.json()['evidence_id']}/content")
+    assert content.status_code == 200
+    assert content.content == binary.getvalue()
+    assert content.headers["cache-control"] == "private, no-store"
+    assert content.headers["x-content-type-options"] == "nosniff"
     authenticity = client.get(
         f"/claims/{claim_id}/evidence/{upload.json()['evidence_id']}/authenticity"
     )

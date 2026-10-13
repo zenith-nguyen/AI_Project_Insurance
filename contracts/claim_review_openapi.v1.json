@@ -249,6 +249,53 @@
         }
       }
     },
+    "/claims/{claim_id}/evidence/{evidence_id}/content": {
+      "get": {
+        "summary": "Evidence Content",
+        "description": "Stream one registered evidence file; never accept a filesystem path from the client.",
+        "operationId": "evidence_content_claims__claim_id__evidence__evidence_id__content_get",
+        "parameters": [
+          {
+            "name": "claim_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Claim Id"
+            }
+          },
+          {
+            "name": "evidence_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Evidence Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/claims/{claim_id}/analyze": {
       "post": {
         "summary": "Analyze",
