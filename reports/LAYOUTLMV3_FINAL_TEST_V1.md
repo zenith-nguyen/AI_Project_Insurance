@@ -1,6 +1,6 @@
 # LayoutLMv3 SROIE — Final test v1
 
-**Ngày hoàn tất:** 13/10/2026  
+**Ngày hoàn tất:** 13/10/2026
 **Phạm vi:** trích xuất hai trường `date` và `total` từ SROIE processed v1.
 
 ## Kết quả

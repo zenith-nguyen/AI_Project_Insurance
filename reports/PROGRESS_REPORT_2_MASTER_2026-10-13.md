@@ -1,6 +1,6 @@
 # Báo cáo tiến độ lần 2 — Bản tổng hợp dễ đọc
 
-**Ngày cập nhật:** 13/10/2026  
+**Ngày cập nhật:** 13/10/2026
 **Trọng tâm:** Data + Baseline + Evaluation v1
 
 ## 1. Kết quả chính
