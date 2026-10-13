@@ -73,6 +73,28 @@ class ReviewRecord(ReviewRequest):
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 
+class CorrectionRequest(BaseModel):
+    reviewer_id: str = Field(min_length=2)
+    document_id: str = Field(min_length=1)
+    field_name: str = Field(min_length=1)
+    original_value: Any = None
+    corrected_value: Any
+    reason: str = Field(min_length=10, max_length=2000)
+
+    @field_validator("reason")
+    @classmethod
+    def correction_reason_must_be_specific(cls, value: str) -> str:
+        if len(value.split()) < 3:
+            raise ValueError("Correction reason must contain at least three words.")
+        return value.strip()
+
+
+class CorrectionRecord(CorrectionRequest):
+    claim_id: str
+    trace_id: str
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+
 class HealthResponse(BaseModel):
     status: Literal["ok"] = "ok"
     mode: Literal["fixture", "live"]

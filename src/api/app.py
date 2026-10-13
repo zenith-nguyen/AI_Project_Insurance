@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse
 
 from src.registry import load_registry
 
-from .schemas import AnalyzeRequest, ClaimAnalysis, HealthResponse, ReviewRecord, ReviewRequest
+from .schemas import AnalyzeRequest, ClaimAnalysis, CorrectionRecord, CorrectionRequest, HealthResponse, ReviewRecord, ReviewRequest
 from .service import FixtureClaimService
 
 
@@ -73,3 +73,11 @@ def review(claim_id: str, request: ReviewRequest) -> ReviewRecord:
         return SERVICE.review(claim_id, request)
     except KeyError as error:
         raise HTTPException(status_code=409, detail="Analyze the claim before recording a review.") from error
+
+
+@app.post("/claims/{claim_id}/corrections", response_model=CorrectionRecord)
+def correct(claim_id: str, request: CorrectionRequest) -> CorrectionRecord:
+    try:
+        return SERVICE.correct(claim_id, request)
+    except KeyError as error:
+        raise HTTPException(status_code=409, detail="Analyze the claim before recording a correction.") from error

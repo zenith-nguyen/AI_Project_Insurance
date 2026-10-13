@@ -16,7 +16,7 @@ from src.graph.claim_graph import build_graph, claim_features
 from src.integration.consistency import check_amount, check_document_date, check_plate
 from src.registry import ModelRegistry
 
-from .schemas import AnalyzeRequest, ClaimAnalysis, Evidence, ReviewRecord, ReviewRequest, Signal
+from .schemas import AnalyzeRequest, ClaimAnalysis, CorrectionRecord, CorrectionRequest, Evidence, ReviewRecord, ReviewRequest, Signal
 
 
 class GoldenClaimRepository:
@@ -61,15 +61,16 @@ class TabularRiskAdapter:
         return {"score": score, "priority": queue}
 
 
-class JsonlReviewStore:
+class JsonlAuditStore:
     def __init__(self, path: str | Path) -> None:
         self.path = Path(path)
         self._lock = Lock()
 
-    def append(self, record: ReviewRecord) -> None:
+    def append(self, event_type: str, record: ReviewRecord | CorrectionRecord) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
+        payload = {"event_type": event_type, **record.model_dump()}
         with self._lock, self.path.open("a", encoding="utf-8") as stream:
-            stream.write(record.model_dump_json() + "\n")
+            stream.write(json.dumps(payload, ensure_ascii=False, default=str) + "\n")
 
 
 class LiveClaimService:
@@ -82,7 +83,7 @@ class LiveClaimService:
         if sha256(risk_artifact) != risk.artifact_hash:
             raise RuntimeError("Registered XGBoost artifact hash does not match the local bundle.")
         self.risk = TabularRiskAdapter(risk_artifact)
-        self.store = JsonlReviewStore(audit_log)
+        self.store = JsonlAuditStore(audit_log)
         self.analyses: dict[str, ClaimAnalysis] = {}
 
     @staticmethod
@@ -169,5 +170,13 @@ class LiveClaimService:
         if analysis is None:
             raise KeyError(claim_id)
         record = ReviewRecord(claim_id=claim_id, trace_id=analysis.trace_id, **request.model_dump())
-        self.store.append(record)
+        self.store.append("review", record)
+        return record
+
+    def correct(self, claim_id: str, request: CorrectionRequest) -> CorrectionRecord:
+        analysis = self.get_analysis(claim_id)
+        if analysis is None:
+            raise KeyError(claim_id)
+        record = CorrectionRecord(claim_id=claim_id, trace_id=analysis.trace_id, **request.model_dump())
+        self.store.append("field_correction", record)
         return record

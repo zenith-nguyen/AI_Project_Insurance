@@ -18,20 +18,23 @@ if (-not (Test-Path ".venv\Scripts\python.exe")) {
 
 $Target = Join-Path $RepoRoot "artifacts\models\tabular_v1\bundle.joblib"
 if (-not (Test-Path -LiteralPath $Target)) {
-    if ([string]::IsNullOrWhiteSpace($ArtifactRoot)) {
-        throw "Missing XGBoost bundle. Re-run with -ArtifactRoot pointing to the shared artifact folder."
-    }
-    $Candidates = @(
-        (Join-Path $ArtifactRoot "models\tabular_v1\bundle.joblib"),
-        (Join-Path $ArtifactRoot "tabular_v1\bundle.joblib"),
-        (Join-Path $ArtifactRoot "bundle.joblib")
-    )
-    $Source = $Candidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
-    if (-not $Source) {
-        throw "bundle.joblib was not found below ArtifactRoot. Checked: $($Candidates -join ', ')"
-    }
     New-Item -ItemType Directory -Force -Path (Split-Path $Target) | Out-Null
-    Copy-Item -LiteralPath $Source -Destination $Target
+    if ([string]::IsNullOrWhiteSpace($ArtifactRoot)) {
+        $ArtifactUrl = "https://github.com/zenith-nguyen/AI_Project_Insurance/releases/download/research-models-v1/bundle.joblib"
+        Write-Host "Downloading registered XGBoost research artifact..."
+        Invoke-WebRequest -Uri $ArtifactUrl -OutFile $Target
+    } else {
+        $Candidates = @(
+            (Join-Path $ArtifactRoot "models\tabular_v1\bundle.joblib"),
+            (Join-Path $ArtifactRoot "tabular_v1\bundle.joblib"),
+            (Join-Path $ArtifactRoot "bundle.joblib")
+        )
+        $Source = $Candidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
+        if (-not $Source) {
+            throw "bundle.joblib was not found below ArtifactRoot. Checked: $($Candidates -join ', ')"
+        }
+        Copy-Item -LiteralPath $Source -Destination $Target
+    }
 }
 
 $Expected = "17649499761df7a6d40d0b0a007d883ec7f3cd68ba9f561af4b169c1d9be28d8"

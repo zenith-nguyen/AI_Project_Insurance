@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
 
-from .schemas import AnalyzeRequest, ClaimAnalysis, ReviewRecord, ReviewRequest
+from .schemas import AnalyzeRequest, ClaimAnalysis, CorrectionRecord, CorrectionRequest, ReviewRecord, ReviewRequest
 
 
 class FixtureClaimService:
@@ -16,6 +16,7 @@ class FixtureClaimService:
         self.template = json.loads(self.fixture_path.read_text(encoding="utf-8"))
         self.analyses: dict[str, ClaimAnalysis] = {}
         self.reviews: dict[str, list[ReviewRecord]] = {}
+        self.corrections: dict[str, list[CorrectionRecord]] = {}
 
     def analyze(self, claim_id: str, request: AnalyzeRequest) -> ClaimAnalysis:
         payload = copy.deepcopy(self.template)
@@ -44,4 +45,12 @@ class FixtureClaimService:
             raise KeyError(claim_id)
         record = ReviewRecord(claim_id=claim_id, trace_id=analysis.trace_id, **request.model_dump())
         self.reviews.setdefault(claim_id, []).append(record)
+        return record
+
+    def correct(self, claim_id: str, request: CorrectionRequest) -> CorrectionRecord:
+        analysis = self.get_analysis(claim_id)
+        if analysis is None:
+            raise KeyError(claim_id)
+        record = CorrectionRecord(claim_id=claim_id, trace_id=analysis.trace_id, **request.model_dump())
+        self.corrections.setdefault(claim_id, []).append(record)
         return record

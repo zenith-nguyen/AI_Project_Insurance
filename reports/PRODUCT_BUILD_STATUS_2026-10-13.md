@@ -15,6 +15,7 @@ Luồng live đầu tiên đã nối:
 3. NetworkX thật để tính quan hệ tại đúng thời điểm chấm.
 4. API trả cùng schema mà prototype fixture đang dùng.
 5. Quyết định của người duyệt được ghi vào audit log JSONL.
+6. Reviewer có endpoint sửa trường OCR/KIE; giá trị cũ, giá trị mới, lý do, người sửa, `claim_id`, `trace_id` và thời gian được lưu cùng audit log.
 
 ## Phần chưa gọi live trong API
 
@@ -31,7 +32,7 @@ Luồng live đầu tiên đã nối:
 1. Cho prototype render toàn bộ dữ liệu trả về từ API thay vì chữ tĩnh.
 2. Thêm document adapter theo chuỗi DiT → PaddleOCR → LayoutLMv3.
 3. Thêm YOLO adapter và binary image fixtures.
-4. Tạo correction endpoint cho OCR/KIE và versioned audit events.
+4. Nối form sửa OCR/KIE trên UI vào correction endpoint đã có.
 5. Chạy golden end-to-end tests, latency test và kiểm tra dữ liệu nhạy cảm.
 
 Đây là research prototype có thể demo luồng tích hợp. Nó chưa phải hệ thống production và chưa được phép tự động từ chối hồ sơ.

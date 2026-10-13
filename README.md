@@ -32,7 +32,7 @@ powershell -ExecutionPolicy Bypass -File scripts/setup_live.ps1
 powershell -ExecutionPolicy Bypass -File scripts/run_live.ps1
 ```
 
-On a fresh clone, pass the shared artifact directory once:
+On a fresh clone, `setup_live.ps1` downloads the pinned research bundle from the repository's `research-models-v1` GitHub Release and verifies its SHA-256. A local shared artifact directory can be used instead:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/setup_live.ps1 -ArtifactRoot "D:\shared-model-artifacts"

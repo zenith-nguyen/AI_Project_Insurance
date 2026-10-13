@@ -36,6 +36,20 @@ def test_fixture_claim_lifecycle_and_human_review_contract():
     assert review.status_code == 200
     assert review.json()["trace_id"] == analysis["trace_id"]
 
+    correction = client.post(
+        "/claims/CLM-TEST-001/corrections",
+        json={
+            "reviewer_id": "reviewer-01",
+            "document_id": "DOC-001",
+            "field_name": "plate_number",
+            "original_value": "51H-123.42",
+            "corrected_value": "51H-123.43",
+            "reason": "Đối chiếu với ảnh đăng ký xe",
+        },
+    )
+    assert correction.status_code == 200
+    assert correction.json()["trace_id"] == analysis["trace_id"]
+
 
 def test_review_requires_analysis_first():
     response = client.post(
@@ -43,3 +57,16 @@ def test_review_requires_analysis_first():
         json={"reviewer_id": "reviewer-01", "decision": "special_review", "reason": "Có tín hiệu cần xác minh thêm"},
     )
     assert response.status_code == 409
+
+    correction = client.post(
+        "/claims/NOT-ANALYZED/corrections",
+        json={
+            "reviewer_id": "reviewer-01",
+            "document_id": "DOC-001",
+            "field_name": "total_amount",
+            "original_value": 100,
+            "corrected_value": 120,
+            "reason": "Đối chiếu lại chứng từ gốc",
+        },
+    )
+    assert correction.status_code == 409

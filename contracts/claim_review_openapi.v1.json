@@ -180,6 +180,55 @@
           }
         }
       }
+    },
+    "/claims/{claim_id}/corrections": {
+      "post": {
+        "summary": "Correct",
+        "operationId": "correct_claims__claim_id__corrections_post",
+        "parameters": [
+          {
+            "name": "claim_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Claim Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CorrectionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CorrectionRecord"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -352,6 +401,100 @@
           "evidence_completeness"
         ],
         "title": "ClaimAnalysis"
+      },
+      "CorrectionRecord": {
+        "properties": {
+          "reviewer_id": {
+            "type": "string",
+            "minLength": 2,
+            "title": "Reviewer Id"
+          },
+          "document_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Document Id"
+          },
+          "field_name": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Field Name"
+          },
+          "original_value": {
+            "title": "Original Value"
+          },
+          "corrected_value": {
+            "title": "Corrected Value"
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 10,
+            "title": "Reason"
+          },
+          "claim_id": {
+            "type": "string",
+            "title": "Claim Id"
+          },
+          "trace_id": {
+            "type": "string",
+            "title": "Trace Id"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reviewer_id",
+          "document_id",
+          "field_name",
+          "corrected_value",
+          "reason",
+          "claim_id",
+          "trace_id"
+        ],
+        "title": "CorrectionRecord"
+      },
+      "CorrectionRequest": {
+        "properties": {
+          "reviewer_id": {
+            "type": "string",
+            "minLength": 2,
+            "title": "Reviewer Id"
+          },
+          "document_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Document Id"
+          },
+          "field_name": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Field Name"
+          },
+          "original_value": {
+            "title": "Original Value"
+          },
+          "corrected_value": {
+            "title": "Corrected Value"
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 10,
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reviewer_id",
+          "document_id",
+          "field_name",
+          "corrected_value",
+          "reason"
+        ],
+        "title": "CorrectionRequest"
       },
       "Evidence": {
         "properties": {
