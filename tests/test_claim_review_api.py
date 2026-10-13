@@ -10,6 +10,12 @@ from src.api.app import app
 client = TestClient(app)
 
 
+def test_browser_api_client_is_served_by_the_backend():
+    response = client.get("/api-client.js")
+    assert response.status_code == 200
+    assert "export class ClaimReviewClient" in response.text
+
+
 def test_fixture_claim_lifecycle_and_human_review_contract():
     health = client.get("/health")
     assert health.status_code == 200

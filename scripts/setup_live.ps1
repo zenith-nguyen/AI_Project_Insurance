@@ -91,7 +91,12 @@ if (Test-Path -LiteralPath $LayoutTarget) {
 
 & ".venv\Scripts\python.exe" scripts\build_golden_claims.py
 & ".venv\Scripts\python.exe" -m pytest tests\test_live_claim_service.py tests\test_claim_review_api.py tests\test_model_registry.py -q
+& ".venv\Scripts\python.exe" scripts\check_live_readiness.py --output runtime\readiness.json
+if ($LASTEXITCODE -ne 0) {
+    throw "Core live readiness check failed. See runtime/readiness.json."
+}
 
 Write-Host ""
 Write-Host "Live research environment is ready."
+Write-Host "Readiness details: runtime/readiness.json"
 Write-Host "Run: powershell -ExecutionPolicy Bypass -File scripts/run_live.ps1"

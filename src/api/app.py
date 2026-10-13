@@ -46,6 +46,11 @@ def intake_page() -> FileResponse:
     return FileResponse(ROOT / "prototype/claim_intake.html")
 
 
+@app.get("/api-client.js", include_in_schema=False)
+def api_client() -> FileResponse:
+    return FileResponse(ROOT / "prototype/api-client.js", media_type="text/javascript")
+
+
 @app.get("/health", response_model=HealthResponse)
 def health() -> HealthResponse:
     return HealthResponse(mode=MODE, product_version=REGISTRY.product_version)

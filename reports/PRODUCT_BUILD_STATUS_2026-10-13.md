@@ -31,6 +31,10 @@ Luồng live đầu tiên đã nối:
 
 Đội UI chạy `scripts/setup_ui.ps1` và `scripts/run_ui.ps1`; không cần data, Drive hoặc GPU. Người phụ trách ML/backend chạy `scripts/setup_live.ps1` và `scripts/run_live.ps1`; máy cần bundle XGBoost đúng SHA-256 trong model registry.
 
+API đã có tài liệu quản lý tập trung tại `reports/API_HANDOFF_GUIDE_2026-10-13.md`, browser client tại `prototype/api-client.js`, và OpenAPI tại `contracts/claim_review_openapi.v1.json`. Kiểm tra máy live bằng `python scripts/check_live_readiness.py`.
+
+Kết quả preflight local ngày 13/10/2026: XGBoost và dependency lõi `PASS`; YOLO thiếu checkpoint cùng `ultralytics`; nhánh chứng từ thiếu checkpoint LayoutLMv3 và Paddle. Vì vậy core live đã chạy được, multimodal live trên máy local chưa đầy đủ.
+
 ## Mốc tiếp theo
 
 1. Chép hai checkpoint đã khóa từ artifact store vào máy tích hợp và chạy golden binary fixtures qua adapter thật.

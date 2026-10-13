@@ -162,6 +162,45 @@
         }
       }
     },
+    "/claims/{claim_id}/capture-sessions": {
+      "post": {
+        "summary": "Start Capture Session",
+        "operationId": "start_capture_session_claims__claim_id__capture_sessions_post",
+        "parameters": [
+          {
+            "name": "claim_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Claim Id"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaptureSessionRecord"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/claims/{claim_id}/evidence/{evidence_id}/authenticity": {
       "get": {
         "summary": "Evidence Authenticity",
@@ -459,7 +498,8 @@
               "exiftool",
               "c2pa",
               "synthid",
-              "forensic_model"
+              "forensic_model",
+              "cross_claim"
             ],
             "title": "Source"
           },
@@ -517,6 +557,28 @@
             "type": "string",
             "title": "Kind"
           },
+          "capture_session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capture Session Id"
+          },
+          "challenge_step": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Challenge Step"
+          },
           "file": {
             "type": "string",
             "contentMediaType": "application/octet-stream",
@@ -529,6 +591,84 @@
           "file"
         ],
         "title": "Body_upload_evidence_claims__claim_id__evidence_post"
+      },
+      "CaptureInstruction": {
+        "properties": {
+          "step": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Step"
+          },
+          "instruction": {
+            "type": "string",
+            "title": "Instruction"
+          }
+        },
+        "type": "object",
+        "required": [
+          "step",
+          "instruction"
+        ],
+        "title": "CaptureInstruction"
+      },
+      "CaptureSessionRecord": {
+        "properties": {
+          "claim_id": {
+            "type": "string",
+            "title": "Claim Id"
+          },
+          "session_id": {
+            "type": "string",
+            "title": "Session Id"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "expires_at": {
+            "type": "string",
+            "title": "Expires At"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "issued",
+              "completed",
+              "expired"
+            ],
+            "title": "Status"
+          },
+          "instructions": {
+            "items": {
+              "$ref": "#/components/schemas/CaptureInstruction"
+            },
+            "type": "array",
+            "title": "Instructions"
+          },
+          "submissions": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Submissions"
+          },
+          "assurance_level": {
+            "type": "string",
+            "const": "guided_unverified",
+            "title": "Assurance Level",
+            "default": "guided_unverified"
+          }
+        },
+        "type": "object",
+        "required": [
+          "claim_id",
+          "session_id",
+          "created_at",
+          "expires_at",
+          "status",
+          "instructions"
+        ],
+        "title": "CaptureSessionRecord"
       },
       "ClaimAnalysis": {
         "properties": {
@@ -561,6 +701,16 @@
             "type": "boolean",
             "title": "Human Review Required",
             "default": true
+          },
+          "analysis_status": {
+            "type": "string",
+            "enum": [
+              "complete",
+              "partial",
+              "blocked"
+            ],
+            "title": "Analysis Status",
+            "default": "complete"
           },
           "priority": {
             "type": "string",
@@ -632,6 +782,14 @@
             },
             "type": "object",
             "title": "Model Versions"
+          },
+          "module_status": {
+            "additionalProperties": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Module Status"
           },
           "warnings": {
             "items": {
@@ -929,6 +1087,65 @@
           "sha256": {
             "type": "string",
             "title": "Sha256"
+          },
+          "perceptual_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Perceptual Hash"
+          },
+          "color_signature": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color Signature"
+          },
+          "capture_session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capture Session Id"
+          },
+          "challenge_step": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Challenge Step"
+          },
+          "capture_assurance": {
+            "anyOf": [
+              {
+                "type": "string",
+                "const": "guided_unverified"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capture Assurance"
           },
           "observed_at": {
             "type": "string",

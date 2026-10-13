@@ -4,6 +4,8 @@ This repository reproduces a **tabular research baseline** for the UEH CPMAI pro
 
 Team-ready handoff documents for Progress Report 2 are indexed in `reports/handoff/README.md`.
 
+The API lifecycle, UI/backend responsibilities, guided-capture example and error-handling rules are documented in `reports/API_HANDOFF_GUIDE_2026-10-13.md`. Browser clients can import `prototype/api-client.js` instead of duplicating raw `fetch` calls.
+
 ## Claim Review API and prototype
 
 The repository now includes a fixture-first FastAPI contract and reviewer prototype. This lets the UI team integrate before live model adapters are released.
