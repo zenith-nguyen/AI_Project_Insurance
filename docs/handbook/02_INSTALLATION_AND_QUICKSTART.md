@@ -23,13 +23,16 @@ powershell -ExecutionPolicy Bypass -File scripts/run_ui.ps1
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/setup_live.ps1 `
-  -ArtifactRoot "D:\shared-model-artifacts"
+  -ArtifactRoot "D:\shared-model-artifacts" `
+  -InstallMultimodalDependencies
 .\.venv\Scripts\python.exe scripts/check_live_readiness.py `
   --output runtime/readiness.json
 powershell -ExecutionPolicy Bypass -File scripts/run_live.ps1
 ```
 
 `core_live_ready=true` nghĩa nhánh risk bảng chạy được. `multimodal_live_ready=true` chỉ khi XGBoost, YOLO và document pipeline đều có artifact/dependency hợp lệ.
+
+`setup_live.ps1` cũng chạy 5 golden claims qua đúng endpoint API và ghi bằng chứng vào `runtime/core_live_smoke.json`. Dùng `-InstallMultimodalDependencies` trên máy ML/backend có checkpoint; đội UI không cần switch này.
 
 ## Kiểm thử
 

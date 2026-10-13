@@ -1,5 +1,6 @@
 param(
-    [string]$ArtifactRoot = ""
+    [string]$ArtifactRoot = "",
+    [switch]$InstallMultimodalDependencies
 )
 
 $ErrorActionPreference = "Stop"
@@ -89,14 +90,29 @@ if (Test-Path -LiteralPath $LayoutTarget) {
     Write-Host "LayoutLMv3 checkpoint is registered and ready."
 }
 
+if ($InstallMultimodalDependencies) {
+    if (Test-Path -LiteralPath $YoloTarget) {
+        & ".venv\Scripts\python.exe" -m pip install -r requirements-gpu.txt
+    }
+    if (Test-Path -LiteralPath $LayoutTarget) {
+        & ".venv\Scripts\python.exe" -m pip install -r requirements-document.txt
+        & ".venv\Scripts\python.exe" -m pip install "paddlepaddle>=3,<4"
+    }
+}
+
 & ".venv\Scripts\python.exe" scripts\build_golden_claims.py
 & ".venv\Scripts\python.exe" -m pytest tests\test_live_claim_service.py tests\test_claim_review_api.py tests\test_model_registry.py -q
 & ".venv\Scripts\python.exe" scripts\check_live_readiness.py --output runtime\readiness.json
 if ($LASTEXITCODE -ne 0) {
     throw "Core live readiness check failed. See runtime/readiness.json."
 }
+& ".venv\Scripts\python.exe" scripts\run_golden_live_smoke.py --output runtime\core_live_smoke.json
+if ($LASTEXITCODE -ne 0) {
+    throw "Golden live smoke test failed. See runtime/core_live_smoke.json."
+}
 
 Write-Host ""
-Write-Host "Live research environment is ready."
+Write-Host "Core live research environment is ready."
 Write-Host "Readiness details: runtime/readiness.json"
+Write-Host "Golden smoke evidence: runtime/core_live_smoke.json"
 Write-Host "Run: powershell -ExecutionPolicy Bypass -File scripts/run_live.ps1"

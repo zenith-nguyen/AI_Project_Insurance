@@ -44,6 +44,8 @@ On a fresh clone, `setup_live.ps1` downloads the pinned research bundle from the
 powershell -ExecutionPolicy Bypass -File scripts/setup_live.ps1 -ArtifactRoot "D:\shared-model-artifacts"
 ```
 
+On the ML/backend integration machine, add `-InstallMultimodalDependencies` to install the optional YOLO and document runtimes when their registered checkpoints are present. Setup also analyzes all five golden claims through the live API and writes `runtime/core_live_smoke.json`; run `scripts/run_golden_live_smoke.py --require-all` when closing the multimodal handoff gate.
+
 Then open the intake page at `http://127.0.0.1:8000/intake`, the workbench at `http://127.0.0.1:8000/`, or Swagger at `http://127.0.0.1:8000/docs`. Reviews and field corrections are persisted under `runtime/audit/`; uploaded claim evidence stays under `runtime/claims/`. Both remain outside Git.
 
 Uploaded images automatically pass through `media_authenticity_v2`: built-in EXIF/XMP and descriptive pixel features always run, while ExifTool and signed C2PA Content Credentials checks activate when their command-line tools are installed. Runtime uploads also receive a perceptual hash and are compared with images from other claims to flag exact or near reuse. The claim analysis includes the cached result automatically. `GET /claims/{claim_id}/evidence/{evidence_id}/authenticity` is only an audit/debug view of that same automatic result. A missing marker is reported as inconclusive, never as proof that an image is genuine; see `reports/MEDIA_AUTHENTICITY_V2_AND_EVIDENCE_GATE.md`.
