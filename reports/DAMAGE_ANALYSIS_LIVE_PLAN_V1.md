@@ -1,7 +1,7 @@
 # Kế hoạch đưa phân tích hư hỏng ảnh vào sản phẩm — v1
 
-**Ngày:** 13/10/2026  
-**Model đã khóa:** YOLOv8s-seg `cardd_candidate_v1`  
+**Ngày:** 13/10/2026
+**Model đã khóa:** YOLOv8s-seg `cardd_candidate_v1`
 **Checkpoint SHA-256:** `6c0d828760a427d48623653dcd6fffeb1cf591045d9ce8b8684a1d0f5f89420b`
 
 ## Mục tiêu sản phẩm
@@ -110,4 +110,3 @@ Nhánh này chỉ được xem là hoàn thành khi:
 3. Tạo bộ 20–50 ảnh Việt Nam đầu tiên cho error analysis; chưa cần train lại ngay.
 4. Thiết kế UI overlay và trường xác nhận/sửa nhãn.
 5. Sau khi thấy lỗi thật mới quyết định mở rộng dữ liệu và train candidate v2.
-
