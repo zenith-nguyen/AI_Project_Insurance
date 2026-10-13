@@ -1,0 +1,11 @@
+DATA GIA LAP - KHONG PHAI HO SO THAT
+
+Claim ID: de trang web tu sinh; neu trung, bam "Tao ma moi"
+So tien claim: 67140
+Ngay su co: 2015-02-28
+Bien so: 51G-001.88
+
+Anh xe: 03_ANH_XE_DEMO_AI.png
+Chung tu: 04_CHUNG_TU_DEMO_GIA_LAP.png
+Feature bang: bam "Dien toan bo du lieu mau" tren giao dien,
+hoac copy noi dung 02_FEATURE_BANG_DAY_DU.json vao o JSON.

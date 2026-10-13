@@ -1,0 +1,10 @@
+{
+  "note": "Dữ liệu giả lập để đọc tham khảo; ô Feature bảng trên UI chỉ nhận object tabular_features.",
+  "claim_id": "Hãy dùng Claim ID do trang web tự sinh",
+  "claim_amount": 67140,
+  "incident_date": "2015-02-28",
+  "plate_number": "51G-001.88",
+  "vehicle_image": "03_ANH_XE_DEMO_AI.png",
+  "claim_document": "04_CHUNG_TU_DEMO_GIA_LAP.png",
+  "tabular_features_file": "02_FEATURE_BANG_DAY_DU.json"
+}

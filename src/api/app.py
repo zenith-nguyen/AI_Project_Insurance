@@ -81,7 +81,10 @@ def intake(claim_id: str, request: ClaimIntakeRequest) -> ClaimIntakeRecord:
     try:
         return SERVICE.intake(claim_id, request)
     except FileExistsError as error:
-        raise HTTPException(status_code=409, detail="claim_id already exists in the runtime claim store.") from error
+        raise HTTPException(
+            status_code=409,
+            detail="Claim ID đã tồn tại. Hãy tạo mã mới; hệ thống không ghi đè hồ sơ cũ.",
+        ) from error
     except ValueError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
 
