@@ -8,12 +8,22 @@ Team-ready handoff documents for Progress Report 2 are indexed in `reports/hando
 
 The repository now includes a fixture-first FastAPI contract and reviewer prototype. This lets the UI team integrate before live model adapters are released.
 
+For the UI team, the recommended setup is Docker Desktop:
+
 ```powershell
-.\.venv\Scripts\python.exe -m pip install -r requirements-api.txt
-.\.venv\Scripts\python.exe -m uvicorn src.api.app:app --reload
+docker compose up --build
 ```
 
-Open `http://127.0.0.1:8000/` for the workbench and `http://127.0.0.1:8000/docs` for the API. The service intentionally starts only in `fixture` mode. Model artifacts remain gated until their registry entries, hashes, schemas and validation evidence are complete. See `reports/PRODUCT_HANDOFF_AND_METRIC_PLAN_2026-10-12.md` for the product, metric and transfer plan.
+This starts the fixture workbench and API without raw data, Google Drive, GPU, or model checkpoints. Open `http://127.0.0.1:8000/` for the workbench and `http://127.0.0.1:8000/docs` for Swagger. The complete two-role onboarding and artifact procedure is in `reports/TEAM_ONBOARDING_AND_ARTIFACT_SETUP_2026-10-13.md`.
+
+Without Docker, use:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/setup_ui.ps1
+powershell -ExecutionPolicy Bypass -File scripts/run_ui.ps1
+```
+
+The service intentionally starts only in `fixture` mode. Model artifacts remain gated until their registry entries, hashes, schemas and validation evidence are complete. See `reports/PRODUCT_HANDOFF_AND_METRIC_PLAN_2026-10-12.md` for the product, metric and transfer plan.
 
 ## Current data and scope
 
