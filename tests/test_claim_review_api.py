@@ -14,6 +14,9 @@ def test_browser_api_client_is_served_by_the_backend():
     response = client.get("/api-client.js")
     assert response.status_code == 200
     assert "export class ClaimReviewClient" in response.text
+    workbench = client.get("/")
+    assert workbench.status_code == 200
+    assert 'import {ClaimReviewClient, ClaimApiError} from "/api-client.js"' in workbench.text
 
 
 def test_fixture_claim_lifecycle_and_human_review_contract():
