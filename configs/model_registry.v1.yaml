@@ -1,6 +1,6 @@
 schema_version: "1.0"
 product_version: "research-v1"
-generated_at: "2026-10-12"
+generated_at: "2026-10-13"
 modules:
   tabular_risk:
     implementation: xgboost
@@ -50,13 +50,13 @@ modules:
     implementation: layoutlmv3
     version: layoutlmv3_sroie_candidate_v2
     task: date_total_extraction
-    artifact_uri: "gdrive://AI_Project_Insurance_Acc 2/artifacts/document/layoutlmv3_sroie_candidate_v2/best"
-    artifact_hash: read_from_candidate_report_before_final_test
-    evidence: reports/LAYOUTLMV3_CANDIDATE_VALIDATION_V2.md
+    artifact_uri: "gdrive://AI_Project_Insurance_Acc 2/artifacts/document/layoutlmv3_sroie_candidate_v2/checkpoint-264"
+    artifact_hash: 2b008c90f764c79be36f7082a96e84ba6d28aaccb512dd801123abe55c1ead3c
+    evidence: reports/LAYOUTLMV3_FINAL_TEST_V1.md
     primary_metric: field_micro_f1
-    metric_value: 0.9214092140921409
-    evaluation_split: sroie_validation_93
-    status: selected_final_test_locked
+    metric_value: 0.86593707250342
+    evaluation_split: sroie_final_test_361
+    status: final_test_complete
   consistency:
     implementation: python_rules
     version: consistency_v1

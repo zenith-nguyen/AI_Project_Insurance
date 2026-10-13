@@ -1,0 +1,58 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>LayoutLMv3 SROIE — Final test v1</title><style>
+:root{--ink:#172326;--muted:#647579;--line:#d9e1e0;--navy:#142d33;--teal:#17877f;--paper:#f5f7f7;--warn:#fff4df}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.62 "Segoe UI",Arial,sans-serif}
+header{background:var(--navy);color:white;padding:34px max(28px,calc((100vw - 1100px)/2))}header b{font-size:14px;letter-spacing:.11em;color:#8fd0c7}header h1{margin:7px 0 0;font-size:34px}
+main{max-width:1100px;margin:28px auto;background:white;border:1px solid var(--line);padding:42px 52px}h1{font-size:32px}h2{font-size:23px;margin-top:38px;padding-top:8px;border-top:2px solid var(--navy)}h3{font-size:18px;margin-top:28px;color:#174f52}p,li{max-width:92ch}table{width:100%;border-collapse:collapse;margin:18px 0 25px;font-size:14px}th,td{padding:11px 12px;border:1px solid var(--line);vertical-align:top}th{background:#eaf2f1;text-align:left}blockquote{margin:18px 0;padding:14px 18px;border-left:4px solid var(--teal);background:#eff8f6}code{background:#eef2f1;padding:2px 5px;border-radius:3px}strong{color:#102f32}a{color:#08756e}.footer{max-width:1100px;margin:0 auto 30px;color:var(--muted);font-size:12px}@media print{body{background:white}header{padding:20px 0;color:#172326;background:white;border-bottom:3px solid #142d33}main{border:0;margin:0 auto;padding:25px 0}h2{break-after:avoid}table{break-inside:avoid}.footer{display:none}}@media(max-width:760px){main{margin:0;padding:24px 18px;border:0}header{padding:25px 18px}table{font-size:12px;display:block;overflow:auto}}
+</style></head><body><header><b>AI PROJECT INSURANCE · 13/10/2026</b><h1>LayoutLMv3 SROIE — Final test v1</h1></header><main><h1>LayoutLMv3 SROIE — Final test v1</h1>
+<p><strong>Ngày hoàn tất:</strong> 13/10/2026<br />
+<strong>Phạm vi:</strong> trích xuất hai trường <code>date</code> và <code>total</code> từ SROIE processed v1.</p>
+<h2>Kết quả</h2>
+<table>
+<thead>
+<tr>
+<th>Chỉ số</th>
+<th style="text-align: right;">Validation chọn model</th>
+<th style="text-align: right;">Final test</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Field micro-F1</td>
+<td style="text-align: right;">0,921409</td>
+<td style="text-align: right;"><strong>0,865937</strong></td>
+</tr>
+<tr>
+<td>Date F1</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;"><strong>0,831956</strong></td>
+</tr>
+<tr>
+<td>Total F1</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;"><strong>0,899457</strong></td>
+</tr>
+<tr>
+<td>Số ảnh</td>
+<td style="text-align: right;">93</td>
+<td style="text-align: right;"><strong>361</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Chênh lệch Field micro-F1 giữa validation và final test là <code>-0,055472</code>, tương đương khoảng 5,55 điểm phần trăm. Trường <code>total</code> tốt hơn trường <code>date</code> trên final test.</p>
+<h2>Tính toàn vẹn protocol</h2>
+<ul>
+<li>Candidate được chọn trên validation trước khi mở test.</li>
+<li>Checkpoint: <code>checkpoint-264</code>.</li>
+<li>Checkpoint tree SHA-256: <code>2b008c90f764c79be36f7082a96e84ba6d28aaccb512dd801123abe55c1ead3c</code>.</li>
+<li>Test gồm 361 ảnh và không được dùng để chọn epoch hoặc sửa alignment.</li>
+<li>Lần inference duy nhất hoàn tất 181/181 batch.</li>
+<li>Hàm tính metric ban đầu thiếu <code>metric_value</code>; metric được tính lại từ <code>EvalPrediction</code> còn trong RAM.</li>
+<li>Recovery không chạy inference lại và không đọc lại test.</li>
+<li>Final report và execution record đã được ghi với cùng <code>run_id</code>.</li>
+</ul>
+<p>Artifact trên Google Drive:</p>
+<pre><code class="language-text">reports/metrics/documents/layoutlmv3_sroie_final_test_v1.json
+reports/metrics/documents/layoutlmv3_sroie_final_test_v1.execution.json
+</code></pre>
+<h2>Cách diễn giải</h2>
+<p>Kết quả chứng minh pipeline KIE có khả năng trích xuất ngày và tổng tiền trên bộ receipt SROIE. Đây là validation nghiên cứu trên dữ liệu công khai, chưa phải bằng chứng hiệu quả trên chứng từ bảo hiểm Việt Nam. Không tiếp tục tối ưu checkpoint hoặc quy tắc theo 361 ảnh final test này.</p></main><div class="footer">Bản trình bày được tạo từ tài liệu nguồn trong repository; số liệu nghiên cứu không phải cam kết production.</div></body></html>

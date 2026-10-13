@@ -20,4 +20,5 @@ def test_registry_has_all_product_modules_and_public_summary_hides_artifact_loca
     summary = registry.public_summary()
     assert summary["product_version"] == "research-v1"
     assert "artifact_uri" not in summary["models"]["damage_segmentation"]
-    assert summary["models"]["document_kie"]["status"] == "selected_final_test_locked"
+    assert summary["models"]["document_kie"]["status"] == "final_test_complete"
+    assert summary["models"]["document_kie"]["metric_value"] == 0.86593707250342

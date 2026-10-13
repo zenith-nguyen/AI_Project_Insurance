@@ -1,0 +1,277 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Báo cáo tiến độ lần 2 — 13/10/2026</title><style>
+:root{--ink:#172326;--muted:#647579;--line:#d9e1e0;--navy:#142d33;--teal:#17877f;--paper:#f5f7f7;--warn:#fff4df}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.62 "Segoe UI",Arial,sans-serif}
+header{background:var(--navy);color:white;padding:34px max(28px,calc((100vw - 1100px)/2))}header b{font-size:14px;letter-spacing:.11em;color:#8fd0c7}header h1{margin:7px 0 0;font-size:34px}
+main{max-width:1100px;margin:28px auto;background:white;border:1px solid var(--line);padding:42px 52px}h1{font-size:32px}h2{font-size:23px;margin-top:38px;padding-top:8px;border-top:2px solid var(--navy)}h3{font-size:18px;margin-top:28px;color:#174f52}p,li{max-width:92ch}table{width:100%;border-collapse:collapse;margin:18px 0 25px;font-size:14px}th,td{padding:11px 12px;border:1px solid var(--line);vertical-align:top}th{background:#eaf2f1;text-align:left}blockquote{margin:18px 0;padding:14px 18px;border-left:4px solid var(--teal);background:#eff8f6}code{background:#eef2f1;padding:2px 5px;border-radius:3px}strong{color:#102f32}a{color:#08756e}.footer{max-width:1100px;margin:0 auto 30px;color:var(--muted);font-size:12px}@media print{body{background:white}header{padding:20px 0;color:#172326;background:white;border-bottom:3px solid #142d33}main{border:0;margin:0 auto;padding:25px 0}h2{break-after:avoid}table{break-inside:avoid}.footer{display:none}}@media(max-width:760px){main{margin:0;padding:24px 18px;border:0}header{padding:25px 18px}table{font-size:12px;display:block;overflow:auto}}
+</style></head><body><header><b>AI PROJECT INSURANCE · 13/10/2026</b><h1>Báo cáo tiến độ lần 2 — 13/10/2026</h1></header><main><h1>Báo cáo tiến độ lần 2 — Bản tổng hợp dễ đọc</h1>
+<p><strong>Ngày cập nhật:</strong> 13/10/2026<br />
+<strong>Trọng tâm:</strong> Data + Baseline + Evaluation v1</p>
+<h2>1. Kết quả chính</h2>
+<p>Dự án đã hoàn thành data audit và baseline/evaluation v1 cho ba nhánh: dữ liệu bảng, ảnh hư hỏng xe và chứng từ. Nhóm cũng đã có demo consistency rules và NetworkX theo nguyên tắc point-in-time, model registry v1, API contract chạy ở fixture mode và giao diện Claim Review Workbench. Kết quả hiện đủ để chứng minh tính khả thi kỹ thuật và luồng tích hợp prototype, nhưng chưa đại diện cho hiệu quả trên dữ liệu bảo hiểm Việt Nam thực tế.</p>
+<h2>2. Đối chiếu yêu cầu báo cáo</h2>
+<table>
+<thead>
+<tr>
+<th>Yêu cầu</th>
+<th>Nội dung đã có</th>
+<th>Kết luận</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Data Audit Report</td>
+<td>Registry nguồn, kiểm tra file, split, checksum, duplicate và leakage</td>
+<td>Đạt</td>
+</tr>
+<tr>
+<td>Data Dictionary</td>
+<td>39 trường Layer B có ý nghĩa, nguồn, stage và reliability</td>
+<td>Đạt</td>
+</tr>
+<tr>
+<td>EDA/phân tích nguồn</td>
+<td>Phân tích CarDD, SROIE, CORD, FUNSD, XFUND, RVL-CDIP và MIDV</td>
+<td>Đạt</td>
+</tr>
+<tr>
+<td>Ground Truth Definition</td>
+<td>Định nghĩa nhãn cho ảnh, chứng từ và fraud label; ghi rõ giới hạn provenance</td>
+<td>Đạt</td>
+</tr>
+<tr>
+<td>Data Leakage Check</td>
+<td>Phát hiện và xử lý SROIE/FUNSD; ghi rõ test tabular đã bị dùng lại</td>
+<td>Đạt</td>
+</tr>
+<tr>
+<td>Baseline model/process</td>
+<td>Tabular, YOLO, DiT, PaddleOCR, rule KIE</td>
+<td>Đạt</td>
+</tr>
+<tr>
+<td>Model Selection Matrix</td>
+<td>Có tiêu chí chọn model đặt trước và bằng chứng lựa chọn</td>
+<td>Đạt</td>
+</tr>
+<tr>
+<td>Metrics v1</td>
+<td>Có metric cho tabular, CarDD, classifier, OCR và KIE</td>
+<td>Đạt</td>
+</tr>
+<tr>
+<td>Risk Register v2</td>
+<td>Có rủi ro dữ liệu, license, PII, bias, domain shift và productization</td>
+<td>Đạt</td>
+</tr>
+<tr>
+<td>RAG test</td>
+<td>Chưa áp dụng vì nhóm chưa chọn RAG làm baseline</td>
+<td>N/A hợp lý</td>
+</tr>
+</tbody>
+</table>
+<h2>3. Data audit và leakage</h2>
+<p>Nhóm tổ chức dữ liệu theo Bronze, Processed, Artifacts và Reports. Các nguồn chứng từ đã được đăng ký trong registry thay vì tải rời rạc không có dấu vết.</p>
+<p>Hai phát hiện quan trọng nhất:</p>
+<ul>
+<li>SROIE mirror có tám ảnh trùng tuyệt đối giữa raw train và raw test. Nhóm giữ nguyên test, loại ảnh train trùng và tạo processed split 525 train, 93 validation, 361 test. Cả ba cặp split có exact overlap bằng 0.</li>
+<li>FUNSD có hai cây lưu trữ giống nhau, khiến lần kiểm tra đầu đếm 398 thay vì 199 mẫu. Audit đã chọn một canonical root 199 ảnh/199 annotation.</li>
+</ul>
+<p>Điều này chứng minh audit không chỉ đếm file mà có khả năng phát hiện lỗi ảnh hưởng trực tiếp đến tính hợp lệ của evaluation.</p>
+<h2>4. Baseline và evaluation v1</h2>
+<h3>4.0. Mô hình xếp hạng rủi ro tabular</h3>
+<p>Bốn model được so sánh bằng Repeated Stratified 5-fold Cross-Validation × 5 repeats trên 700 dòng train. Preprocessing được fit riêng trong từng fold. Average Precision là tiêu chí chọn chính; Recall@10% và ROC-AUC là metric hỗ trợ.</p>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th style="text-align: right;">CV AP</th>
+<th style="text-align: right;">CV Recall@10%</th>
+<th style="text-align: right;">CV ROC-AUC</th>
+<th>Quyết định</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Logistic Regression</td>
+<td style="text-align: right;">0,671</td>
+<td style="text-align: right;">29,7%</td>
+<td style="text-align: right;">0,867</td>
+<td>Baseline đơn giản</td>
+</tr>
+<tr>
+<td>Random Forest</td>
+<td style="text-align: right;">0,599</td>
+<td style="text-align: right;">24,8%</td>
+<td style="text-align: right;">0,840</td>
+<td>Không chọn</td>
+</tr>
+<tr>
+<td>XGBoost</td>
+<td style="text-align: right;"><strong>0,706</strong></td>
+<td style="text-align: right;"><strong>30,3%</strong></td>
+<td style="text-align: right;"><strong>0,870</strong></td>
+<td><strong>Được chọn</strong></td>
+</tr>
+<tr>
+<td>LightGBM</td>
+<td style="text-align: right;">0,653</td>
+<td style="text-align: right;">29,6%</td>
+<td style="text-align: right;">0,837</td>
+<td>Không chọn</td>
+</tr>
+</tbody>
+</table>
+<p>Sau khi chọn bằng CV, XGBoost đạt AP 0,559, ROC-AUC 0,825, Recall@10% 22,4% và Precision@10% 55,0% trên frozen test 200 hồ sơ. Rule baseline đạt Recall@10% 16,3%, nên mức tăng thực tế là 6,1 điểm phần trăm và chưa đạt KPI tương đối +10 điểm.</p>
+<p>KPI tuyệt đối Recall@10% ≥ 60% không thể dùng trực tiếp trên dataset prevalence 24,7%; ngay cả model xếp hạng hoàn hảo cũng chỉ có trần khoảng 40,5%. Nhóm phải xác nhận KPI theo prevalence và review capacity của bối cảnh vận hành.</p>
+<p>XGBoost là model tốt nhất quan sát được trong bốn cấu hình, nhưng chênh lệch CV AP so với Logistic Regression chỉ là 0,035 và chưa có paired uncertainty comparison. Vì vậy báo cáo không tuyên bố XGBoost đã chứng minh ưu thế ổn định trong production.</p>
+<h3>4.1. Ảnh hư hỏng xe</h3>
+<p>YOLOv8n-seg được dùng làm baseline. YOLOv8s-seg tăng validation mask mAP50-95 từ 0,5175 lên 0,5284, đạt quy tắc tăng tối thiểu 0,01 đã đặt trước. Checkpoint được khóa bằng SHA-256 trước khi mở test.</p>
+<p>Final test chạy đúng một lần trên 419 ảnh/931 đối tượng và đạt mask mAP50-95 0,5140. Các lớp mạnh là <code>glass shatter</code> và <code>tire flat</code>; các lớp cần cải thiện là <code>crack</code>, <code>dent</code> và <code>scratch</code>.</p>
+<h3>4.2. Phân loại chứng từ</h3>
+<p>DiT đạt macro-F1 0,9283 và balanced accuracy 0,9281 trên 320 ảnh validation độc lập, cân bằng 20 ảnh cho mỗi lớp. Đây là metric chính để báo cáo; kết quả smoke 0,9626 không được dùng làm metric độc lập.</p>
+<h3>4.3. OCR</h3>
+<p>PaddleOCR đã xử lý 93 receipt validation, đạt CER 0,4097, WER 0,5592 và thời gian trung bình 28,17 giây/trang trong lần chạy baseline. Pipeline chạy được nhưng chất lượng và latency còn yếu.</p>
+<h3>4.4. Trích xuất thông tin</h3>
+<p>Rule KIE là baseline có thể giải thích, đạt field micro-F1 khoảng 0,6834 trong phép so sánh cô lập. LayoutLMv3 đạt 0,9214 trên validation cho hai trường <code>date</code> và <code>total</code>, vượt ngưỡng lựa chọn đặt trước. Checkpoint <code>checkpoint-264</code> sau đó được đánh giá đúng một lần trên final test 361 ảnh và đạt field micro-F1 0,8659; Date F1 0,8320; Total F1 0,8995. Inference chỉ chạy một lần; sự cố hàm metric được phục hồi từ prediction còn trong RAM mà không đọc test hoặc inference lại.</p>
+<h3>4.5. Consistency và NetworkX</h3>
+<p>Consistency rules và NetworkX point-in-time demo đều PASS. Đây là kiểm tra engineering trên dữ liệu synthetic, chứng minh thuật toán và output contract chạy đúng. Chưa có đủ claim/entity/edge thật để đo fraud lift.</p>
+<h2>5. Kiến trúc sản phẩm đã thống nhất</h2>
+<p>Sản phẩm là một reviewer console gồm bốn màn hình trong cùng ứng dụng:</p>
+<ol>
+<li><strong>Claim Workbench:</strong> xử lý hồ sơ hằng ngày.</li>
+<li><strong>Evidence &amp; Audit:</strong> xem nguồn gốc và lịch sử của từng kết quả.</li>
+<li><strong>Relationship Watch:</strong> xem NetworkX và shared entities.</li>
+<li><strong>Model Registry:</strong> xem model version, checkpoint và metric.</li>
+</ol>
+<p>UI dùng fixture JSON trong giai đoạn prototype và chuyển sang FastAPI khi inference service hoàn thành. Model chỉ đưa ra evidence và đề xuất route; người duyệt giữ quyền quyết định.</p>
+<h3>Model và công nghệ trong hệ thống</h3>
+<table>
+<thead>
+<tr>
+<th>Module</th>
+<th>Công nghệ</th>
+<th>Hiệu quả hiện tại</th>
+<th>Vai trò trong UI</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Tabular risk</td>
+<td>XGBoost + sigmoid calibration</td>
+<td>Frozen-test AP 0,559; Recall@10% 22,4%</td>
+<td>Sắp xếp hàng chờ và explanation</td>
+</tr>
+<tr>
+<td>Damage image</td>
+<td>Ultralytics YOLOv8s-seg</td>
+<td>Final-test mask mAP50-95 0,5140</td>
+<td>Hiển thị mask và cảnh báo lớp yếu</td>
+</tr>
+<tr>
+<td>Document type</td>
+<td>Microsoft DiT</td>
+<td>Independent macro-F1 0,9283</td>
+<td>Điều hướng tài liệu vào đúng pipeline</td>
+</tr>
+<tr>
+<td>OCR</td>
+<td>PaddleOCR</td>
+<td>CER 0,4097; WER 0,5592</td>
+<td>Text và bounding boxes để GĐV đối chiếu</td>
+</tr>
+<tr>
+<td>KIE</td>
+<td>LayoutLMv3</td>
+<td>Final-test field F1 0,8659 trên 361 ảnh</td>
+<td>Trích xuất <code>date</code> và <code>total</code></td>
+</tr>
+<tr>
+<td>Consistency</td>
+<td>Python rules</td>
+<td>Engineering demo PASS</td>
+<td>Cờ lệch số tiền, ngày, biển số</td>
+</tr>
+<tr>
+<td>Relationships</td>
+<td>NetworkX</td>
+<td>Point-in-time demo PASS</td>
+<td>Shared entity và liên kết claim</td>
+</tr>
+<tr>
+<td>Serving</td>
+<td>FastAPI + Docker fixture</td>
+<td>API contract và container smoke test PASS</td>
+<td>Hợp nhất response theo <code>claim_id</code>; live adapters chưa nối</td>
+</tr>
+</tbody>
+</table>
+<p>Đây là kiến trúc nhiều model. Không có một “siêu model” duy nhất đọc toàn bộ ảnh, tài liệu và graph ở giai đoạn hiện tại. Cách tách module giúp kiểm tra từng nguồn bằng chứng, thay model độc lập và hiển thị provenance cho người duyệt.</p>
+<h3>Luồng sử dụng của GĐV trong prototype v2</h3>
+<ol>
+<li>Mở hồ sơ từ hàng chờ ưu tiên.</li>
+<li>Đọc lý do hồ sơ được ưu tiên bằng ngôn ngữ nghiệp vụ.</li>
+<li>Mở ảnh, chứng từ hoặc quan hệ tương ứng với từng cảnh báo.</li>
+<li>Đối chiếu bằng chứng gốc; sửa trường OCR/KIE nếu cần.</li>
+<li>Chọn tiếp tục xử lý, yêu cầu bổ sung hoặc chuyển rà soát chuyên sâu.</li>
+<li>Ghi lý do; hệ thống lưu người thực hiện, thời gian, model version và thay đổi.</li>
+</ol>
+<p>Điểm rủi ro không được gọi là xác suất gian lận nếu chưa được calibration trên prevalence production. UI không có nút “từ chối tự động”.</p>
+<h2>6. Giới hạn cần trình bày trung thực</h2>
+<ul>
+<li>Public datasets chưa đại diện đầy đủ cho bảo hiểm xe tại Việt Nam.</li>
+<li>OCR còn yếu; KIE đã hoàn tất final test nhưng hiện mới đánh giá hai field trên receipt công khai.</li>
+<li>CarDD còn ba lớp yếu và cần bằng chứng quyền sử dụng phù hợp.</li>
+<li><code>fraud_reported</code> là observed label có provenance chưa được xác minh đầy đủ.</li>
+<li>NetworkX hiện mới là demo logic, chưa phải fraud model.</li>
+<li>Model registry và fixture API đã có; live model adapters, security/load test và UAT chưa hoàn chỉnh.</li>
+</ul>
+<h2>7. Kế hoạch giai đoạn kế tiếp</h2>
+<h3>Mốc A — Khóa bằng chứng model hiện tại</h3>
+<ol>
+<li>LayoutLMv3 final test đã hoàn tất đúng một lần trên 361 SROIE test; registry đã cập nhật checkpoint hash và final metric.</li>
+<li>Không dùng kết quả test để quay lại chọn epoch, sửa alignment hoặc thay hyperparameter.</li>
+<li>Chốt error analysis theo <code>date</code>/<code>total</code> trên validation hoặc dữ liệu miền mới, không tối ưu theo final test.</li>
+</ol>
+<h3>Mốc B — Đóng gói model cho prototype</h3>
+<ol>
+<li>Tạo model registry chứa model name, version, checkpoint SHA-256, schema, metric và trạng thái gate.</li>
+<li>Đóng gói adapter riêng cho XGBoost, YOLO, DiT/OCR/LayoutLMv3, consistency và NetworkX.</li>
+<li>Tạo FastAPI <code>/health</code>, <code>/version</code> và <code>/claims/{claim_id}/analyze</code>.</li>
+<li>Dùng fixture adapter để nhóm UI phát triển độc lập với GPU; live adapter giữ cùng response schema.</li>
+</ol>
+<h3>Mốc C — Clickable MVP</h3>
+<ol>
+<li>Dùng <code>prototype/insurance_review_console_v2.html</code> làm UX reference.</li>
+<li>Hoàn thiện hàng chờ, bằng chứng, corrections, quyết định và audit log.</li>
+<li>Tạo 5–10 golden claims giả lập hoặc đã ẩn danh có cùng <code>claim_id</code> xuyên suốt mọi nguồn.</li>
+<li>Chạy contract test và end-to-end test trên golden set.</li>
+</ol>
+<h3>Mốc D — Cải thiện chất lượng</h3>
+<ol>
+<li>OCR: phân loại lỗi theo ảnh mờ, xoay, chữ nhỏ, dấu phân cách tiền; thử preprocessing và cấu hình OCR trên cùng validation.</li>
+<li>CarDD: tạo error gallery cho <code>crack</code>, <code>dent</code>, <code>scratch</code>; chỉ cải thiện bằng train/validation hoặc dữ liệu miền mới, không tối ưu theo final test.</li>
+<li>Tabular: phát triển feature S1–S5 trên <code>train_fs</code>/<code>val_fs</code>; không dùng lại frozen test để chọn feature.</li>
+<li>Graph: thu thập entity/edge có timestamp thật rồi mới đánh giá fraud lift.</li>
+</ol>
+<h3>Mốc E — Điều kiện trước pilot</h3>
+<ol>
+<li>Dữ liệu bảo hiểm Việt Nam có consent và chính sách PII.</li>
+<li>Ground-truth/adjudication protocol và external test mới.</li>
+<li>Security, load, monitoring, rollback và UAT.</li>
+<li>KPI được xác nhận lại theo prevalence, review capacity, SIU capacity và chi phí thực tế.</li>
+</ol>
+<h2>8. Kết luận</h2>
+<p>Dự án đã vượt khỏi giai đoạn ý tưởng và đã có các module AI chạy được, metric, audit, bằng chứng lựa chọn model, registry, fixture API và human-review UI. Mốc tiếp theo là nối live adapters, tạo golden claims end-to-end và chuyển fixture UI sang API sử dụng model thật. Production/go-live chỉ được xem xét sau domain validation, security/load test và UAT.</p>
+<h2>9. Nơi kiểm tra bằng chứng kỹ thuật</h2>
+<p>Nếu cần kiểm tra sâu hơn, không cần đọc toàn bộ thư mục <code>reports</code>. Chỉ mở các file sau:</p>
+<ul>
+<li><code>CARDD_FINAL_TEST_V1.md</code>: final test ảnh xe và metric từng lớp.</li>
+<li><code>DIT_INDEPENDENT_VALIDATION_V1.md</code>: validation độc lập của document classifier.</li>
+<li><code>DOCUMENT_BASELINE_VALIDATION_V1.md</code>: OCR và rule KIE baseline.</li>
+<li><code>LAYOUTLMV3_CANDIDATE_VALIDATION_V2.md</code>: kết quả lựa chọn KIE candidate.</li>
+<li><code>LAYOUTLMV3_FINAL_TEST_V1.md</code>: final test KIE 361 ảnh và protocol recovery không inference lại.</li>
+<li><code>DATA_LEAKAGE_CHECK_V1.md</code>: leakage và cách khắc phục.</li>
+<li><code>CLAIM_CONSISTENCY_NETWORKX_DEMO_V1.md</code>: consistency/graph demo.</li>
+<li><code>LAYER_B_STAGE_RELIABILITY_DICTIONARY_V1.md</code>: dictionary 39 trường theo stage.</li>
+</ul></main><div class="footer">Bản trình bày được tạo từ tài liệu nguồn trong repository; số liệu nghiên cứu không phải cam kết production.</div></body></html>

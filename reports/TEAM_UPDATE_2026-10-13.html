@@ -1,0 +1,43 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cập nhật cho team — 13/10/2026</title><style>
+:root{--ink:#172326;--muted:#647579;--line:#d9e1e0;--navy:#142d33;--teal:#17877f;--paper:#f5f7f7;--warn:#fff4df}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.62 "Segoe UI",Arial,sans-serif}
+header{background:var(--navy);color:white;padding:34px max(28px,calc((100vw - 1100px)/2))}header b{font-size:14px;letter-spacing:.11em;color:#8fd0c7}header h1{margin:7px 0 0;font-size:34px}
+main{max-width:1100px;margin:28px auto;background:white;border:1px solid var(--line);padding:42px 52px}h1{font-size:32px}h2{font-size:23px;margin-top:38px;padding-top:8px;border-top:2px solid var(--navy)}h3{font-size:18px;margin-top:28px;color:#174f52}p,li{max-width:92ch}table{width:100%;border-collapse:collapse;margin:18px 0 25px;font-size:14px}th,td{padding:11px 12px;border:1px solid var(--line);vertical-align:top}th{background:#eaf2f1;text-align:left}blockquote{margin:18px 0;padding:14px 18px;border-left:4px solid var(--teal);background:#eff8f6}code{background:#eef2f1;padding:2px 5px;border-radius:3px}strong{color:#102f32}a{color:#08756e}.footer{max-width:1100px;margin:0 auto 30px;color:var(--muted);font-size:12px}@media print{body{background:white}header{padding:20px 0;color:#172326;background:white;border-bottom:3px solid #142d33}main{border:0;margin:0 auto;padding:25px 0}h2{break-after:avoid}table{break-inside:avoid}.footer{display:none}}@media(max-width:760px){main{margin:0;padding:24px 18px;border:0}header{padding:25px 18px}table{font-size:12px;display:block;overflow:auto}}
+</style></head><body><header><b>AI PROJECT INSURANCE · 13/10/2026</b><h1>Cập nhật cho team — 13/10/2026</h1></header><main><h1>Cập nhật cho team — 13/10/2026</h1>
+<h2>Báo cáo tiến độ 2 đã hoàn thành chưa?</h2>
+<p><strong>Đã hoàn thành.</strong> Gói v8 ngày 12/10 đã đáp ứng phạm vi Data + Baseline + Evaluation v1. Ngày 13/10 nhóm hoàn tất thêm LayoutLMv3 final test, nên v9 chỉ cập nhật bằng chứng mới này, model registry và kế hoạch bước tiếp theo. Các kết quả Data Audit, XGBoost, CarDD, DiT, OCR, API contract và prototype trong v8 vẫn giữ nguyên.</p>
+<h2>Kết quả mới</h2>
+<p>LayoutLMv3 trích xuất <code>date</code> và <code>total</code> được đánh giá trên 361 ảnh SROIE final test:</p>
+<ul>
+<li>Field micro-F1: <strong>0,8659</strong>.</li>
+<li>Date F1: <strong>0,8320</strong>.</li>
+<li>Total F1: <strong>0,8995</strong>.</li>
+<li>Validation trước đó: <strong>0,9214</strong>.</li>
+<li>Checkpoint: <code>checkpoint-264</code>.</li>
+<li>Inference chạy một lần; test không được đọc lại trong quá trình phục hồi metric.</li>
+</ul>
+<p>Kết quả này đóng gate nghiên cứu của nhánh KIE. Không tiếp tục chỉnh model theo final test.</p>
+<h2>Sản phẩm hiện tại</h2>
+<p>Nhóm đang xây <strong>Claim Review Workbench</strong>, một màn hình hỗ trợ nhân viên bảo hiểm xem hồ sơ và bằng chứng. Hệ thống gồm nhiều công cụ:</p>
+<ul>
+<li>XGBoost sắp xếp hồ sơ cần ưu tiên xem.</li>
+<li>YOLO đánh dấu vùng hư hỏng trên ảnh xe.</li>
+<li>DiT nhận biết loại chứng từ.</li>
+<li>PaddleOCR đọc chữ và vị trí.</li>
+<li>LayoutLMv3 lấy ngày và tổng tiền.</li>
+<li>Rules đối chiếu thông tin giữa các nguồn.</li>
+<li>NetworkX hiển thị các hồ sơ có thực thể dùng chung.</li>
+</ul>
+<p>Các module hiện đã chạy riêng và có metric. API/UI fixture cũng chạy được. Phần còn thiếu là nối checkpoint thật vào API và kiểm thử một claim xuyên suốt toàn hệ thống.</p>
+<h2>Việc tiếp theo</h2>
+<ol>
+<li>Tạo 5–10 golden claims giả lập hoặc đã ẩn danh, mỗi claim có cùng <code>claim_id</code> ở dữ liệu bảng, ảnh, chứng từ và graph.</li>
+<li>Viết live adapters để API gọi model thật, giữ nguyên JSON contract cho đội UI.</li>
+<li>Nối UI vào API và kiểm thử luồng: mở claim → xem bằng chứng → sửa kết quả → ghi quyết định.</li>
+<li>Cải thiện OCR, các lớp ảnh yếu và XGBoost bằng validation/dữ liệu mới; không tối ưu theo final tests đã khóa.</li>
+<li>Chỉ pilot sau khi có dữ liệu bảo hiểm Việt Nam hợp lệ, security/load test và UAT.</li>
+</ol>
+<h2>Cách nói ngắn khi trình bày</h2>
+<blockquote>
+<p>Nhóm đã hoàn thành Data + Baseline + Evaluation v1 và có prototype hỗ trợ duyệt claim. Các model đã được đánh giá riêng; LayoutLMv3 vừa đóng final test với field F1 0,8659. Giai đoạn kế tiếp là tích hợp model thật qua API, tạo golden claims xuyên suốt và nối UI để kiểm thử end-to-end. Đây vẫn là hệ thống hỗ trợ con người, chưa phải sản phẩm tự động kết luận gian lận.</p>
+</blockquote></main><div class="footer">Bản trình bày được tạo từ tài liệu nguồn trong repository; số liệu nghiên cứu không phải cam kết production.</div></body></html>
