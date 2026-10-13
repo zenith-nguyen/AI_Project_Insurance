@@ -26,7 +26,8 @@ function renderAnalysis(analysis){
   document.querySelector('.queuecard b').textContent=analysis.claim_id;
   document.querySelector('.casehead .meta').textContent=`Hồ sơ ${analysis.claim_id} · trace ${analysis.trace_id.slice(0,8)}`;
   const priorityLabels={normal:'Ưu tiên thông thường',review:'Cần rà soát',high:'Ưu tiên cao'};
-  document.querySelector('.priority').textContent=priorityLabels[analysis.priority]||analysis.priority;
+  const statusLabels={complete:'Äá»§ dá»¯ liá»‡u',partial:'PhÃ¢n tÃ­ch má»™t pháº§n',blocked:'Thiáº¿u dá»¯ liá»‡u cháº¥m Ä‘iá»ƒm'};
+  document.querySelector('.priority').textContent=`${priorityLabels[analysis.priority]||analysis.priority} Â· ${statusLabels[analysis.analysis_status]||analysis.analysis_status}`;
   document.querySelector('#overview .titleline .muted').textContent=`${analysis.signals.length} tín hiệu cần GĐV xác minh`;
   const grid=document.querySelector('.reason-grid');
   grid.replaceChildren(...analysis.signals.map(signal=>{

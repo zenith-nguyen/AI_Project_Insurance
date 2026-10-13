@@ -43,11 +43,13 @@ class FixtureClaimService:
     def authenticity(self, claim_id: str, evidence_id: str) -> MediaAuthenticityReport:
         from src.media_authenticity import MediaAuthenticityAnalyzer
 
+        matches = self.runtime_store.find_image_reuse(claim_id, evidence_id)
         cached = self.runtime_store.load_authenticity(claim_id, evidence_id)
-        if cached is not None and cached.get("analyzer_version") == MediaAuthenticityAnalyzer.version:
+        cached_matches = (cached or {}).get("image_info", {}).get("cross_claim_matches", [])
+        if cached is not None and cached.get("analyzer_version") == MediaAuthenticityAnalyzer.version and cached_matches == matches:
             return MediaAuthenticityReport.model_validate(cached)
         path = self.runtime_store.evidence_path(claim_id, evidence_id)
-        report = MediaAuthenticityAnalyzer().analyze(path, evidence_id=evidence_id)
+        report = MediaAuthenticityAnalyzer().analyze(path, evidence_id=evidence_id, reuse_matches=matches)
         self.runtime_store.save_authenticity(claim_id, evidence_id, report.model_dump())
         return report
 

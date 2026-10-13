@@ -40,7 +40,7 @@ def test_golden_claim_runs_real_tabular_rules_and_graph(tmp_path):
         "tabular_risk": "tabular_v1",
         "consistency": "consistency_v1",
         "relationships": "point_in_time_v1",
-        "media_authenticity": "media_authenticity_v1",
+        "media_authenticity": "media_authenticity_v2",
     }
     assert any("YOLO was not invoked" in warning for warning in result.warnings)
     readiness = live.readiness()
@@ -172,4 +172,62 @@ def test_verified_ai_provenance_becomes_claim_signal(tmp_path):
     result = live.analyze("CLM-RUNTIME-AI", AnalyzeRequest())
     signal = next(item for item in result.signals if item.category == "authenticity")
     assert signal.severity == "high"
-    assert signal.model_version == "media_authenticity_v1"
+    assert signal.model_version == "media_authenticity_v2"
+
+
+def test_missing_documents_and_relationships_keep_tabular_score_but_mark_partial(tmp_path):
+    live = service(tmp_path)
+    golden = json.loads((ROOT / "data/golden/claims/CLM-GOLD-001/claim.json").read_text(encoding="utf-8"))
+    live.intake(
+        "CLM-PARTIAL-001",
+        ClaimIntakeRequest(
+            claim_amount=golden["claim_amount"], incident_date=golden["incident_date"],
+            plate_number=golden["plate_number"], tabular_features=golden["tabular_features"],
+        ),
+    )
+
+    result = live.analyze("CLM-PARTIAL-001", AnalyzeRequest())
+
+    assert result.analysis_status == "partial"
+    assert result.research_risk_score is not None
+    assert result.module_status["tabular_risk"]["status"] == "completed"
+    assert result.module_status["document_pipeline"]["status"] == "skipped_missing_input"
+    assert result.module_status["relationships"]["status"] == "skipped_missing_input"
+    assert result.graph_features == {"data_status": "not_provided"}
+
+
+def test_missing_tabular_features_blocks_score_without_crashing_other_modules(tmp_path):
+    live = service(tmp_path)
+    live.intake("CLM-BLOCKED-001", ClaimIntakeRequest(tabular_features={}))
+
+    result = live.analyze("CLM-BLOCKED-001", AnalyzeRequest())
+
+    assert result.analysis_status == "blocked"
+    assert result.research_risk_score is None
+    assert result.module_status["tabular_risk"]["status"] == "blocked_missing_input"
+
+
+def test_cross_claim_exact_image_reuse_is_detected_automatically(tmp_path):
+    live = service(tmp_path)
+    golden = json.loads((ROOT / "data/golden/claims/CLM-GOLD-001/claim.json").read_text(encoding="utf-8"))
+    request = ClaimIntakeRequest(
+        claim_amount=golden["claim_amount"], incident_date=golden["incident_date"],
+        plate_number=golden["plate_number"], tabular_features=golden["tabular_features"],
+    )
+    live.intake("CLM-REUSE-001", request)
+    live.intake("CLM-REUSE-002", request)
+    image = BytesIO()
+    Image.new("RGB", (24, 24), (30, 80, 120)).save(image, format="JPEG")
+    content = image.getvalue()
+    live.upload("CLM-REUSE-001", "image", "first.jpg", "image/jpeg", content)
+    second = live.upload("CLM-REUSE-002", "image", "second.jpg", "image/jpeg", content)
+
+    report = live.authenticity("CLM-REUSE-002", second.evidence_id)
+
+    assert report.verdict == "review"
+    finding = next(item for item in report.findings if item.code == "cross_claim_image_reuse")
+    assert finding.severity == "high"
+    assert report.image_info["cross_claim_matches"][0]["claim_id"] == "CLM-REUSE-001"
+    first_id = json.loads((tmp_path / "claims/CLM-REUSE-001/evidence_manifest.json").read_text(encoding="utf-8"))[0]["evidence_id"]
+    refreshed_first = live.authenticity("CLM-REUSE-001", first_id)
+    assert refreshed_first.image_info["cross_claim_matches"][0]["claim_id"] == "CLM-REUSE-002"

@@ -96,9 +96,9 @@ def test_claim_intake_and_evidence_upload_contract():
     assert upload.status_code == 201
     assert upload.json()["claim_id"] == claim_id
     assert upload.json()["sha256"]
-    assert upload.json()["authenticity_verdict"] == "inconclusive"
+    assert upload.json()["authenticity_verdict"] in {"inconclusive", "review"}
     authenticity = client.get(
         f"/claims/{claim_id}/evidence/{upload.json()['evidence_id']}/authenticity"
     )
     assert authenticity.status_code == 200
-    assert authenticity.json()["verdict"] == "inconclusive"
+    assert authenticity.json()["verdict"] in {"inconclusive", "review"}

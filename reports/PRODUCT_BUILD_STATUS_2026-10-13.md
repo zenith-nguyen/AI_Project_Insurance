@@ -17,7 +17,8 @@ Luồng live đầu tiên đã nối:
 5. Quyết định của người duyệt được ghi vào audit log JSONL.
 6. Reviewer có endpoint sửa trường OCR/KIE; giá trị cũ, giá trị mới, lý do, người sửa, `claim_id`, `trace_id` và thời gian được lưu cùng audit log.
 7. Trang `/intake` tạo hồ sơ và tải ảnh/PDF lên kho runtime; API kiểm loại tệp, kích thước, chữ ký nội dung, SHA-256 và gắn mọi bằng chứng với `claim_id`.
-8. `media_authenticity_v1` đã nối vào ảnh upload: đọc EXIF/XMP, hỗ trợ ExifTool/C2PA tùy chọn, ghi rõ trạng thái SynthID và phát tín hiệu review khi thấy provenance AI hoặc metadata đáng chú ý.
+8. `media_authenticity_v2` chạy tự động khi upload: đọc EXIF/XMP, hỗ trợ ExifTool/C2PA, ghi rõ trạng thái SynthID, trích xuất pixel features và phát hiện ảnh tái sử dụng giữa các claim bằng SHA-256/perceptual hash.
+9. Luồng phân tích đã chịu được dữ liệu thiếu: đủ feature bảng thì vẫn trả risk score; thiếu chứng từ, ảnh hoặc graph được ghi `partial`. Thiếu feature bắt buộc của XGBoost được ghi `blocked`, không làm toàn API sập. Graph chưa được cung cấp không còn bị hiểu nhầm thành “0 quan hệ”.
 
 ## Phần đã có adapter live, cần artifact/dependency trên máy chạy
 
@@ -33,7 +34,7 @@ Luồng live đầu tiên đã nối:
 
 1. Chép hai checkpoint đã khóa từ artifact store vào máy tích hợp và chạy golden binary fixtures qua adapter thật.
 2. Hiển thị mask YOLO, OCR box và provenance chi tiết trực tiếp trên UI.
-3. Thu thập benchmark media-authenticity theo manifest group-safe đã có.
+3. Thu thập benchmark media-authenticity theo manifest group-safe đã có; khóa threshold trên validation rồi đo test theo generator và từng loại biến đổi.
 4. Đo latency/load, kiểm tra dữ liệu nhạy cảm, authentication và phân quyền.
 5. Thực hiện domain validation Việt Nam và UAT với người dùng nghiệp vụ.
 

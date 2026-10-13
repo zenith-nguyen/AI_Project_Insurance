@@ -38,13 +38,15 @@ class EvidenceUploadRecord(BaseModel):
     content_type: str | None = None
     size_bytes: int = Field(gt=0)
     sha256: str
+    perceptual_hash: str | None = None
+    color_signature: list[int] | None = None
     observed_at: str
     authenticity_verdict: Literal["ai_provenance_detected", "provenance_problem", "review", "inconclusive", "error"] | None = None
 
 
 class AuthenticityFinding(BaseModel):
     code: str
-    source: Literal["metadata", "exiftool", "c2pa", "synthid", "forensic_model"]
+    source: Literal["metadata", "exiftool", "c2pa", "synthid", "forensic_model", "cross_claim"]
     outcome: Literal["detected", "absent", "completed", "unavailable", "error"]
     severity: Literal["info", "review", "high"]
     explanation: str
@@ -92,6 +94,7 @@ class ClaimAnalysis(BaseModel):
     created_at: str
     mode: Literal["fixture", "live"]
     human_review_required: bool = True
+    analysis_status: Literal["complete", "partial", "blocked"] = "complete"
     priority: Literal["normal", "review", "high"]
     research_risk_score: float | None = Field(default=None, ge=0, le=1)
     risk_score_is_probability: bool = False
@@ -102,6 +105,7 @@ class ClaimAnalysis(BaseModel):
     extracted_fields: dict[str, Any] = Field(default_factory=dict)
     graph_features: dict[str, Any] = Field(default_factory=dict)
     model_versions: dict[str, str] = Field(default_factory=dict)
+    module_status: dict[str, dict[str, Any]] = Field(default_factory=dict)
     warnings: list[str] = Field(default_factory=list)
 
 

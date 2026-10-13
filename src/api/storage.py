@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
 
-from PIL import Image
+from PIL import Image, ImageStat
 
 from .schemas import ClaimIntakeRequest, ClaimIntakeRecord, EvidenceUploadRecord
 
@@ -40,6 +40,25 @@ def validate_claim_id(claim_id: str) -> str:
     if not CLAIM_ID.fullmatch(claim_id):
         raise ValueError("claim_id must contain 3-64 letters, numbers, hyphens or underscores.")
     return claim_id
+
+
+def _image_fingerprints(content: bytes) -> tuple[str, list[int]]:
+    """Small robust fingerprint for reuse search; it is not an AI detector."""
+    with Image.open(io.BytesIO(content)) as image:
+        rgb = image.convert("RGB").resize((64, 64), Image.Resampling.LANCZOS)
+        color_signature = [round(value) for value in ImageStat.Stat(rgb).mean]
+        gray = rgb.convert("L").resize((9, 8), Image.Resampling.LANCZOS)
+        pixels = list(gray.get_flattened_data())
+    bits = []
+    for row in range(8):
+        start = row * 9
+        bits.extend(pixels[start + column] > pixels[start + column + 1] for column in range(8))
+    value = sum(int(bit) << index for index, bit in enumerate(bits))
+    return f"{value:016x}", color_signature
+
+
+def _hamming(left: str, right: str) -> int:
+    return (int(left, 16) ^ int(right, 16)).bit_count()
 
 
 class RuntimeClaimStore:
@@ -74,6 +93,7 @@ class RuntimeClaimStore:
         claim_file.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         (root / "evidence_manifest.json").write_text("[]\n", encoding="utf-8")
         graph = {
+            "data_status": "not_provided",
             "scored_at": payload["scored_at"],
             "known_risky_claims": [],
             "nodes": [{"id": claim_id, "entity_type": "claim", "available_at": created_at}],
@@ -103,6 +123,7 @@ class RuntimeClaimStore:
             except Exception as error:
                 raise ValueError("Uploaded image cannot be decoded safely.") from error
         digest = hashlib.sha256(content).hexdigest()
+        perceptual_hash, color_signature = _image_fingerprints(content) if kind == "image" else (None, None)
         evidence_id = f"EV-{uuid4().hex[:12]}"
         folder = root / ("vehicle_images" if kind == "image" else "documents")
         stored_name = f"{evidence_id}{extension}"
@@ -118,11 +139,46 @@ class RuntimeClaimStore:
             "content_type": content_type,
             "size_bytes": len(content),
             "sha256": digest,
+            "perceptual_hash": perceptual_hash,
+            "color_signature": color_signature,
             "observed_at": observed_at,
         }
         manifest.append(item)
         manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         return EvidenceUploadRecord(claim_id=claim_id, **item)
+
+    def find_image_reuse(self, claim_id: str, evidence_id: str, *, max_distance: int = 4) -> list[dict]:
+        """Find exact and visually similar runtime images from other claims."""
+        own_manifest = json.loads((self.claim_root(claim_id) / "evidence_manifest.json").read_text(encoding="utf-8"))
+        target = next((row for row in own_manifest if row.get("evidence_id") == evidence_id), None)
+        if target is None or target.get("kind") != "image":
+            return []
+        matches = []
+        for manifest_path in self.root.glob("*/evidence_manifest.json"):
+            other_claim = manifest_path.parent.name
+            if other_claim == claim_id:
+                continue
+            for row in json.loads(manifest_path.read_text(encoding="utf-8")):
+                if row.get("kind") != "image":
+                    continue
+                exact = row.get("sha256") == target.get("sha256")
+                distance = None
+                if target.get("perceptual_hash") and row.get("perceptual_hash"):
+                    distance = _hamming(target["perceptual_hash"], row["perceptual_hash"])
+                target_color, row_color = target.get("color_signature"), row.get("color_signature")
+                color_distance = None
+                if target_color and row_color:
+                    color_distance = sum((int(left) - int(right)) ** 2 for left, right in zip(target_color, row_color)) ** 0.5
+                perceptual_match = distance is not None and distance <= max_distance and color_distance is not None and color_distance <= 60
+                if exact or perceptual_match:
+                    matches.append({
+                        "claim_id": other_claim,
+                        "evidence_id": row.get("evidence_id"),
+                        "match_type": "exact" if exact else "perceptual",
+                        "hamming_distance": distance,
+                        "color_distance": round(color_distance, 3) if color_distance is not None else None,
+                    })
+        return sorted(matches, key=lambda item: (item["match_type"] != "exact", item.get("hamming_distance") or 0))
 
     def evidence_path(self, claim_id: str, evidence_id: str) -> Path:
         root = self.claim_root(claim_id)
