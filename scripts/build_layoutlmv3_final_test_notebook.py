@@ -33,6 +33,13 @@ def candidate_fragments() -> tuple[str, str]:
     training_cell = next(source(cell) for cell in notebook["cells"] if "def compute_metrics(result):" in source(cell))
     definitions = dataset_cell.split("train_data = SROIE", 1)[0].rstrip()
     metrics = training_cell[training_cell.index("def bio_spans") : training_cell.index("args = TrainingArguments")].rstrip()
+    # metric_value lives in the candidate's preceding rule-baseline cell, but
+    # compute_metrics also calls it. Keep the final-test notebook self-contained.
+    metric_value = '''def metric_value(field,value):
+    if field=="date" and parsed_dates(value): return min(parsed_dates(value)).isoformat()
+    if field=="total" and parsed_amounts(value): return str(min(parsed_amounts(value)).normalize())
+    return normalize(value)'''
+    metrics = metric_value + "\n\n" + metrics
     metrics = metrics.replace("validation_metadata", "test_metadata")
     metrics = metrics.replace(
         'field_precision,field_recall,field_f1 = field_scores({"date","total"})',
