@@ -31,7 +31,9 @@ levels:
 required_files:
   - contracts/claim_review_openapi.v1.json
   - prototype/api-client.js
-  - prototype/insurance_review_console_v2.html
+  - prototype/claim_review_workbench_v3.html
+  - prototype/workbench.css
+  - prototype/workbench.js
   - configs/model_registry.v1.yaml
   - artifacts/models/tabular_v1/bundle.joblib
   - reports/RESULTS.md
@@ -55,6 +57,7 @@ required_endpoints:
   - /claims/{claim_id}/analysis
   - /claims/{claim_id}/review
   - /claims/{claim_id}/corrections
+  - /claims/{claim_id}/events
 
 manual_gates:
   golden_multimodal_run_signed_off: false

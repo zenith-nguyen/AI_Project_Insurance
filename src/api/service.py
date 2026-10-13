@@ -97,3 +97,9 @@ class FixtureClaimService:
         record = CorrectionRecord(claim_id=claim_id, trace_id=analysis.trace_id, **request.model_dump())
         self.corrections.setdefault(claim_id, []).append(record)
         return record
+
+    def events(self, claim_id: str) -> list[dict]:
+        return [
+            *({"event_type": "review", **record.model_dump()} for record in self.reviews.get(claim_id, [])),
+            *({"event_type": "field_correction", **record.model_dump()} for record in self.corrections.get(claim_id, [])),
+        ]

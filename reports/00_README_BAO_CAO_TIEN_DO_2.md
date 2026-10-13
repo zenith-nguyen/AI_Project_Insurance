@@ -1,47 +1,9 @@
-# Gói dữ liệu — Báo cáo tiến độ lần 2
+# 00 — Bắt đầu từ đây: báo cáo tiến độ lần 2
 
-Mở tài liệu theo thứ tự sau để trình bày trực tiếp:
+Tài liệu chính để gửi nhóm và trình bày là [Báo cáo tiến độ 13/10/2026](PROGRESS_REPORT_2_MASTER_2026-10-13.md). Bản [PDF](PROGRESS_REPORT_2_MASTER_2026-10-13.pdf) có cùng nội dung và hình giao diện demo. Đây là hai định dạng của **một báo cáo**, tránh đọc nhầm các gói cũ v6/v8 làm trạng thái hiện tại.
 
-1. `PROGRESS_REPORT_2_PRESENTATION_NOTES_V1.md` — kịch bản trình bày ngắn.
-2. `PROGRESS_REPORT_2_READINESS_2026-10-10.md` — mức đáp ứng yêu cầu môn học.
-3. `data_audit_report.md`, `DOCUMENT_DATA_AUDIT_STATUS_V1.md` và `DOCUMENT_DATA_AUDIT_RUN_2026-10-11.md` — Data Audit Report và kết quả chạy thật.
-4. `data_dictionary.md` — Data Dictionary.
-5. `DOCUMENT_DATA_SOURCE_PLAN_V1.md` và `DOCUMENT_SOURCE_LINK_AUDIT_V1.md` — nguồn và provenance.
-6. `EXPERIMENT_EVIDENCE_INDEX_V1.md` — nơi tìm từng bằng chứng.
-7. `CARDD_MODEL_SELECTION_V1.md` và `CARDD_FINAL_TEST_V1.md` — baseline/evaluation đã hoàn tất.
-8. `DOCUMENT_MODEL_BASELINE_PLAN_V1.md` — baseline process cho nhánh chứng từ.
-9. `model_selection_matrix.md` — Model Selection Matrix.
-10. `metrics_v1.md` — Metrics v1.
-11. `risk_register_v2_additions.md` — Risk Register v2.
-12. `DRIVE_DATA_CATALOG_V1.md` — vị trí dữ liệu và model trên Google Drive.
-13. `SROIE_PROCESSED_SPLIT_DIAGNOSTIC_2026-10-11.md` — nguyên nhân lỗi split và bản sửa group-aware.
-14. `GROUND_TRUTH_DEFINITION_V1.md` — định nghĩa ground truth theo task.
-15. `DATA_LEAKAGE_CHECK_V1.md` — kết quả leakage và remediation.
-16. `DOCUMENT_EDA_SOURCE_ANALYSIS_V1.md` — EDA/phân tích nguồn.
-17. `REPORT_REQUIREMENTS_COVERAGE_V1.md` — đối chiếu từng yêu cầu mục 6.2.
-18. `PRODUCT_MODEL_AND_USAGE_V1.md` — sản phẩm, model stack và cách đưa model vào sử dụng.
-19. `CARDD_PICLAB_CONSENT_ACTION_V1.md` — kế hoạch đóng bằng chứng prior consent.
-20. `DOCUMENT_GRAPH_IMPLEMENTATION_V1.md` — code, notebook, trạng thái và cách dùng nhánh document/graph.
-21. `SROIE_PROCESSED_SPLIT_RESULT_V1.md` — data gate SROIE đã PASS và không còn cross-split overlap.
-22. `DOCUMENT_BASELINE_VALIDATION_V1.md` — metric DiT, PaddleOCR và rule KIE trên validation.
-23. `Document_DiT_Independent_Validation_Acc2_v2.ipynb` — kiểm tra DiT trên RVL validation mirror đã pin, tương thích `datasets>=3` và độc lập với sample train intake.
-24. `LAYOUTLMV3_ALIGNMENT_REMEDIATION_V1.md` — giải thích data gate 0,1290 và thuật toán căn chỉnh đã sửa trong notebook v3.
-25. `Document_LayoutLMv3_Candidate_Acc2_v3.ipynb` — candidate KIE đã chạy; vẫn khóa test và giữ nguyên quy tắc chọn model.
-26. `LAYOUTLMV3_CANDIDATE_VALIDATION_V2.md` — kết quả validation, model selection và giới hạn của LayoutLMv3.
-27. `DIT_INDEPENDENT_VALIDATION_V1.md` — DiT trên 320 ảnh validation độc lập với sample train intake.
-28. `CLAIM_CONSISTENCY_NETWORKX_DEMO_V1.md` — kết quả engineering demo consistency và graph point-in-time.
-29. `CURRENT_PRODUCT_STATUS_2026-10-12.md` — trạng thái module, product gate và thứ tự triển khai tiếp theo.
-26. `LAYER_B_STAGE_RELIABILITY_DICTIONARY_V1.md` — data dictionary theo stage, rubric reliability và feature policy cho đủ 39 cột nguồn.
-27. `FRAUD_LABEL_PROVENANCE_V1.md` — cách diễn giải target quan sát và giới hạn label provenance.
-28. `DATA_MODEL_SYSTEM_CARD_V2.md` — Data Card, Model Card đa module và kiến trúc hệ thống đã cập nhật.
-29. `COLAB_CROSS_ACCOUNT_RUNBOOK_V1.md` — quy trình chạy notebook qua nhiều tài khoản mà vẫn dùng chung artifact.
+Trong 5 phút, bạn có thể trình bày theo thứ tự: (1) Data Audit và hai lỗi đã sửa ở SROIE/FUNSD, (2) metric cùng giới hạn của XGBoost, YOLO, DiT, OCR, LayoutLMv3, (3) Claim Review Workbench đang chạy với hồ sơ giả lập `CLM-DEMO-SYN-001`, (4) các gate còn thiếu để bàn giao nghiên cứu và pilot. Điểm 75,9/100 trong demo là điểm xếp hạng nghiên cứu của hồ sơ giả, **không phải xác suất gian lận**.
 
-## Trạng thái cần nói rõ
+Muốn mở demo trên máy, làm theo [hướng dẫn cài đặt](../docs/handbook/02_INSTALLATION_AND_QUICKSTART.md). Báo cáo chính có ảnh chụp sẵn để trình bày khi không chạy server. Ảnh xe, giấy tờ, danh tính và quan hệ trong demo đều là dữ liệu tổng hợp.
 
-- CarDD: đã hoàn tất baseline, candidate comparison, model lock và final test đúng một lần.
-- Document data: registry, intake và audit tự động đã hoàn tất; SROIE raw có tám cặp leakage đã được ghi nhận.
-- SROIE processed: PASS với 525/93/361 và exact overlap bằng 0.
-- Document: DiT independent validation đạt macro-F1 0,9283; PaddleOCR và rule KIE đã có baseline. LayoutLMv3 v3 đạt field micro-F1 0,9214 so với rule 0,6834 và được chọn theo quy tắc khóa trước; SROIE test vẫn khóa.
-- Integration: consistency và NetworkX point-in-time engineering demo đều PASS; chưa có graph claim thật để đánh giá fraud lift.
-- RAG prompt/retrieval test: chưa áp dụng vì chưa chọn RAG làm baseline.
-- Production/go-live: chưa mở; còn cần dữ liệu bảo hiểm thật, PII/license review, API, UI integration, monitoring và UAT.
+Các nguồn kiểm chứng nằm trong `reports/RESULTS.md`, `reports/CARDD_FINAL_TEST_V1.md`, `reports/DIT_INDEPENDENT_VALIDATION_V1.md`, `reports/LAYOUTLMV3_FINAL_TEST_V1.md`, `reports/DATA_LEAKAGE_CHECK_V1.md` và `reports/LAYER_B_STAGE_RELIABILITY_DICTIONARY_V1.md`. Trạng thái sản phẩm được ghi tại [Product Build Status](PRODUCT_BUILD_STATUS_2026-10-13.md), Definition of Done tại [08](../docs/handbook/08_DEFINITION_OF_DONE.md).

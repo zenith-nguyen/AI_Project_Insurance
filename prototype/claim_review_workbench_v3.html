@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Claim Review · Hồ sơ và bằng chứng</title>
+  <link rel="stylesheet" href="/workbench.css">
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar" aria-label="Điều hướng">
+      <a class="brand" href="/"><span class="brand-mark">C</span><span>Claim Review<small>WORKBENCH · RESEARCH V1</small></span></a>
+      <div class="side-label">Không gian làm việc</div>
+      <a class="side-link current" href="/">◫ <span>Xem hồ sơ</span></a>
+      <a class="side-link" href="/intake">＋ <span>Nạp hồ sơ mới</span></a>
+      <a class="side-link" href="/docs" target="_blank" rel="noopener">⌘ <span>API cho đội kỹ thuật</span></a>
+      <div class="side-spacer"></div>
+      <div class="side-note"><strong>Quyết định thuộc về con người</strong><p>AI xếp ưu tiên và chỉ ra bằng chứng cần kiểm tra. Không tự động kết luận gian lận.</p></div>
+      <div class="side-foot" id="sideMode">Đang kết nối API…</div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar"><div class="breadcrumb">Hồ sơ <span>/</span> <strong id="crumbId">Đang tải</strong></div><div class="top-actions"><a href="/intake">Nạp hồ sơ</a><span id="modeBadge" class="mode-badge">Đang kết nối</span></div></header>
+      <div class="page">
+        <div id="demoBanner" class="demo-banner" hidden><strong>HỒ SƠ DEMO GIẢ LẬP</strong><span>Ảnh xe do AI tạo; chứng từ, danh tính và quan hệ đều là mẫu tổng hợp. Chỉ dùng để trình diễn luồng sản phẩm.</span></div>
+        <div class="hero"><div><div class="eyebrow">HỒ SƠ ĐANG XEM · <span id="heroId">—</span></div><h1>Xem hồ sơ, kiểm tra bằng chứng, ghi quyết định</h1><p id="heroSubtitle">Các tín hiệu giúp người duyệt biết nên nhìn vào đâu trước.</p></div><button id="refreshButton" class="refresh" type="button">↻ Phân tích lại</button></div>
+        <div id="errorBox" class="error-box" role="alert" hidden></div>
+        <div class="stats">
+          <article class="stat primary"><span>Ưu tiên rà soát</span><strong id="priorityValue">—</strong><small id="analysisValue">Chờ phân tích</small></article>
+          <article class="stat"><span>Điểm xếp hạng nghiên cứu</span><strong id="scoreValue">—</strong><small>Không phải xác suất gian lận</small></article>
+          <article class="stat"><span>Bằng chứng yêu cầu</span><strong id="evidenceValue">—</strong><small id="missingValue">—</small></article>
+          <article class="stat"><span>Tín hiệu cần xem</span><strong id="signalValue">—</strong><small>Luôn đối chiếu nguồn gốc</small></article>
+        </div>
+
+        <div class="layout">
+          <div class="left-column">
+            <section class="card module-card"><div class="section-heading"><div><div class="eyebrow">SỨC KHỎE PHÂN TÍCH</div><h2>Module nào đã chạy?</h2></div><span id="moduleSummary" class="muted">—</span></div><div id="moduleList" class="module-list"></div></section>
+            <nav class="tabs" aria-label="Nội dung hồ sơ"><button class="active" data-tab="overview">Tổng quan</button><button data-tab="evidence">Ảnh & chứng từ</button><button data-tab="relations">Quan hệ</button><button data-tab="audit">Nhật ký</button></nav>
+            <section class="card panel active" id="overview"><div class="section-heading"><div><div class="eyebrow">NƠI CẦN KIỂM TRA</div><h2>Tín hiệu và lý do</h2></div></div><div id="signals" class="signal-grid"></div><div class="subtle-note">Mỗi tín hiệu là lời nhắc kiểm tra. Điểm nghiên cứu và tín hiệu không đủ để tự động từ chối hồ sơ.</div></section>
+            <section class="card panel" id="evidence"><div class="section-heading"><div><div class="eyebrow">BẰNG CHỨNG GỐC</div><h2>Ảnh xe và chứng từ</h2></div></div><div class="evidence-grid"><div><h3>Ảnh xe</h3><div id="vehiclePreview" class="preview"><span>Chưa có ảnh xe.</span></div><div id="vehicleMeta" class="source-note"></div><div id="damageResults" class="result-list"></div></div><div><h3>Chứng từ</h3><div id="documentPreview" class="preview document"><span>Chưa có chứng từ.</span></div><div id="documentMeta" class="source-note"></div><div id="documentResults" class="result-list"></div></div></div><div id="correctionPanel" class="correction"><div class="section-heading compact"><div><div class="eyebrow">CON NGƯỜI XÁC NHẬN</div><h3>Sửa một trường đọc sai</h3></div></div><div class="form-row"><label>Trường<select id="fieldName"><option value="total_amount">Tổng tiền</option><option value="document_date">Ngày chứng từ</option><option value="plate_number">Biển số</option></select></label><label>Giá trị đúng<input id="correctedValue" placeholder="Nhập theo chứng từ gốc"></label></div><label>Lý do sửa<textarea id="correctionReason" placeholder="Ví dụ: Đối chiếu trực tiếp với chứng từ trong hồ sơ"></textarea></label><button id="saveCorrection" type="button" class="secondary">Lưu chỉnh sửa</button><p id="correctionFeedback" class="feedback" aria-live="polite"></p></div></section>
+            <section class="card panel" id="relations"><div class="section-heading"><div><div class="eyebrow">NETWORKX · THEO THỜI ĐIỂM</div><h2>Quan hệ cần xem lại</h2></div></div><div id="graphState" class="subtle-note"></div><div id="graphMetrics" class="graph-metrics"></div><p class="muted">Dữ liệu quan hệ cho biết hồ sơ có thể liên quan qua thực thể dùng chung. Đây là tín hiệu điều tra, không phải kết luận gian lận.</p></section>
+            <section class="card panel" id="audit"><div class="section-heading"><div><div class="eyebrow">TRUY VẾT</div><h2>Quyết định và chỉnh sửa đã lưu</h2></div><button id="reloadEvents" class="text-button" type="button">Tải lại</button></div><div id="eventsList" class="events"></div></section>
+          </div>
+
+          <aside class="review-card"><div class="review-head"><div class="eyebrow">BƯỚC CUỐI</div><h2>Quyết định của người duyệt</h2><p>Đọc bằng chứng gốc trước khi ghi kết quả xử lý.</p></div><div class="review-body"><label class="choice"><input type="radio" name="decision" value="continue_processing"><span><strong>Tiếp tục xử lý</strong><small>Chưa cần rà soát thêm theo thông tin hiện có</small></span></label><label class="choice"><input type="radio" name="decision" value="request_evidence"><span><strong>Yêu cầu bổ sung</strong><small>Thiếu ảnh, chứng từ hoặc thông tin cần đối chiếu</small></span></label><label class="choice"><input type="radio" name="decision" value="special_review"><span><strong>Rà soát chuyên sâu</strong><small>Có tín hiệu cần người phụ trách kiểm tra</small></span></label><label class="reason-label">Lý do quyết định<textarea id="reviewReason" placeholder="Ghi rõ đã kiểm tra gì và vì sao chọn hướng xử lý này…"></textarea></label><button id="saveReview" type="button" class="primary-button">Lưu quyết định</button><p id="reviewFeedback" class="feedback" aria-live="polite"></p><div class="review-policy">Hệ thống lưu người thực hiện, thời gian và mã phân tích để truy vết.</div></div></aside>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script type="module" src="/workbench.js"></script>
+</body>
+</html>

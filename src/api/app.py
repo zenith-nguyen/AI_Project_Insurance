@@ -38,7 +38,17 @@ app = FastAPI(
 
 @app.get("/", include_in_schema=False)
 def index() -> FileResponse:
-    return FileResponse(ROOT / "prototype/insurance_review_console_v2.html")
+    return FileResponse(ROOT / "prototype/claim_review_workbench_v3.html")
+
+
+@app.get("/workbench.css", include_in_schema=False)
+def workbench_css() -> FileResponse:
+    return FileResponse(ROOT / "prototype/workbench.css", media_type="text/css")
+
+
+@app.get("/workbench.js", include_in_schema=False)
+def workbench_js() -> FileResponse:
+    return FileResponse(ROOT / "prototype/workbench.js", media_type="text/javascript")
 
 
 @app.get("/intake", include_in_schema=False)
@@ -145,6 +155,14 @@ def analysis(claim_id: str) -> ClaimAnalysis:
     if result is None:
         raise HTTPException(status_code=404, detail="Claim has not been analyzed in this process.")
     return result
+
+
+@app.get("/claims/{claim_id}/events")
+def claim_events(claim_id: str) -> list[dict]:
+    try:
+        return SERVICE.events(claim_id)
+    except KeyError as error:
+        raise HTTPException(status_code=404, detail="Claim is not available in the configured claim store.") from error
 
 
 @app.post("/claims/{claim_id}/review", response_model=ReviewRecord)

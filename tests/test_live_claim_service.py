@@ -43,6 +43,8 @@ def test_golden_claim_runs_real_tabular_rules_and_graph(tmp_path):
         "media_authenticity": "media_authenticity_v2",
     }
     assert any("YOLO was not invoked" in warning for warning in result.warnings)
+    assert result.module_status["document_pipeline"]["status"] == "completed_precomputed"
+    assert result.analysis_status == "partial"
     readiness = live.readiness()
     assert readiness["modules"]["tabular_risk"]["active"] is True
     assert readiness["modules"]["damage_segmentation"]["active"] is False
@@ -64,6 +66,8 @@ def test_review_is_persisted_as_jsonl(tmp_path):
     assert stored["event_type"] == "review"
     assert stored["claim_id"] == record.claim_id
     assert stored["trace_id"] == record.trace_id
+    assert live.events("CLM-GOLD-002") == [stored]
+    assert live.events("CLM-GOLD-001") == []
 
 
 def test_field_correction_is_persisted_with_provenance(tmp_path):
@@ -85,6 +89,7 @@ def test_field_correction_is_persisted_with_provenance(tmp_path):
     assert stored["event_type"] == "field_correction"
     assert stored["claim_id"] == record.claim_id
     assert stored["field_name"] == "total_amount"
+    assert live.events("CLM-GOLD-001") == [stored]
 
 
 def test_unknown_golden_claim_is_rejected(tmp_path):

@@ -6,7 +6,7 @@ Sản phẩm đang được xây dựng là **Claim Review Workbench**: một m�
 
 ## Phần đã chạy nối với nhau
 
-Năm golden claims `CLM-GOLD-001` đến `CLM-GOLD-005` dùng cùng một `claim_id` xuyên suốt dữ liệu bảng, chứng từ, ảnh placeholder, quan hệ và kết quả mong đợi.
+Năm golden claims `CLM-GOLD-001` đến `CLM-GOLD-005` dùng cùng một `claim_id` xuyên suốt dữ liệu bảng, trường chứng từ chuẩn bị trước, ảnh placeholder, quan hệ và kết quả mong đợi. Hồ sơ trình diễn riêng `CLM-DEMO-SYN-001` có ảnh xe AI tạo và chứng từ giả lập dạng PNG, cùng dữ liệu bảng và graph tổng hợp.
 
 Luồng live đầu tiên đã nối:
 
@@ -25,7 +25,7 @@ Luồng live đầu tiên đã nối:
 
 - YOLOv8s-seg: adapter nhận ảnh, kiểm SHA-256 và chuẩn hóa box/mask đã hoàn thành; tự bật khi checkpoint và `ultralytics` có trên máy.
 - DiT → PaddleOCR → LayoutLMv3: adapter ảnh/PDF, kiểm tree hash checkpoint, OCR, KIE và consistency đã hoàn thành; tự bật khi checkpoint cùng dependency có trên máy.
-- Golden claims hiện dùng trường chứng từ đã trích xuất trước và ảnh placeholder. API ghi rõ giới hạn này trong `warnings`.
+- Golden claims hiện dùng trường chứng từ đã trích xuất trước và ảnh placeholder. Hồ sơ demo có file ảnh/chứng từ thật nhưng trường chứng từ vẫn được chuẩn bị trước. API ghi `completed_precomputed` và nêu rõ OCR/KIE chưa đọc file này.
 
 ## Cách chạy cho hai nhóm
 
@@ -33,11 +33,13 @@ Luồng live đầu tiên đã nối:
 
 API đã có tài liệu quản lý tập trung tại `reports/API_HANDOFF_GUIDE_2026-10-13.md`, browser client tại `prototype/api-client.js`, và OpenAPI tại `contracts/claim_review_openapi.v1.json`. Kiểm tra máy live bằng `python scripts/check_live_readiness.py`.
 
-Workbench đã dùng client chung, đọc nội dung evidence qua endpoint an toàn, vẽ polygon/box YOLO khi có output thật, và hiển thị trường KIE cùng confidence/provenance ảnh. Bộ handbook bàn giao được chuẩn hóa từ `00` đến `08`; script packaging sinh cả Markdown, PDF, checksum và ZIP có nhãn DRAFT/FINAL.
+Workbench v3 tại `/` dùng client chung, đọc nội dung evidence qua endpoint an toàn, vẽ polygon/box YOLO khi có output thật, hiển thị trường KIE cùng confidence/provenance ảnh, quyết định/correction và nhật ký qua `GET /claims/{claim_id}/events`. Bộ handbook bàn giao được chuẩn hóa từ `00` đến `08`; script packaging sinh cả Markdown, PDF, checksum và ZIP có nhãn DRAFT/FINAL.
 
 Definition of Done v1 đã khóa ba mức: `engineering_foundation`, `research_handoff` và `pilot_ready`. Mốc nền kỹ thuật hiện PASS; target kết thúc dự án là `research_handoff` hiện chưa PASS vì máy local thiếu artifact/dependency multimodal và ba sign-off bàn giao. UI đã có overlay OCR token/KIE field cho chứng từ ảnh; PDF hiện dùng viewer gốc.
 
-Kết quả preflight local ngày 13/10/2026: XGBoost và dependency lõi `PASS`; YOLO thiếu checkpoint cùng `ultralytics`; nhánh chứng từ thiếu checkpoint LayoutLMv3 và Paddle. Vì vậy core live đã chạy được, multimodal live trên máy local chưa đầy đủ.
+Kết quả preflight local ngày 13/10/2026: XGBoost và dependency đã cài `PASS`; YOLO và LayoutLMv3 vẫn thiếu checkpoint tại đường dẫn được model registry chỉ định. Vì vậy core live đã chạy được, multimodal live trên máy local chưa đầy đủ.
+
+Để xem demo có dữ liệu tổng hợp, chạy `.\.venv\Scripts\python.exe scripts/seed_synthetic_demo.py`, sau đó `scripts/run_live.ps1` và mở `http://127.0.0.1:8000/?claim_id=CLM-DEMO-SYN-001`. Nút Phân tích tự gọi các module đang có; endpoint authenticity riêng chỉ dành cho kỹ thuật. Ảnh chụp và báo cáo dễ đọc nằm trong `reports/PROGRESS_REPORT_2_MASTER_2026-10-13.pdf`.
 
 ## Mốc tiếp theo
 

@@ -14,6 +14,7 @@ await api.createClaim(claimId, claimPayload);
 await api.uploadEvidence(claimId, {kind: "image", file: imageFile});
 const analysis = await api.analyzeClaim(claimId);
 await api.saveReview(claimId, reviewPayload);
+const events = await api.getEvents(claimId);
 ```
 
 Ba trường UI phải đọc trước là `analysis_status`, `research_risk_score` và `module_status`. UI phải hiển thị `warnings`, không đổi risk score thành xác suất gian lận.
@@ -27,4 +28,6 @@ GET /claims/{claim_id}/evidence/{evidence_id}/content
 UI dùng endpoint này để hiển thị ảnh gốc cùng mask/box. Server chỉ trả file đã có trong manifest của claim và không nhận đường dẫn filesystem từ client.
 
 Contract chuẩn nằm tại `contracts/claim_review_openapi.v1.json`. Hướng dẫn chi tiết nằm tại `reports/API_HANDOFF_GUIDE_2026-10-13.md`.
+
+Trang `/` hiện là Claim Review Workbench v3. Team UI có thể xem demo với `?claim_id=CLM-DEMO-SYN-001` và dùng cùng `prototype/api-client.js` để tích hợp giao diện riêng. `module_status.document_pipeline.status=completed_precomputed` nghĩa là có trường chứng từ chuẩn bị sẵn; file upload chưa được OCR/KIE đọc. Chỉ `completed` mới là module đã chạy thật. `GET /claims/{claim_id}/events` đọc lại review và correction đã lưu để hiển thị nhật ký; bản demo local chưa có xác thực người dùng, vì vậy không đưa endpoint này lên môi trường công khai.
 

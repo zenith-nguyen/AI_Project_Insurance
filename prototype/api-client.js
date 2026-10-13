@@ -56,6 +56,10 @@ export class ClaimReviewClient {
     return this.request(`/claims/${encodeURIComponent(claimId)}/analysis`);
   }
 
+  getEvents(claimId) {
+    return this.request(`/claims/${encodeURIComponent(claimId)}/events`);
+  }
+
   getAuthenticity(claimId, evidenceId) {
     return this.request(`/claims/${encodeURIComponent(claimId)}/evidence/${encodeURIComponent(evidenceId)}/authenticity`);
   }

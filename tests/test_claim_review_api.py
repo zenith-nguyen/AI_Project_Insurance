@@ -16,9 +16,13 @@ def test_browser_api_client_is_served_by_the_backend():
     assert "export class ClaimReviewClient" in response.text
     workbench = client.get("/")
     assert workbench.status_code == 200
-    assert 'import {ClaimReviewClient, ClaimApiError} from "/api-client.js"' in workbench.text
-    assert "evidenceContentUrl" in workbench.text
-    assert "document-overlay" in workbench.text
+    assert 'src="/workbench.js"' in workbench.text
+    assert "Quyết định của người duyệt" in workbench.text
+    script = client.get("/workbench.js")
+    assert script.status_code == 200
+    assert 'import {ClaimReviewClient, ClaimApiError} from "/api-client.js"' in script.text
+    assert "evidenceContentUrl" in script.text
+    assert "addOverlay" in script.text
 
 
 def test_fixture_claim_lifecycle_and_human_review_contract():
@@ -67,6 +71,9 @@ def test_fixture_claim_lifecycle_and_human_review_contract():
     )
     assert correction.status_code == 200
     assert correction.json()["trace_id"] == analysis["trace_id"]
+    events = client.get("/claims/CLM-TEST-001/events")
+    assert events.status_code == 200
+    assert [event["event_type"] for event in events.json()] == ["review", "field_correction"]
 
 
 def test_review_requires_analysis_first():

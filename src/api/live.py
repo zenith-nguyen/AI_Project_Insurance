@@ -85,6 +85,13 @@ class JsonlAuditStore:
         with self._lock, self.path.open("a", encoding="utf-8") as stream:
             stream.write(json.dumps(payload, ensure_ascii=False, default=str) + "\n")
 
+    def list_claim(self, claim_id: str, limit: int = 100) -> list[dict]:
+        if not self.path.is_file():
+            return []
+        with self._lock, self.path.open("r", encoding="utf-8") as stream:
+            rows = [json.loads(line) for line in stream if line.strip()]
+        return [row for row in rows if row.get("claim_id") == claim_id][-limit:]
+
 
 class LiveClaimService:
     def __init__(self, root: Path, registry: ModelRegistry, audit_log: str | Path, runtime_claim_root: str | Path | None = None) -> None:
@@ -364,10 +371,10 @@ class LiveClaimService:
         has_documents = document_count > 0
         document_fields_available = bool(documents or document_results)
         module_status["document_pipeline"] = {
-            "status": "completed" if document_fields_available else (
+            "status": "completed" if document_results else "completed_precomputed" if documents else (
                 "error" if document_failures else "unavailable" if has_documents else "skipped_missing_input"
             ),
-            "reason": None if document_fields_available else (
+            "reason": "Document fields were prepared for the demo; uploaded file was not read by OCR/KIE." if documents and not document_results else None if document_results else (
                 "Document inference failed." if document_failures else
                 "Document checkpoint/dependencies are not configured." if has_documents else "No claim document was provided."
             ),
@@ -393,7 +400,7 @@ class LiveClaimService:
             ),
         }
         analysis_status = "blocked" if risk is None else ("partial" if missing or any(
-            item["status"] in {"skipped_missing_input", "unavailable", "blocked_missing_input", "error"}
+            item["status"] in {"skipped_missing_input", "unavailable", "blocked_missing_input", "error", "completed_precomputed"}
             for item in module_status.values()
         ) else "complete")
         priority = "high" if any(signal.severity == "high" for signal in signals) else ("review" if signals else "normal")
@@ -415,7 +422,7 @@ class LiveClaimService:
                 *( ["Analysis is partial: the risk score remains available, but one or more evidence modules could not run."] if analysis_status == "partial" else [] ),
                 *( ["Risk scoring is blocked because required tabular model inputs are incomplete."] if analysis_status == "blocked" else [] ),
                 *( ["Relationship data was not provided; zero graph risk must not be inferred."] if not graph_available else [] ),
-                *( ["Document fields are precomputed inputs; OCR and LayoutLMv3 were not invoked by this request."] if self.document_runtime is None else [] ),
+                *( ["Document fields are precomputed inputs; OCR and LayoutLMv3 were not invoked for them."] if documents and not document_results else [] ),
                 *( ["YOLO was not invoked because INSURANCE_YOLO_WEIGHTS is not configured."] if self.damage is None else [] ),
                 "No authenticity signal is proof that an image is camera-original; provenance may be absent or stripped.",
                 *runtime_warnings,
@@ -443,3 +450,7 @@ class LiveClaimService:
         record = CorrectionRecord(claim_id=claim_id, trace_id=analysis.trace_id, **request.model_dump())
         self.store.append("field_correction", record)
         return record
+
+    def events(self, claim_id: str) -> list[dict]:
+        self.repository.load(claim_id)
+        return self.store.list_claim(claim_id)
