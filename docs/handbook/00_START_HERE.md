@@ -11,6 +11,7 @@
 5. `05_DATA_ARTIFACTS_AND_GOVERNANCE.md` — data, checkpoint, hash và quyền truy cập.
 6. `06_OPERATIONS_AND_TROUBLESHOOTING.md` — vận hành và xử lý lỗi.
 7. `07_RELEASE_SECURITY_AND_UAT.md` — điều kiện pilot/phát hành.
+8. `08_DEFINITION_OF_DONE.md` — tiêu chí kết thúc dự án và các mức release.
 
 Trạng thái hiện tại là **research prototype có luồng end-to-end một phần**. XGBoost, rules, NetworkX, upload, authenticity, review và correction đã nối vào API. YOLO và document pipeline có adapter nhưng máy triển khai phải có checkpoint/dependency đúng hash.
 

@@ -12,7 +12,7 @@ Chỉ gắn nhãn `FINAL` cho gói bàn giao khi toàn bộ gate bắt buộc đ
 - monitoring, incident response và rollback được diễn tập;
 - license/consent cho dataset và model được lưu bằng chứng.
 
-Gói `DRAFT` dùng cho phát triển và demo. Gói `FINAL` là snapshot bất biến gồm handbook đánh số, PDF, OpenAPI, client, model registry, checksum và release manifest.
+Gói `DRAFT` dùng cho phát triển và demo. Gói `FINAL` là snapshot bất biến gồm handbook đánh số, PDF, OpenAPI, client, model registry, checksum và release manifest. Cờ xác nhận không thể bỏ qua Definition of Done: script vẫn kiểm tra `research_handoff` bằng máy trước khi đóng gói.
 
 Tạo gói:
 

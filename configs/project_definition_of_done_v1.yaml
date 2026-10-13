@@ -1,0 +1,69 @@
+schema_version: "1.0"
+project: Claim Review Workbench
+target_release: research_handoff
+
+levels:
+  engineering_foundation:
+    description: Code, API contract, core risk slice, tests and handoff framework are reproducible.
+    require_multimodal_live: false
+    required_manual_gates: []
+  research_handoff:
+    description: Team can demo one claim end-to-end with every registered model and transfer the product safely.
+    require_multimodal_live: true
+    required_manual_gates:
+      - golden_multimodal_run_signed_off
+      - handbook_reviewed_by_non_author
+      - ui_backend_handoff_accepted
+  pilot_ready:
+    description: Controlled pilot on authorized Vietnamese insurance data is approved.
+    require_multimodal_live: true
+    required_manual_gates:
+      - golden_multimodal_run_signed_off
+      - handbook_reviewed_by_non_author
+      - ui_backend_handoff_accepted
+      - dataset_license_and_consent_evidence
+      - vietnam_domain_validation
+      - security_privacy_review
+      - latency_load_test
+      - business_uat
+      - monitoring_and_rollback_drill
+
+required_files:
+  - contracts/claim_review_openapi.v1.json
+  - prototype/api-client.js
+  - prototype/insurance_review_console_v2.html
+  - configs/model_registry.v1.yaml
+  - artifacts/models/tabular_v1/bundle.joblib
+  - reports/RESULTS.md
+  - reports/CARDD_FINAL_TEST_V1.md
+  - reports/DIT_INDEPENDENT_VALIDATION_V1.md
+  - reports/LAYOUTLMV3_FINAL_TEST_V1.md
+  - reports/MEDIA_AUTHENTICITY_V2_AND_EVIDENCE_GATE.md
+  - docs/handbook/00_START_HERE.md
+  - docs/handbook/08_DEFINITION_OF_DONE.md
+
+required_endpoints:
+  - /health
+  - /readiness
+  - /version
+  - /claims/{claim_id}/intake
+  - /claims/{claim_id}/capture-sessions
+  - /claims/{claim_id}/evidence
+  - /claims/{claim_id}/evidence/{evidence_id}/content
+  - /claims/{claim_id}/evidence/{evidence_id}/authenticity
+  - /claims/{claim_id}/analyze
+  - /claims/{claim_id}/analysis
+  - /claims/{claim_id}/review
+  - /claims/{claim_id}/corrections
+
+manual_gates:
+  golden_multimodal_run_signed_off: false
+  handbook_reviewed_by_non_author: false
+  ui_backend_handoff_accepted: false
+  dataset_license_and_consent_evidence: false
+  vietnam_domain_validation: false
+  security_privacy_review: false
+  latency_load_test: false
+  business_uat: false
+  monitoring_and_rollback_drill: false
+

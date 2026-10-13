@@ -8,6 +8,8 @@ The API lifecycle, UI/backend responsibilities, guided-capture example and error
 
 The numbered handoff handbook starts at `docs/handbook/00_START_HERE.md`. Build a PDF + ZIP draft with `python scripts/build_handoff_bundle.py --status draft`; final packaging is deliberately gated by the release/UAT checklist.
 
+Project completion is versioned in `configs/project_definition_of_done_v1.yaml`. Run `python scripts/check_project_done.py --output runtime/project_done.json --no-fail` to see the exact remaining blockers; a `FINAL` bundle cannot be produced until the `research_handoff` target passes.
+
 ## Claim Review API and prototype
 
 The repository now includes a fixture-first FastAPI contract and reviewer prototype. This lets the UI team integrate before live model adapters are released.

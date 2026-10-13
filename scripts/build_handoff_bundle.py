@@ -6,12 +6,15 @@ import hashlib
 import json
 import re
 import shutil
+import sys
 import textwrap
 import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 HANDBOOK = ROOT / "docs/handbook"
 NUMBERED_DOCS = [HANDBOOK / f"{number:02d}_{name}.md" for number, name in enumerate([
     "START_HERE",
@@ -22,6 +25,7 @@ NUMBERED_DOCS = [HANDBOOK / f"{number:02d}_{name}.md" for number, name in enumer
     "DATA_ARTIFACTS_AND_GOVERNANCE",
     "OPERATIONS_AND_TROUBLESHOOTING",
     "RELEASE_SECURITY_AND_UAT",
+    "DEFINITION_OF_DONE",
 ])]
 SUPPORT_FILES = [
     ROOT / "contracts/claim_review_openapi.v1.json",
@@ -90,7 +94,12 @@ def render_pdf(markdown_path: Path, output: Path, status: str, release_version: 
 
 def build(output_root: Path, status: str, release_version: str, confirm_gates: bool = False) -> tuple[Path, Path]:
     if status == "final" and not confirm_gates:
-        raise ValueError("FINAL requires --confirm-gates after completing 07_RELEASE_SECURITY_AND_UAT.md.")
+        raise ValueError("FINAL requires --confirm-gates after completing 07_RELEASE_SECURITY_AND_UAT.md and 08_DEFINITION_OF_DONE.md.")
+    if status == "final":
+        from scripts.check_project_done import evaluate
+        done = evaluate(level="research_handoff")
+        if not done["done"]:
+            raise ValueError("FINAL Definition of Done is not satisfied: " + ", ".join(done["blockers"]))
     missing = [str(path) for path in NUMBERED_DOCS + SUPPORT_FILES if not path.is_file()]
     if missing:
         raise FileNotFoundError("Missing handoff inputs:\n" + "\n".join(missing))
@@ -100,13 +109,13 @@ def build(output_root: Path, status: str, release_version: str, confirm_gates: b
     package = output_root / package_name
     if package.exists():
         shutil.rmtree(package)
-    (package / "00-07_HANDBOOK").mkdir(parents=True)
+    (package / "00-08_HANDBOOK").mkdir(parents=True)
     (package / "90_CONTRACTS").mkdir()
     (package / "99_STATUS").mkdir()
 
     for source in NUMBERED_DOCS:
-        shutil.copy2(source, package / "00-07_HANDBOOK" / source.name)
-        render_pdf(source, package / "00-07_HANDBOOK" / source.with_suffix(".pdf").name, status, release_version)
+        shutil.copy2(source, package / "00-08_HANDBOOK" / source.name)
+        render_pdf(source, package / "00-08_HANDBOOK" / source.with_suffix(".pdf").name, status, release_version)
     for source in SUPPORT_FILES[:3]:
         shutil.copy2(source, package / "90_CONTRACTS" / source.name)
     shutil.copy2(SUPPORT_FILES[3], package / "99_STATUS" / SUPPORT_FILES[3].name)
