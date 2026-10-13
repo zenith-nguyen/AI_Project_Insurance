@@ -23,7 +23,22 @@ powershell -ExecutionPolicy Bypass -File scripts/setup_ui.ps1
 powershell -ExecutionPolicy Bypass -File scripts/run_ui.ps1
 ```
 
-The service intentionally starts only in `fixture` mode. Model artifacts remain gated until their registry entries, hashes, schemas and validation evidence are complete. See `reports/PRODUCT_HANDOFF_AND_METRIC_PLAN_2026-10-12.md` for the product, metric and transfer plan.
+The Docker/UI default intentionally starts in `fixture` mode. Live adapters remain gated by registry entries, hashes, schemas and validation evidence. See `reports/PRODUCT_HANDOFF_AND_METRIC_PLAN_2026-10-12.md` for the product, metric and transfer plan.
+
+The first local live slice is also available for ML/backend integration. It runs the registered XGBoost bundle, consistency rules and point-in-time NetworkX graph against five de-identified golden claims. OCR, KIE and damage inference remain explicitly inactive in this slice. If the bundle already exists in this workspace:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/setup_live.ps1
+powershell -ExecutionPolicy Bypass -File scripts/run_live.ps1
+```
+
+On a fresh clone, pass the shared artifact directory once:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/setup_live.ps1 -ArtifactRoot "D:\shared-model-artifacts"
+```
+
+Then open Swagger at `http://127.0.0.1:8000/docs` and call `POST /claims/CLM-GOLD-001/analyze`. Reviews are persisted under `runtime/audit/` and stay outside Git.
 
 ## Current data and scope
 

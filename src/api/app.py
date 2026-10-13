@@ -15,11 +15,19 @@ from .service import FixtureClaimService
 
 ROOT = Path(__file__).resolve().parents[2]
 MODE = os.getenv("INSURANCE_API_MODE", "fixture")
-if MODE != "fixture":
-    raise RuntimeError("Only fixture mode is enabled until live model artifacts pass release gates.")
-
 REGISTRY = load_registry(ROOT / "configs/model_registry.v1.yaml")
-SERVICE = FixtureClaimService(ROOT / "prototype/fixtures/claim_analysis_demo.json")
+if MODE == "fixture":
+    SERVICE = FixtureClaimService(ROOT / "prototype/fixtures/claim_analysis_demo.json")
+elif MODE == "live":
+    from .live import LiveClaimService
+
+    SERVICE = LiveClaimService(
+        ROOT,
+        REGISTRY,
+        os.getenv("INSURANCE_AUDIT_LOG", str(ROOT / "runtime/audit/reviews.jsonl")),
+    )
+else:
+    raise RuntimeError("INSURANCE_API_MODE must be 'fixture' or 'live'.")
 
 app = FastAPI(
     title="Insurance Claim Review API",
@@ -35,7 +43,7 @@ def index() -> FileResponse:
 
 @app.get("/health", response_model=HealthResponse)
 def health() -> HealthResponse:
-    return HealthResponse(mode="fixture", product_version=REGISTRY.product_version)
+    return HealthResponse(mode=MODE, product_version=REGISTRY.product_version)
 
 
 @app.get("/version")
@@ -45,7 +53,10 @@ def version() -> dict:
 
 @app.post("/claims/{claim_id}/analyze", response_model=ClaimAnalysis)
 def analyze(claim_id: str, request: AnalyzeRequest) -> ClaimAnalysis:
-    return SERVICE.analyze(claim_id, request)
+    try:
+        return SERVICE.analyze(claim_id, request)
+    except KeyError as error:
+        raise HTTPException(status_code=404, detail="Claim is not available in the configured claim store.") from error
 
 
 @app.get("/claims/{claim_id}/analysis", response_model=ClaimAnalysis)

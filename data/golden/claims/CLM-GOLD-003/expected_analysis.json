@@ -1,0 +1,10 @@
+{
+  "claim_id": "CLM-GOLD-003",
+  "human_review_required": true,
+  "required_signal_categories": [
+    "consistency",
+    "relationship"
+  ],
+  "amount_check": "fail",
+  "test_scope": "API orchestration and claim_id continuity; image/document inference requires separate binary fixtures."
+}

@@ -1,0 +1,11 @@
+{
+  "claim_id": "CLM-GOLD-004",
+  "data_origin": "synthetic_manifest",
+  "images": [
+    {
+      "evidence_id": "vehicle-image-manifest",
+      "filename": null,
+      "status": "placeholder_no_binary"
+    }
+  ]
+}

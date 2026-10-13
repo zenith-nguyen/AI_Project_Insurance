@@ -1,0 +1,27 @@
+{
+  "claim_id": "CLM-GOLD-004",
+  "document_id": "DOC-004",
+  "evidence_id": "repair-estimate",
+  "document_type": "repair_estimate",
+  "source": "golden_precomputed_fields",
+  "fields": [
+    {
+      "field_name": "total_amount",
+      "raw_text": "58344.0",
+      "normalized_value": 58344.0,
+      "confidence": 0.95
+    },
+    {
+      "field_name": "document_date",
+      "raw_text": "2015-01-10",
+      "normalized_value": "2015-01-10",
+      "confidence": 0.97
+    },
+    {
+      "field_name": "plate_number",
+      "raw_text": "51G-004.88",
+      "normalized_value": "51G-004.88",
+      "confidence": 0.96
+    }
+  ]
+}

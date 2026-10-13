@@ -14,6 +14,7 @@ data/**/*.png
 data/**/*.zip
 data/**/*.json
 !data/**/.gitkeep
+!data/golden/claims/**/*.json
 artifacts/
 reports/metrics/*.json
 reports/metrics/*.csv
@@ -22,3 +23,5 @@ reports/leakage/*.csv
 reports/leakage/*.md
 .env
 *.log
+# Runtime audit records contain reviewer input and stay outside source control.
+runtime/

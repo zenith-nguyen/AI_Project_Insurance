@@ -5,11 +5,46 @@ const tabButtons=[...document.querySelectorAll('[data-tab]')],views=[...document
 </script><script>
 const apiStatus=document.querySelector('.account');
 const decisionMap={continue:'continue_processing',request:'request_evidence',siu:'special_review'};
+let activeClaimId='CLM-2026-00418';
+function renderAnalysis(analysis){
+  activeClaimId=analysis.claim_id;
+  document.querySelector('.breadcrumb').textContent=`Hàng chờ / ${analysis.claim_id}`;
+  document.querySelector('.queuecard b').textContent=analysis.claim_id;
+  document.querySelector('.casehead .meta').textContent=`Hồ sơ ${analysis.claim_id} · trace ${analysis.trace_id.slice(0,8)}`;
+  const priorityLabels={normal:'Ưu tiên thông thường',review:'Cần rà soát',high:'Ưu tiên cao'};
+  document.querySelector('.priority').textContent=priorityLabels[analysis.priority]||analysis.priority;
+  document.querySelector('#overview .titleline .muted').textContent=`${analysis.signals.length} tín hiệu cần GĐV xác minh`;
+  const grid=document.querySelector('.reason-grid');
+  grid.replaceChildren(...analysis.signals.map(signal=>{
+    const article=document.createElement('article');
+    article.className=`reason ${signal.severity==='high'?'caution':signal.severity==='info'?'info':''}`;
+    const eyebrow=document.createElement('div'); eyebrow.className='eyebrow'; eyebrow.textContent=signal.category;
+    const title=document.createElement('h3'); title.textContent=signal.title;
+    const explanation=document.createElement('p'); explanation.textContent=signal.explanation;
+    const button=document.createElement('button');
+    const tab=signal.category==='relationship'?'relations':signal.category==='damage'?'damage':signal.category==='document'||signal.category==='consistency'?'documents':'overview';
+    button.textContent='Mở bằng chứng →'; button.onclick=()=>openTab(tab);
+    article.append(eyebrow,title,explanation,button);
+    return article;
+  }));
+  const completeness=Math.round(analysis.evidence_completeness*100);
+  document.querySelector('.completeness i').style.width=`${completeness}%`;
+  const completenessBox=document.querySelector('.completeness').parentElement;
+  completenessBox.querySelector('b').textContent=`${completeness}% bằng chứng đã có`;
+  completenessBox.querySelector('p').textContent=analysis.missing_evidence.length?`Còn thiếu: ${analysis.missing_evidence.join(', ')}`:'Hồ sơ đã có đủ bằng chứng yêu cầu.';
+  const infoRows=[...document.querySelectorAll('.summary .box:nth-child(2) .row b')];
+  if(infoRows[1]) infoRows[1].textContent=analysis.extracted_fields.plate_number||'Chưa có';
+  if(infoRows[2]) infoRows[2].textContent=analysis.extracted_fields.incident_date||'Chưa có';
+  document.querySelector('.tech p').textContent=Object.entries(analysis.model_versions).map(([name,version])=>`${name}: ${version}`).join(' · ');
+}
 async function connectApi(){
   if(!location.protocol.startsWith('http')) return;
   try{
     const health=await fetch('/health').then(r=>r.json());
-    await fetch('/claims/CLM-2026-00418/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({claim_amount:16370000,incident_date:'2026-10-11',plate_number:'51H-123.42'})});
+    activeClaimId=health.mode==='live'?'CLM-GOLD-001':'CLM-2026-00418';
+    const response=await fetch(`/claims/${activeClaimId}/analyze`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});
+    if(!response.ok) throw new Error(`Analyze failed: ${response.status}`);
+    renderAnalysis(await response.json());
     apiStatus.innerHTML=`Thu Anh · Giám định viên<br>API ${health.mode} · ${health.product_version}`;
   }catch(error){apiStatus.innerHTML='Thu Anh · Giám định viên<br>Không kết nối được API';}
 }
@@ -17,7 +52,7 @@ const originalSave=save.onclick;
 save.onclick=async()=>{
   if(location.protocol.startsWith('http')){
     const selected=document.querySelector('input[name=decision]:checked');
-    const response=await fetch('/claims/CLM-2026-00418/review',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({reviewer_id:'prototype-reviewer',decision:decisionMap[selected.value],reason:note.value.trim()})});
+    const response=await fetch(`/claims/${activeClaimId}/review`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({reviewer_id:'prototype-reviewer',decision:decisionMap[selected.value],reason:note.value.trim()})});
     if(!response.ok){toast.textContent='Chưa lưu được quyết định. Kiểm tra API.';toast.classList.add('show');return;}
   }
   originalSave();

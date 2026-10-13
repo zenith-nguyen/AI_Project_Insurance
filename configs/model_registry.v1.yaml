@@ -7,7 +7,7 @@ modules:
     version: tabular_v1
     task: claim_priority_ranking
     artifact_uri: artifacts/models/tabular_v1/bundle.joblib
-    artifact_hash: pending_local_artifact_registration
+    artifact_hash: 17649499761df7a6d40d0b0a007d883ec7f3cd68ba9f561af4b169c1d9be28d8
     evidence: reports/RESULTS.md
     primary_metric: average_precision
     metric_value: 0.559
@@ -62,7 +62,7 @@ modules:
     version: consistency_v1
     task: cross_source_consistency
     artifact_uri: src/integration/consistency.py
-    artifact_hash: source_control_commit
+    artifact_hash: dbd001520abb0e25104561069ece05ed244041c20184f4e18693f472e6bf0ac7
     evidence: reports/CLAIM_CONSISTENCY_NETWORKX_DEMO_V1.md
     primary_metric: engineering_demo
     metric_value: 1.0
@@ -73,7 +73,7 @@ modules:
     version: point_in_time_v1
     task: claim_relationship_features
     artifact_uri: src/graph/claim_graph.py
-    artifact_hash: source_control_commit
+    artifact_hash: d711067713584d5f15aae12750da65bd6033f37c36d28b9fd6a9579b0dcec2f7
     evidence: reports/CLAIM_CONSISTENCY_NETWORKX_DEMO_V1.md
     primary_metric: engineering_demo
     metric_value: 1.0
