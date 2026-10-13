@@ -1,4 +1,4 @@
-# Phần bổ sung Báo cáo tiến độ đợt 2 — Mục 4 đến 11
+# Phần bổ sung Báo cáo tiến độ đợt 2 — Ground Truth đến RAG
 
 **Đề tài:** Hệ thống AI chấm điểm rủi ro gian lận cho hồ sơ bồi thường bảo hiểm vật chất xe ô tô  
 **Ngày cập nhật:** 13/10/2026  
@@ -6,13 +6,15 @@
 
 Phần này thay cho các dòng “khung tiêu đề”, “[Bổ sung]” và “cần xác nhận phạm vi” trong bản PDF ngày 13/10/2026. Tên artifact trong ngoặc là nơi kiểm chứng số liệu trong repository.
 
-## 4. Ground Truth Definition và Citation Policy
+Trong rubric, Ground Truth là hạng mục số 4. Trong cấu trúc PDF của nhóm, do mục 4 đã dành cho giả định chi phí, phần này mang số **5**; các mục tiếp theo được đánh số đến **11** để khớp bản gốc.
 
-### 4.1. Nguyên tắc chung
+## 5. Ground Truth Definition và Citation Policy
+
+### 5.1. Nguyên tắc chung
 
 Ground truth được định nghĩa riêng theo từng tác vụ. Nhãn của dữ liệu công khai chỉ là chuẩn đánh giá nghiên cứu trong đúng miền dữ liệu đó; không tự động trở thành ground truth của nghiệp vụ bảo hiểm Việt Nam. Mỗi kết quả phải lưu dataset/split, phiên bản schema, thời điểm đánh giá, model/checkpoint và quy tắc chuẩn hóa. Test không được dùng để chọn model, sửa threshold hoặc điều chỉnh mapping.
 
-### 4.2. Ground truth theo tác vụ
+### 5.2. Ground truth theo tác vụ
 
 | Tác vụ | Ground truth dùng trong PoC | Metric chính | Giới hạn |
 |---|---|---|---|
@@ -27,7 +29,7 @@ Ground truth được định nghĩa riêng theo từng tác vụ. Nhãn của d
 
 Đối với dữ liệu bảo hiểm thật, tập evaluation quan trọng cần hai người gán nhãn độc lập và một reviewer nghiệp vụ xử lý bất đồng. Mọi chỉnh sửa ground truth sau evaluation phải tạo version mới; không ghi đè kết quả cũ và không đưa PII thô vào báo cáo/source control.
 
-### 4.3. Citation Policy
+### 5.3. Citation Policy
 
 Core product hiện không dùng RAG hoặc LLM bên ngoài. Tuy vậy, mọi diễn giải hiển thị cho người duyệt phải truy được về ít nhất một `evidence_id`, trường dữ liệu nguồn, rule ID hoặc model version. Nội dung không có bằng chứng được đánh dấu `unsupported/unknown`; hệ thống không được tự bổ sung số tiền, ngày, biển số hay kết luận gian lận.
 
@@ -35,9 +37,9 @@ Nếu mở RAG trong tương lai, citation ground truth phải chứa `document_
 
 **Bằng chứng:** `reports/GROUND_TRUTH_DEFINITION_V1.md`, `reports/FRAUD_LABEL_PROVENANCE_V1.md`.
 
-## 5. Data Leakage Check
+## 6. Data Leakage Check
 
-### 5.1. Kiểm tra đã thực hiện
+### 6.1. Kiểm tra đã thực hiện
 
 - Tách train/validation/test trước khi training; preprocessing được fit trong từng fold hoặc chỉ trên train.
 - Kiểm exact image overlap bằng SHA-256 giữa các split.
@@ -45,7 +47,7 @@ Nếu mở RAG trong tương lai, citation ground truth phải chứa `document_
 - Kiểm checksum/ZIP đối với nguồn document; kiểm cân bằng sample RVL-CDIP.
 - Kiểm test có bị dùng để lựa chọn model, threshold hoặc feature policy hay không.
 
-### 5.2. Kết quả và remediation
+### 6.2. Kết quả và remediation
 
 | Nguồn | Phát hiện | Xử lý/trạng thái |
 |---|---|---|
@@ -61,9 +63,9 @@ Các kiểm tra còn mở là near-duplicate bằng perceptual hash/embedding, t
 
 **Bằng chứng:** `reports/DATA_LEAKAGE_CHECK_V1.md`, `reports/SROIE_PROCESSED_SPLIT_RESULT_V1.md`, `reports/CARDD_FINAL_TEST_V1.md`.
 
-## 6. Baseline model và baseline process
+## 7. Baseline model và baseline process
 
-### 6.1. Vai trò từng baseline
+### 7.1. Vai trò từng baseline
 
 | Nhánh | Baseline | Candidate/phiên bản đang dùng | Vai trò trong sản phẩm |
 |---|---|---|---|
@@ -76,7 +78,7 @@ Các kiểm tra còn mở là near-duplicate bằng perceptual hash/embedding, t
 | Relationship | NetworkX point-in-time features | NetworkX v1 | Tìm entity dùng chung, component và quan hệ hai hop |
 | Media authenticity | Metadata/hash/C2PA khi có tool | Authenticity v2 | Tạo tín hiệu provenance/reuse; không tuyên bố chắc chắn ảnh AI hay ảnh thật |
 
-### 6.2. Baseline process
+### 7.2. Baseline process
 
 1. Chạy data gate và leakage gate trước training.
 2. Chia train/validation/test hoặc CV theo protocol đã khóa.
@@ -87,7 +89,7 @@ Các kiểm tra còn mở là near-duplicate bằng perceptual hash/embedding, t
 7. Đưa output về cùng `claim_id`; module thiếu đầu vào trả `partial/unknown` thay vì tự suy diễn.
 8. Người duyệt xem bằng chứng, sửa field nếu cần và lưu quyết định cùng audit trail.
 
-### 6.3. Kết quả baseline chính
+### 7.3. Kết quả baseline chính
 
 - Tabular frozen test: XGBoost AP 0,559; Recall@10% 22,4%. Business rule AP 0,424; Recall@10% 16,3%.
 - CarDD: YOLOv8s final-test mask mAP50-95 0,5140 trên 419 ảnh.
@@ -97,9 +99,9 @@ Các kiểm tra còn mở là near-duplicate bằng perceptual hash/embedding, t
 
 **Bằng chứng:** `reports/RESULTS.md`, `reports/CARDD_BASELINE_V2_RESULTS.md`, `reports/DOCUMENT_BASELINE_VALIDATION_V1.md`, `reports/LAYOUTLMV3_FINAL_TEST_V1.md`.
 
-## 7. Model Selection Matrix và Build/Buy/API/RAG Justification
+## 8. Model Selection Matrix và Build/Buy/API/RAG Justification
 
-### 7.1. Model Selection Matrix
+### 8.1. Model Selection Matrix
 
 | Quyết định | Các phương án | Tiêu chí khóa trước | Kết quả | Quyết định |
 |---|---|---|---|---|
@@ -109,7 +111,7 @@ Các kiểm tra còn mở là near-duplicate bằng perceptual hash/embedding, t
 | Document classification | Rule/template, pretrained DiT | Macro-F1 trên validation độc lập và khả năng tái sử dụng | DiT macro-F1 0,9283 | Giữ DiT pretrained cho PoC |
 | OCR | OCR cloud/API, PaddleOCR local | Baseline chạy offline, đo CER/WER/latency trước khi cân nhắc mua | PaddleOCR đã chạy nhưng CER/WER và latency còn yếu | Giữ làm baseline; chưa chốt production engine |
 
-### 7.2. Build/Buy/API/RAG Justification
+### 8.2. Build/Buy/API/RAG Justification
 
 | Hướng | Quyết định hiện tại | Lý do |
 |---|---|---|
@@ -123,9 +125,9 @@ Kết luận lựa chọn hiện tại là **Conditional Go cho Technical PoC**.
 
 **Bằng chứng:** `reports/handoff/model_selection_matrix.md`, `reports/CARDD_MODEL_SELECTION_V1.md`, `reports/TABULAR_MODEL_SELECTION_REVIEW_2026-10-12.md`.
 
-## 8. Metrics v1
+## 9. Metrics v1
 
-### 8.1. Tabular risk — frozen test 200 hồ sơ, 49 Y
+### 9.1. Tabular risk — frozen test 200 hồ sơ, 49 Y
 
 | Metric | XGBoost v1 | Rule baseline | Diễn giải |
 |---|---:|---:|---|
@@ -141,7 +143,7 @@ Bootstrap 95%: AP 0,458–0,691; ROC-AUC 0,753–0,889; Recall@10% 12,2%–28,6%
 
 KPI Recall@10% ≥60% không khả thi trên dataset prevalence 24,7%: queue 10% có trần lý thuyết khoảng `10/24,7 = 40,5%`. Muốn recall 60% thì queue tối thiểu đã khoảng 14,8% ngay cả với ranking hoàn hảo. KPI phải được chốt lại theo prevalence và review capacity thực tế.
 
-### 8.2. Ảnh và chứng từ
+### 9.2. Ảnh và chứng từ
 
 | Module | Tập đánh giá | Kết quả v1 |
 |---|---|---|
@@ -153,13 +155,13 @@ KPI Recall@10% ≥60% không khả thi trên dataset prevalence 24,7%: queue 10%
 
 Ba lớp CarDD yếu trên final test là `crack` 0,0863, `dent` 0,2779 và `scratch` 0,2804. Các metric public không chứng minh hiệu quả trên hồ sơ bảo hiểm Việt Nam.
 
-### 8.3. Metric vận hành chưa thể kết luận
+### 9.3. Metric vận hành chưa thể kết luận
 
 STP, False Hold và Net Value chưa có ground truth nghiệp vụ, chi phí được phê duyệt hoặc validation production nên chưa báo cáo như kết quả đạt. Prototype chỉ trình bày risk ranking và module status; người duyệt vẫn chịu trách nhiệm quyết định.
 
 **Bằng chứng:** `reports/handoff/metrics_v1.md`, `reports/RESULTS.md`, `reports/CARDD_FINAL_TEST_V1.md`, `reports/DIT_INDEPENDENT_VALIDATION_V1.md`, `reports/LAYOUTLMV3_FINAL_TEST_V1.md`.
 
-## 9. Risk Register v2
+## 10. Risk Register v2
 
 | ID | Rủi ro | Mức | Biện pháp hiện tại | Trạng thái |
 |---|---|---|---|---|
@@ -183,25 +185,25 @@ Không có rủi ro nào được xem là “đã giải quyết” chỉ vì co
 
 **Bằng chứng:** `reports/handoff/risk_register_v2_additions.md`, `reports/MEDIA_AUTHENTICITY_V2_AND_EVIDENCE_GATE.md`, `docs/handbook/08_DEFINITION_OF_DONE.md`.
 
-## 10. Prompt/retrieval test set và hallucination/citation sơ bộ cho RAG/GenAI
+## 11. Prompt/retrieval test set và hallucination/citation sơ bộ cho RAG/GenAI
 
-### 10.1. Quyết định phạm vi
+### 11.1. Quyết định phạm vi
 
 **N/A trong baseline hiện tại.** Hệ thống không dùng RAG, chatbot hay external LLM để tạo risk score, OCR/KIE hoặc quyết định claim. Vì vậy không có prompt/retrieval test result để báo cáo; ghi N/A là đúng hơn tạo một kết quả giả.
 
 Reviewer UI chỉ hiển thị output có cấu trúc từ XGBoost, YOLO, DiT, PaddleOCR, LayoutLMv3, rules, NetworkX và media-authenticity. Điểm risk không được đổi thành câu “hồ sơ gian lận”, và model không tự từ chối hồ sơ.
 
-### 10.2. Protocol nếu nhóm mở RAG sau Evaluation v1
+### 11.2. Protocol nếu nhóm mở RAG sau Evaluation v1
 
 Tập test tối thiểu nên có bốn nhóm: câu hỏi có đúng một nguồn hỗ trợ; câu hỏi cần tổng hợp nhiều nguồn; câu hỏi nguồn mâu thuẫn; câu hỏi không có đáp án. Mỗi mẫu lưu câu hỏi, answer key, document/page/region hợp lệ, mệnh đề bắt buộc và mệnh đề cấm suy diễn.
 
 Các metric cần đo gồm retrieval Recall@K, citation precision/recall, groundedness theo từng mệnh đề, answer correctness và abstention accuracy. Hallucination được tính khi câu trả lời chứa mệnh đề không có nguồn hỗ trợ, thêm số/ngày/điều khoản không tồn tại hoặc biến tín hiệu model thành kết luận gian lận. Ngưỡng pass phải được khóa trước test; trường hợp không đủ nguồn phải trả “không đủ bằng chứng”.
 
-### 10.3. Kết luận ghi vào báo cáo
+### 11.3. Kết luận ghi vào báo cáo
 
 > RAG/GenAI chưa thuộc phạm vi baseline của Evaluation v1 nên prompt/retrieval test set và hallucination/citation evaluation được ghi N/A. Core inference không gọi LLM bên ngoài. Nếu bổ sung trợ lý hỏi đáp policy/SOP, nhóm sẽ xây test set có citation ground truth theo document/page/region, đo retrieval, groundedness, citation correctness và khả năng từ chối trả lời khi không đủ bằng chứng trước khi tích hợp vào sản phẩm.
 
-## 11. Kết luận chung cho các mục bổ sung
+## Kết luận chung cho các mục bổ sung
 
 Nhóm đã có Data + Baseline + Evaluation v1 ở mức nghiên cứu: audit phát hiện và sửa leakage thật; các model chính đã có metric tách theo validation/final test; XGBoost được chọn làm risk-ranking model; YOLOv8s và LayoutLMv3 được khóa theo rule đặt trước. Prototype đã nối core risk, consistency, relationship, evidence và audit trail trên cùng `claim_id`.
 
