@@ -4,12 +4,12 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 
 from src.registry import load_registry
 
-from .schemas import AnalyzeRequest, ClaimAnalysis, CorrectionRecord, CorrectionRequest, HealthResponse, ReviewRecord, ReviewRequest
+from .schemas import AnalyzeRequest, ClaimAnalysis, ClaimIntakeRecord, ClaimIntakeRequest, CorrectionRecord, CorrectionRequest, EvidenceUploadRecord, HealthResponse, ReviewRecord, ReviewRequest
 from .service import FixtureClaimService
 
 
@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[2]
 MODE = os.getenv("INSURANCE_API_MODE", "fixture")
 REGISTRY = load_registry(ROOT / "configs/model_registry.v1.yaml")
 if MODE == "fixture":
-    SERVICE = FixtureClaimService(ROOT / "prototype/fixtures/claim_analysis_demo.json")
+    SERVICE = FixtureClaimService(ROOT / "prototype/fixtures/claim_analysis_demo.json", ROOT / "runtime/claims")
 elif MODE == "live":
     from .live import LiveClaimService
 
@@ -41,6 +41,11 @@ def index() -> FileResponse:
     return FileResponse(ROOT / "prototype/insurance_review_console_v2.html")
 
 
+@app.get("/intake", include_in_schema=False)
+def intake_page() -> FileResponse:
+    return FileResponse(ROOT / "prototype/claim_intake.html")
+
+
 @app.get("/health", response_model=HealthResponse)
 def health() -> HealthResponse:
     return HealthResponse(mode=MODE, product_version=REGISTRY.product_version)
@@ -51,12 +56,39 @@ def version() -> dict:
     return REGISTRY.public_summary()
 
 
+@app.post("/claims/{claim_id}/intake", response_model=ClaimIntakeRecord, status_code=201)
+def intake(claim_id: str, request: ClaimIntakeRequest) -> ClaimIntakeRecord:
+    try:
+        return SERVICE.intake(claim_id, request)
+    except FileExistsError as error:
+        raise HTTPException(status_code=409, detail="claim_id already exists in the runtime claim store.") from error
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+
+
+@app.post("/claims/{claim_id}/evidence", response_model=EvidenceUploadRecord, status_code=201)
+async def upload_evidence(
+    claim_id: str,
+    kind: str = Form(...),
+    file: UploadFile = File(...),
+) -> EvidenceUploadRecord:
+    try:
+        content = await file.read(15 * 1024 * 1024 + 1)
+        return SERVICE.upload(claim_id, kind, file.filename or "upload", file.content_type, content)
+    except KeyError as error:
+        raise HTTPException(status_code=404, detail="Create claim intake before uploading evidence.") from error
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+
+
 @app.post("/claims/{claim_id}/analyze", response_model=ClaimAnalysis)
 def analyze(claim_id: str, request: AnalyzeRequest) -> ClaimAnalysis:
     try:
         return SERVICE.analyze(claim_id, request)
     except KeyError as error:
         raise HTTPException(status_code=404, detail="Claim is not available in the configured claim store.") from error
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
 
 
 @app.get("/claims/{claim_id}/analysis", response_model=ClaimAnalysis)

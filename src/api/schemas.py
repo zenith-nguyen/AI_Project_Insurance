@@ -14,6 +14,33 @@ class AnalyzeRequest(BaseModel):
     evidence_ids: list[str] = Field(default_factory=list)
 
 
+class ClaimIntakeRequest(BaseModel):
+    claim_amount: float | None = Field(default=None, ge=0)
+    incident_date: str | None = None
+    plate_number: str | None = None
+    scored_at: str | None = None
+    tabular_features: dict[str, Any] = Field(default_factory=dict)
+    required_evidence: list[str] = Field(default_factory=lambda: ["claim-intake", "vehicle_image", "claim_document"])
+
+
+class ClaimIntakeRecord(BaseModel):
+    claim_id: str
+    created_at: str
+    status: Literal["stored"] = "stored"
+
+
+class EvidenceUploadRecord(BaseModel):
+    claim_id: str
+    evidence_id: str
+    kind: Literal["image", "document"]
+    original_filename: str
+    stored_uri: str
+    content_type: str | None = None
+    size_bytes: int = Field(gt=0)
+    sha256: str
+    observed_at: str
+
+
 class Evidence(BaseModel):
     evidence_id: str
     kind: Literal["claim", "image", "document", "relationship"]

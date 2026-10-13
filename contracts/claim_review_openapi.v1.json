@@ -44,6 +44,104 @@
         }
       }
     },
+    "/claims/{claim_id}/intake": {
+      "post": {
+        "summary": "Intake",
+        "operationId": "intake_claims__claim_id__intake_post",
+        "parameters": [
+          {
+            "name": "claim_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Claim Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClaimIntakeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClaimIntakeRecord"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/claims/{claim_id}/evidence": {
+      "post": {
+        "summary": "Upload Evidence",
+        "operationId": "upload_evidence_claims__claim_id__evidence_post",
+        "parameters": [
+          {
+            "name": "claim_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Claim Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_evidence_claims__claim_id__evidence_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvidenceUploadRecord"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/claims/{claim_id}/analyze": {
       "post": {
         "summary": "Analyze",
@@ -280,6 +378,25 @@
         "type": "object",
         "title": "AnalyzeRequest"
       },
+      "Body_upload_evidence_claims__claim_id__evidence_post": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "file"
+        ],
+        "title": "Body_upload_evidence_claims__claim_id__evidence_post"
+      },
       "ClaimAnalysis": {
         "properties": {
           "schema_version": {
@@ -401,6 +518,93 @@
           "evidence_completeness"
         ],
         "title": "ClaimAnalysis"
+      },
+      "ClaimIntakeRecord": {
+        "properties": {
+          "claim_id": {
+            "type": "string",
+            "title": "Claim Id"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "status": {
+            "type": "string",
+            "const": "stored",
+            "title": "Status",
+            "default": "stored"
+          }
+        },
+        "type": "object",
+        "required": [
+          "claim_id",
+          "created_at"
+        ],
+        "title": "ClaimIntakeRecord"
+      },
+      "ClaimIntakeRequest": {
+        "properties": {
+          "claim_amount": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Claim Amount"
+          },
+          "incident_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Incident Date"
+          },
+          "plate_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plate Number"
+          },
+          "scored_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scored At"
+          },
+          "tabular_features": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Tabular Features"
+          },
+          "required_evidence": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Required Evidence"
+          }
+        },
+        "type": "object",
+        "title": "ClaimIntakeRequest"
       },
       "CorrectionRecord": {
         "properties": {
@@ -546,6 +750,70 @@
           "label"
         ],
         "title": "Evidence"
+      },
+      "EvidenceUploadRecord": {
+        "properties": {
+          "claim_id": {
+            "type": "string",
+            "title": "Claim Id"
+          },
+          "evidence_id": {
+            "type": "string",
+            "title": "Evidence Id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "image",
+              "document"
+            ],
+            "title": "Kind"
+          },
+          "original_filename": {
+            "type": "string",
+            "title": "Original Filename"
+          },
+          "stored_uri": {
+            "type": "string",
+            "title": "Stored Uri"
+          },
+          "content_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Type"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Size Bytes"
+          },
+          "sha256": {
+            "type": "string",
+            "title": "Sha256"
+          },
+          "observed_at": {
+            "type": "string",
+            "title": "Observed At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "claim_id",
+          "evidence_id",
+          "kind",
+          "original_filename",
+          "stored_uri",
+          "size_bytes",
+          "sha256",
+          "observed_at"
+        ],
+        "title": "EvidenceUploadRecord"
       },
       "HTTPValidationError": {
         "properties": {

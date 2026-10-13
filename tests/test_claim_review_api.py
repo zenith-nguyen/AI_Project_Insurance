@@ -1,4 +1,5 @@
 from fastapi.testclient import TestClient
+from uuid import uuid4
 
 from src.api.app import app
 
@@ -70,3 +71,20 @@ def test_review_requires_analysis_first():
         },
     )
     assert correction.status_code == 409
+
+
+def test_claim_intake_and_evidence_upload_contract():
+    claim_id = f"CLM-UPLOAD-{uuid4().hex[:8]}"
+    intake = client.post(
+        f"/claims/{claim_id}/intake",
+        json={"claim_amount": 12000000, "incident_date": "2026-10-13", "plate_number": "51A-12345"},
+    )
+    assert intake.status_code == 201
+    upload = client.post(
+        f"/claims/{claim_id}/evidence",
+        data={"kind": "image"},
+        files={"file": ("damage.png", b"\x89PNG\r\n\x1a\nfixture", "image/png")},
+    )
+    assert upload.status_code == 201
+    assert upload.json()["claim_id"] == claim_id
+    assert upload.json()["sha256"]

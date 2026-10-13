@@ -56,7 +56,8 @@ async function connectApi(){
   if(!location.protocol.startsWith('http')) return;
   try{
     const health=await fetch('/health').then(r=>r.json());
-    activeClaimId=health.mode==='live'?'CLM-GOLD-001':'CLM-2026-00418';
+    const requestedClaim=new URLSearchParams(location.search).get('claim_id');
+    activeClaimId=requestedClaim||(health.mode==='live'?'CLM-GOLD-001':'CLM-2026-00418');
     const response=await fetch(`/claims/${activeClaimId}/analyze`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});
     if(!response.ok) throw new Error(`Analyze failed: ${response.status}`);
     renderAnalysis(await response.json());

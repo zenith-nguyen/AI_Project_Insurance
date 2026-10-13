@@ -38,7 +38,7 @@ On a fresh clone, `setup_live.ps1` downloads the pinned research bundle from the
 powershell -ExecutionPolicy Bypass -File scripts/setup_live.ps1 -ArtifactRoot "D:\shared-model-artifacts"
 ```
 
-Then open Swagger at `http://127.0.0.1:8000/docs` and call `POST /claims/CLM-GOLD-001/analyze`. Reviews are persisted under `runtime/audit/` and stay outside Git.
+Then open the intake page at `http://127.0.0.1:8000/intake`, the workbench at `http://127.0.0.1:8000/`, or Swagger at `http://127.0.0.1:8000/docs`. Reviews and field corrections are persisted under `runtime/audit/`; uploaded claim evidence stays under `runtime/claims/`. Both remain outside Git.
 
 ## Current data and scope
 

@@ -6,7 +6,7 @@ import pytest
 pytest.importorskip("networkx")
 
 from src.api.live import LiveClaimService
-from src.api.schemas import AnalyzeRequest, CorrectionRequest, ReviewRequest
+from src.api.schemas import AnalyzeRequest, ClaimIntakeRequest, CorrectionRequest, ReviewRequest
 from src.registry import load_registry
 
 
@@ -18,6 +18,7 @@ def service(tmp_path: Path) -> LiveClaimService:
         ROOT,
         load_registry(ROOT / "configs/model_registry.v1.yaml"),
         tmp_path / "reviews.jsonl",
+        tmp_path / "claims",
     )
 
 
@@ -91,3 +92,24 @@ def test_all_golden_claim_expectations_are_satisfied(tmp_path):
         categories = {signal.category for signal in result.signals}
         assert result.human_review_required is expected["human_review_required"]
         assert categories.issuperset(expected["required_signal_categories"])
+
+
+def test_runtime_claim_can_be_intaken_uploaded_and_analyzed(tmp_path):
+    live = service(tmp_path)
+    golden = json.loads((ROOT / "data/golden/claims/CLM-GOLD-001/claim.json").read_text(encoding="utf-8"))
+    live.intake(
+        "CLM-RUNTIME-001",
+        ClaimIntakeRequest(
+            claim_amount=golden["claim_amount"],
+            incident_date=golden["incident_date"],
+            plate_number="51A-12345",
+            tabular_features=golden["tabular_features"],
+        ),
+    )
+    live.upload("CLM-RUNTIME-001", "image", "damage.png", "image/png", b"\x89PNG\r\n\x1a\nfixture")
+    live.upload("CLM-RUNTIME-001", "document", "estimate.pdf", "application/pdf", b"%PDF-1.4 fixture")
+
+    result = live.analyze("CLM-RUNTIME-001", AnalyzeRequest())
+    assert result.mode == "live"
+    assert result.evidence_completeness == 1.0
+    assert {item.kind for item in result.evidence}.issuperset({"claim", "image", "document"})

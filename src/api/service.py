@@ -7,16 +7,24 @@ from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
 
-from .schemas import AnalyzeRequest, ClaimAnalysis, CorrectionRecord, CorrectionRequest, ReviewRecord, ReviewRequest
+from .schemas import AnalyzeRequest, ClaimAnalysis, ClaimIntakeRecord, ClaimIntakeRequest, CorrectionRecord, CorrectionRequest, EvidenceUploadRecord, ReviewRecord, ReviewRequest
+from .storage import RuntimeClaimStore
 
 
 class FixtureClaimService:
-    def __init__(self, fixture_path: str | Path) -> None:
+    def __init__(self, fixture_path: str | Path, runtime_claim_root: str | Path | None = None) -> None:
         self.fixture_path = Path(fixture_path)
         self.template = json.loads(self.fixture_path.read_text(encoding="utf-8"))
         self.analyses: dict[str, ClaimAnalysis] = {}
         self.reviews: dict[str, list[ReviewRecord]] = {}
         self.corrections: dict[str, list[CorrectionRecord]] = {}
+        self.runtime_store = RuntimeClaimStore(runtime_claim_root or self.fixture_path.parent / "runtime_claims")
+
+    def intake(self, claim_id: str, request: ClaimIntakeRequest) -> ClaimIntakeRecord:
+        return self.runtime_store.create(claim_id, request)
+
+    def upload(self, claim_id: str, kind: str, filename: str, content_type: str | None, content: bytes) -> EvidenceUploadRecord:
+        return self.runtime_store.save_evidence(claim_id, kind, filename, content_type, content)
 
     def analyze(self, claim_id: str, request: AnalyzeRequest) -> ClaimAnalysis:
         payload = copy.deepcopy(self.template)

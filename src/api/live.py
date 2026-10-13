@@ -16,23 +16,29 @@ from src.graph.claim_graph import build_graph, claim_features
 from src.integration.consistency import check_amount, check_document_date, check_plate
 from src.registry import ModelRegistry
 
-from .schemas import AnalyzeRequest, ClaimAnalysis, CorrectionRecord, CorrectionRequest, Evidence, ReviewRecord, ReviewRequest, Signal
+from .schemas import AnalyzeRequest, ClaimAnalysis, ClaimIntakeRecord, ClaimIntakeRequest, CorrectionRecord, CorrectionRequest, Evidence, EvidenceUploadRecord, ReviewRecord, ReviewRequest, Signal
+from .storage import RuntimeClaimStore
 
 
-class GoldenClaimRepository:
-    def __init__(self, root: str | Path) -> None:
-        self.root = Path(root)
+class ClaimRepository:
+    def __init__(self, golden_root: str | Path, runtime_root: str | Path) -> None:
+        self.golden_root = Path(golden_root)
+        self.runtime_root = Path(runtime_root)
 
     def load(self, claim_id: str) -> dict:
-        claim_root = self.root / claim_id
+        candidates = [self.runtime_root / claim_id, self.golden_root / claim_id]
+        claim_root = next((path for path in candidates if (path / "claim.json").is_file()), candidates[-1])
         claim_file = claim_root / "claim.json"
         if not claim_file.is_file():
             raise KeyError(claim_id)
         documents = [json.loads(path.read_text(encoding="utf-8")) for path in sorted((claim_root / "documents").glob("*.json"))]
+        image_manifest = claim_root / "vehicle_images/manifest.json"
+        evidence_manifest = claim_root / "evidence_manifest.json"
         return {
             "claim": json.loads(claim_file.read_text(encoding="utf-8")),
             "documents": documents,
-            "images": json.loads((claim_root / "vehicle_images/manifest.json").read_text(encoding="utf-8")),
+            "images": json.loads(image_manifest.read_text(encoding="utf-8")) if image_manifest.is_file() else {"images": []},
+            "uploaded_evidence": json.loads(evidence_manifest.read_text(encoding="utf-8")) if evidence_manifest.is_file() else [],
             "graph": json.loads((claim_root / "entities.json").read_text(encoding="utf-8")),
         }
 
@@ -74,10 +80,12 @@ class JsonlAuditStore:
 
 
 class LiveClaimService:
-    def __init__(self, root: Path, registry: ModelRegistry, audit_log: str | Path) -> None:
+    def __init__(self, root: Path, registry: ModelRegistry, audit_log: str | Path, runtime_claim_root: str | Path | None = None) -> None:
         self.root = root
         self.registry = registry
-        self.repository = GoldenClaimRepository(root / "data/golden/claims")
+        runtime_claims = Path(runtime_claim_root) if runtime_claim_root else root / "runtime/claims"
+        self.repository = ClaimRepository(root / "data/golden/claims", runtime_claims)
+        self.runtime_store = RuntimeClaimStore(runtime_claims)
         risk = registry.modules["tabular_risk"]
         risk_artifact = root / risk.artifact_uri
         if sha256(risk_artifact) != risk.artifact_hash:
@@ -85,6 +93,12 @@ class LiveClaimService:
         self.risk = TabularRiskAdapter(risk_artifact)
         self.store = JsonlAuditStore(audit_log)
         self.analyses: dict[str, ClaimAnalysis] = {}
+
+    def intake(self, claim_id: str, request: ClaimIntakeRequest) -> ClaimIntakeRecord:
+        return self.runtime_store.create(claim_id, request)
+
+    def upload(self, claim_id: str, kind: str, filename: str, content_type: str | None, content: bytes) -> EvidenceUploadRecord:
+        return self.runtime_store.save_evidence(claim_id, kind, filename, content_type, content)
 
     @staticmethod
     def _fields(document: dict) -> list[ExtractedField]:
@@ -100,6 +114,12 @@ class LiveClaimService:
         signals: list[Signal] = []
         evidence = [Evidence(evidence_id="claim-intake", kind="claim", label="Golden claim intake")]
         extracted: dict[str, object] = {"claim_amount": claim_amount, "incident_date": incident_date, "plate_number": plate_number}
+
+        for item in payload.get("uploaded_evidence", []):
+            evidence.append(Evidence(
+                evidence_id=item["evidence_id"], kind=item["kind"], label=item["original_filename"],
+                source_uri=item["stored_uri"], observed_at=item["observed_at"],
+            ))
 
         for document in documents:
             document_id = document["document_id"]
@@ -143,6 +163,10 @@ class LiveClaimService:
             for item in payload["images"].get("images", [])
             if item.get("status") == "available"
         }
+        if any(item.kind == "image" for item in evidence):
+            present.add("vehicle_image")
+        if any(item.kind == "document" for item in evidence):
+            present.add("claim_document")
         missing = sorted(required - present)
         completeness = (len(required) - len(missing)) / len(required) if required else 1.0
         priority = "high" if any(signal.severity == "high" for signal in signals) else ("review" if signals else "normal")
