@@ -18,6 +18,8 @@ def test_browser_api_client_is_served_by_the_backend():
     assert workbench.status_code == 200
     assert 'src="/workbench.js"' in workbench.text
     assert "Quyết định của người duyệt" in workbench.text
+    assert "DIỄN GIẢI NGHIỆP VỤ" in workbench.text
+    assert "Phát hiện → ý nghĩa → hành động" in workbench.text
     script = client.get("/workbench.js")
     assert script.status_code == 200
     assert 'import {ClaimReviewClient, ClaimApiError} from "/api-client.js"' in script.text
