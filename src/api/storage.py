@@ -51,19 +51,28 @@ def validate_claim_id(claim_id: str) -> str:
     return claim_id
 
 
-def _image_fingerprints(content: bytes) -> tuple[str, list[int]]:
-    """Small robust fingerprint for reuse search; it is not an AI detector."""
-    with Image.open(io.BytesIO(content)) as image:
-        rgb = image.convert("RGB").resize((64, 64), Image.Resampling.LANCZOS)
-        color_signature = [round(value) for value in ImageStat.Stat(rgb).mean]
-        gray = rgb.convert("L").resize((9, 8), Image.Resampling.LANCZOS)
-        pixels = list(gray.get_flattened_data())
+def _difference_hash(image: Image.Image) -> str:
+    gray = image.convert("L").resize((9, 8), Image.Resampling.LANCZOS)
+    pixels = list(gray.get_flattened_data())
     bits = []
     for row in range(8):
         start = row * 9
         bits.extend(pixels[start + column] > pixels[start + column + 1] for column in range(8))
     value = sum(int(bit) << index for index, bit in enumerate(bits))
-    return f"{value:016x}", color_signature
+    return f"{value:016x}"
+
+
+def _image_fingerprints(content: bytes) -> tuple[str, list[str], list[str], list[int]]:
+    """Robust hashes for reuse search; these are not AI-generation detectors."""
+    with Image.open(io.BytesIO(content)) as image:
+        rgb = image.convert("RGB")
+        color_signature = [round(value) for value in ImageStat.Stat(rgb).mean]
+        rotations = [_difference_hash(rgb.rotate(angle, expand=True)) for angle in (0, 90, 180, 270)]
+        width, height = rgb.size
+        margin_x, margin_y = round(width * 0.08), round(height * 0.08)
+        center = rgb.crop((margin_x, margin_y, width - margin_x, height - margin_y))
+        center_rotations = [_difference_hash(center.rotate(angle, expand=True)) for angle in (0, 90, 180, 270)]
+    return rotations[0], rotations, center_rotations, color_signature
 
 
 def _hamming(left: str, right: str) -> int:
@@ -93,6 +102,7 @@ class RuntimeClaimStore:
             "incident_date": request.incident_date,
             "plate_number": request.plate_number,
             "tabular_features": request.tabular_features,
+            "relationship_entities": request.relationship_entities,
             "required_evidence": request.required_evidence,
         }
         root.mkdir(parents=True, exist_ok=False)
@@ -186,7 +196,10 @@ class RuntimeClaimStore:
             except Exception as error:
                 raise ValueError("Uploaded image cannot be decoded safely.") from error
         digest = hashlib.sha256(content).hexdigest()
-        perceptual_hash, color_signature = _image_fingerprints(content) if kind == "image" else (None, None)
+        if kind == "image":
+            perceptual_hash, perceptual_hashes, center_crop_hashes, color_signature = _image_fingerprints(content)
+        else:
+            perceptual_hash, perceptual_hashes, center_crop_hashes, color_signature = None, None, None, None
         evidence_id = f"EV-{uuid4().hex[:12]}"
         folder = root / ("vehicle_images" if kind == "image" else "documents")
         stored_name = f"{evidence_id}{extension}"
@@ -203,6 +216,8 @@ class RuntimeClaimStore:
             "size_bytes": len(content),
             "sha256": digest,
             "perceptual_hash": perceptual_hash,
+            "perceptual_hashes": perceptual_hashes,
+            "center_crop_hashes": center_crop_hashes,
             "color_signature": color_signature,
             "capture_session_id": capture_session_id,
             "challenge_step": challenge_step,
@@ -220,7 +235,7 @@ class RuntimeClaimStore:
             capture_path.write_text(json.dumps(capture_payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         return EvidenceUploadRecord(claim_id=claim_id, **item)
 
-    def find_image_reuse(self, claim_id: str, evidence_id: str, *, max_distance: int = 4) -> list[dict]:
+    def find_image_reuse(self, claim_id: str, evidence_id: str, *, max_distance: int = 8) -> list[dict]:
         """Find exact and visually similar runtime images from other claims."""
         own_manifest = json.loads((self.claim_root(claim_id) / "evidence_manifest.json").read_text(encoding="utf-8"))
         target = next((row for row in own_manifest if row.get("evidence_id") == evidence_id), None)
@@ -235,20 +250,33 @@ class RuntimeClaimStore:
                 if row.get("kind") != "image":
                     continue
                 exact = row.get("sha256") == target.get("sha256")
-                distance = None
-                if target.get("perceptual_hash") and row.get("perceptual_hash"):
-                    distance = _hamming(target["perceptual_hash"], row["perceptual_hash"])
+                target_hashes = target.get("perceptual_hashes") or [target.get("perceptual_hash")]
+                row_hashes = row.get("perceptual_hashes") or [row.get("perceptual_hash")]
+                target_hashes = [value for value in target_hashes if value]
+                row_hashes = [value for value in row_hashes if value]
+                distances = [_hamming(left, right) for left in target_hashes for right in row_hashes]
+                distance = min(distances) if distances else None
+                target_crops = [value for value in target.get("center_crop_hashes") or [] if value]
+                row_crops = [value for value in row.get("center_crop_hashes") or [] if value]
+                crop_distances = [_hamming(left, right) for left in target_crops for right in row_crops]
+                crop_distance = min(crop_distances) if crop_distances else None
                 target_color, row_color = target.get("color_signature"), row.get("color_signature")
                 color_distance = None
                 if target_color and row_color:
                     color_distance = sum((int(left) - int(right)) ** 2 for left, right in zip(target_color, row_color)) ** 0.5
-                perceptual_match = distance is not None and distance <= max_distance and color_distance is not None and color_distance <= 60
+                perceptual_match = (
+                    color_distance is not None and color_distance <= 60 and (
+                        (distance is not None and distance <= max_distance) or
+                        (crop_distance is not None and crop_distance <= max_distance)
+                    )
+                )
                 if exact or perceptual_match:
                     matches.append({
                         "claim_id": other_claim,
                         "evidence_id": row.get("evidence_id"),
-                        "match_type": "exact" if exact else "perceptual",
+                        "match_type": "exact" if exact else "near_duplicate",
                         "hamming_distance": distance,
+                        "center_crop_hamming_distance": crop_distance,
                         "color_distance": round(color_distance, 3) if color_distance is not None else None,
                     })
         return sorted(matches, key=lambda item: (item["match_type"] != "exact", item.get("hamming_distance") or 0))

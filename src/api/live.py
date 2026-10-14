@@ -1,8 +1,10 @@
 """Live orchestration for golden claims and locally registered model artifacts."""
 from __future__ import annotations
 
+import hashlib
 import json
 import os
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from threading import Lock
@@ -17,7 +19,7 @@ from src.features.preprocessing import features
 from src.graph.claim_graph import build_graph, claim_features
 from src.integration.consistency import check_amount, check_document_date, check_plate
 from src.image.inference import YOLODamageAdapter
-from src.media_authenticity import MediaAuthenticityAnalyzer
+from src.media_authenticity import CalibratedImageForensics, MediaAuthenticityAnalyzer
 from src.registry import ModelRegistry
 
 from .schemas import AnalyzeRequest, CaptureSessionRecord, ClaimAnalysis, ClaimIntakeRecord, ClaimIntakeRequest, CorrectionRecord, CorrectionRequest, Evidence, EvidenceUploadRecord, MediaAuthenticityReport, ReviewRecord, ReviewRequest, Signal
@@ -38,16 +40,52 @@ class ClaimRepository:
         documents = [json.loads(path.read_text(encoding="utf-8")) for path in sorted((claim_root / "documents").glob("*.json"))]
         image_manifest = claim_root / "vehicle_images/manifest.json"
         evidence_manifest = claim_root / "evidence_manifest.json"
+        claim = json.loads(claim_file.read_text(encoding="utf-8"))
+        graph_path = claim_root / "entities.json"
+        graph = json.loads(graph_path.read_text(encoding="utf-8")) if graph_path.is_file() else None
+        if claim_root.parent == self.runtime_root and (not graph or graph.get("data_status") == "not_provided"):
+            graph = self._runtime_relationship_graph(claim_id, claim)
         return {
-            "claim": json.loads(claim_file.read_text(encoding="utf-8")),
+            "claim": claim,
             "documents": documents,
             "images": json.loads(image_manifest.read_text(encoding="utf-8")) if image_manifest.is_file() else {"images": []},
             "uploaded_evidence": json.loads(evidence_manifest.read_text(encoding="utf-8")) if evidence_manifest.is_file() else [],
-            "graph": json.loads((claim_root / "entities.json").read_text(encoding="utf-8")) if (claim_root / "entities.json").is_file() else {
-                "data_status": "not_provided", "scored_at": json.loads(claim_file.read_text(encoding="utf-8")).get("scored_at"),
-                "known_risky_claims": [], "nodes": [], "edges": [],
-            },
+            "graph": graph or {"data_status": "not_provided", "scored_at": claim.get("scored_at"), "known_risky_claims": [], "nodes": [], "edges": []},
         }
+
+    @staticmethod
+    def _relationship_values(claim: dict) -> dict[str, str]:
+        values = {key: value for key, value in claim.get("relationship_entities", {}).items() if value}
+        if claim.get("plate_number"):
+            values.setdefault("vehicle_plate", claim["plate_number"])
+        return {key: re.sub(r"[^A-Z0-9]", "", str(value).upper()) for key, value in values.items() if value}
+
+    def _runtime_relationship_graph(self, claim_id: str, claim: dict) -> dict:
+        target_values = self._relationship_values(claim)
+        scored_at = claim.get("scored_at") or claim.get("created_at")
+        if not target_values:
+            return {"data_status": "not_provided", "scored_at": scored_at, "known_risky_claims": [], "nodes": [], "edges": []}
+        target_keys = {(kind, value) for kind, value in target_values.items()}
+        nodes: dict[str, dict] = {}
+        edges: list[dict] = []
+        for candidate_file in sorted(self.runtime_root.glob("*/claim.json")):
+            candidate = json.loads(candidate_file.read_text(encoding="utf-8"))
+            available_at = candidate.get("created_at") or candidate.get("scored_at")
+            if not available_at or datetime.fromisoformat(available_at.replace("Z", "+00:00")) > datetime.fromisoformat(scored_at.replace("Z", "+00:00")):
+                continue
+            candidate_id = candidate.get("claim_id")
+            shared = set(self._relationship_values(candidate).items()) & target_keys
+            if candidate_id == claim_id:
+                shared = target_keys
+            if not shared:
+                continue
+            nodes[candidate_id] = {"id": candidate_id, "entity_type": "claim", "available_at": available_at}
+            for kind, value in sorted(shared):
+                digest = hashlib.sha256(f"{kind}:{value}".encode()).hexdigest()[:16]
+                entity_id = f"entity:{kind}:{digest}"
+                nodes[entity_id] = {"id": entity_id, "entity_type": kind, "available_at": available_at}
+                edges.append({"source": candidate_id, "target": entity_id, "event_time": available_at, "relation": "reported_entity"})
+        return {"data_status": "provided", "scored_at": scored_at, "known_risky_claims": [], "nodes": list(nodes.values()), "edges": edges}
 
 
 class TabularRiskAdapter:
@@ -105,7 +143,16 @@ class LiveClaimService:
         if sha256(risk_artifact) != risk.artifact_hash:
             raise RuntimeError("Registered XGBoost artifact hash does not match the local bundle.")
         self.risk = TabularRiskAdapter(risk_artifact)
-        self.media_authenticity = MediaAuthenticityAnalyzer()
+        forensic_runner = None
+        forensic_checkpoint = os.getenv("INSURANCE_FORENSIC_CHECKPOINT")
+        forensic_calibration = os.getenv("INSURANCE_FORENSIC_CALIBRATION")
+        if forensic_checkpoint or forensic_calibration:
+            if not forensic_checkpoint or not forensic_calibration:
+                raise RuntimeError("Set both INSURANCE_FORENSIC_CHECKPOINT and INSURANCE_FORENSIC_CALIBRATION.")
+            forensic_runner = CalibratedImageForensics(
+                forensic_checkpoint, forensic_calibration, device=os.getenv("INSURANCE_FORENSIC_DEVICE"),
+            )
+        self.media_authenticity = MediaAuthenticityAnalyzer(forensic_runner=forensic_runner)
         self.damage = None
         yolo_weights = os.getenv("INSURANCE_YOLO_WEIGHTS")
         if yolo_weights:
@@ -170,6 +217,7 @@ class LiveClaimService:
                 "exiftool": bool(self.media_authenticity.exiftool),
                 "c2patool": bool(self.media_authenticity.c2patool),
                 "synthid": False,
+                "pixel_forensics": bool(self.media_authenticity.forensic_runner),
             },
             "damage_segmentation": {
                 "active": self.damage is not None,
@@ -326,6 +374,17 @@ class LiveClaimService:
         if graph_available:
             graph = build_graph(graph_payload["nodes"], graph_payload["edges"], graph_payload["scored_at"])
             graph_values = claim_features(graph, claim_id, set(graph_payload.get("known_risky_claims", [])))
+            neighbor_entities = list(graph.neighbors(claim_id))
+            graph_values["shared_entity_types"] = sorted({
+                str(graph.nodes[entity].get("entity_type", "unknown"))
+                for entity in neighbor_entities if graph.degree(entity) > 1
+            })
+            graph_values["related_claim_ids"] = sorted({
+                str(node)
+                for entity in neighbor_entities
+                for node in graph.neighbors(entity)
+                if node != claim_id and graph.nodes[node].get("entity_type") == "claim"
+            })
             graph_values["data_status"] = "provided"
             module_status["relationships"] = {"status": "completed", "reason": None}
             evidence.append(Evidence(evidence_id="relationship-graph", kind="relationship", label="Point-in-time relationship graph"))

@@ -3,7 +3,7 @@ from io import BytesIO
 from pathlib import Path
 
 import pytest
-from PIL import Image
+from PIL import Image, ImageDraw, PngImagePlugin
 
 pytest.importorskip("networkx")
 
@@ -40,7 +40,7 @@ def test_golden_claim_runs_real_tabular_rules_and_graph(tmp_path):
         "tabular_risk": "tabular_v1",
         "consistency": "consistency_v1",
         "relationships": "point_in_time_v1",
-        "media_authenticity": "media_authenticity_v2",
+        "media_authenticity": "media_authenticity_v3",
     }
     assert any("YOLO was not invoked" in warning for warning in result.warnings)
     assert result.module_status["document_pipeline"]["status"] == "completed_precomputed"
@@ -206,10 +206,10 @@ def test_verified_ai_provenance_becomes_claim_signal(tmp_path):
     result = live.analyze("CLM-RUNTIME-AI", AnalyzeRequest())
     signal = next(item for item in result.signals if item.category == "authenticity")
     assert signal.severity == "high"
-    assert signal.model_version == "media_authenticity_v2"
+    assert signal.model_version == "media_authenticity_v3"
 
 
-def test_missing_documents_and_relationships_keep_tabular_score_but_mark_partial(tmp_path):
+def test_missing_documents_keep_tabular_score_and_plate_graph_has_no_shared_entity(tmp_path):
     live = service(tmp_path)
     golden = json.loads((ROOT / "data/golden/claims/CLM-GOLD-001/claim.json").read_text(encoding="utf-8"))
     live.intake(
@@ -226,8 +226,10 @@ def test_missing_documents_and_relationships_keep_tabular_score_but_mark_partial
     assert result.research_risk_score is not None
     assert result.module_status["tabular_risk"]["status"] == "completed"
     assert result.module_status["document_pipeline"]["status"] == "skipped_missing_input"
-    assert result.module_status["relationships"]["status"] == "skipped_missing_input"
-    assert result.graph_features == {"data_status": "not_provided"}
+    assert result.module_status["relationships"]["status"] == "completed"
+    assert result.graph_features["data_status"] == "provided"
+    assert result.graph_features["shared_entity_count"] == 0
+    assert result.graph_features["two_hop_claim_count"] == 0
 
 
 def test_missing_tabular_features_blocks_score_without_crashing_other_modules(tmp_path):
@@ -265,3 +267,64 @@ def test_cross_claim_exact_image_reuse_is_detected_automatically(tmp_path):
     first_id = json.loads((tmp_path / "claims/CLM-REUSE-001/evidence_manifest.json").read_text(encoding="utf-8"))[0]["evidence_id"]
     refreshed_first = live.authenticity("CLM-REUSE-001", first_id)
     assert refreshed_first.image_info["cross_claim_matches"][0]["claim_id"] == "CLM-REUSE-002"
+
+
+def test_resized_and_recompressed_image_is_detected_as_near_duplicate(tmp_path):
+    live = service(tmp_path)
+    golden = json.loads((ROOT / "data/golden/claims/CLM-GOLD-001/claim.json").read_text(encoding="utf-8"))
+    request = ClaimIntakeRequest(tabular_features=golden["tabular_features"])
+    live.intake("CLM-NEAR-001", request)
+    live.intake("CLM-NEAR-002", request)
+    base = Image.new("RGB", (160, 120), "white")
+    draw = ImageDraw.Draw(base)
+    draw.rectangle((12, 18, 86, 94), fill=(22, 95, 150))
+    draw.ellipse((92, 25, 148, 82), fill=(210, 75, 50))
+    first = BytesIO()
+    base.save(first, format="JPEG", quality=95)
+    second = BytesIO()
+    base.resize((112, 84), Image.Resampling.LANCZOS).save(second, format="JPEG", quality=45)
+    live.upload("CLM-NEAR-001", "image", "original.jpg", "image/jpeg", first.getvalue())
+    uploaded = live.upload("CLM-NEAR-002", "image", "social-copy.jpg", "image/jpeg", second.getvalue())
+
+    report = live.authenticity("CLM-NEAR-002", uploaded.evidence_id)
+
+    match = report.image_info["cross_claim_matches"][0]
+    assert match["claim_id"] == "CLM-NEAR-001"
+    assert match["match_type"] == "near_duplicate"
+
+
+def test_declared_ai_and_editing_software_metadata_are_reported(tmp_path):
+    live = service(tmp_path)
+    golden = json.loads((ROOT / "data/golden/claims/CLM-GOLD-001/claim.json").read_text(encoding="utf-8"))
+    live.intake("CLM-META-001", ClaimIntakeRequest(tabular_features=golden["tabular_features"]))
+    image = BytesIO()
+    metadata = PngImagePlugin.PngInfo()
+    metadata.add_text("description", "AI generated with OpenAI image; edited with Adobe Photoshop")
+    Image.new("RGB", (32, 32), (30, 70, 110)).save(image, format="PNG", pnginfo=metadata)
+    uploaded = live.upload("CLM-META-001", "image", "declared-ai.png", "image/png", image.getvalue())
+
+    report = live.authenticity("CLM-META-001", uploaded.evidence_id)
+    codes = {finding.code for finding in report.findings}
+
+    assert "ai_metadata_marker_1" in codes
+    assert "editing_software_marker_1" in codes
+    assert report.verdict == "review"
+
+
+def test_relationship_graph_matches_prior_claims_by_hashed_entities(tmp_path):
+    live = service(tmp_path)
+    golden = json.loads((ROOT / "data/golden/claims/CLM-GOLD-001/claim.json").read_text(encoding="utf-8"))
+    common = {"contact_phone": "0909 000 111", "repair_shop": "GARAGE-DEMO-01"}
+    live.intake("CLM-LINK-001", ClaimIntakeRequest(
+        plate_number="51A-111.11", relationship_entities=common, tabular_features=golden["tabular_features"],
+    ))
+    live.intake("CLM-LINK-002", ClaimIntakeRequest(
+        plate_number="51A-222.22", relationship_entities=common, tabular_features=golden["tabular_features"],
+    ))
+
+    result = live.analyze("CLM-LINK-002", AnalyzeRequest())
+
+    assert result.module_status["relationships"]["status"] == "completed"
+    assert result.graph_features["shared_entity_count"] == 2
+    assert result.graph_features["two_hop_claim_count"] == 1
+    assert any(signal.category == "relationship" for signal in result.signals)

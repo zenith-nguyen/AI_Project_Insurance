@@ -156,16 +156,21 @@ function authenticitySummary(report) {
   if(!report) return {verdict:"Chưa kiểm tra",basis:"Chưa có kết quả phân tích nguồn gốc ảnh.",action:"Chạy kiểm tra trên file ảnh gốc."};
   const detected=(report.findings||[]).filter(item=>item.outcome==="detected");
   const ai=detected.filter(item=>item.code.startsWith("ai_metadata_marker")||item.code==="c2pa_ai_assertion_present");
+  const edited=detected.filter(item=>item.code.startsWith("editing_software_marker"));
+  const forensic=detected.filter(item=>item.code.startsWith("forensic_model_"));
   const reuse=detected.find(item=>item.code==="cross_claim_image_reuse");
   const provenanceProblem=detected.find(item=>item.code==="c2pa_validation_problem");
-  if(ai.length) return {verdict:"Có dấu hiệu AI được khai báo",basis:ai.map(item=>item.explanation).join(" "),action:"Kiểm tra Content Credentials/metadata và chính sách chấp nhận ảnh của doanh nghiệp."};
+  const combinedBasis=detected.map(item=>item.explanation).join(" ");
+  if(ai.length) return {verdict:"Có dấu hiệu AI được khai báo",basis:combinedBasis,action:"Kiểm tra Content Credentials/metadata, đối chiếu hồ sơ liên quan và yêu cầu file camera gốc nếu quy trình cần."};
   if(provenanceProblem) return {verdict:"Nguồn gốc ký số có vấn đề",basis:provenanceProblem.explanation,action:"Kiểm tra chữ ký, lịch sử chỉnh sửa và yêu cầu file gốc."};
   if(reuse) {
     const matches=report.image_info?.cross_claim_matches||[];
     const exact=matches.filter(item=>item.match_type==="exact").length;
     const claims=[...new Set(matches.map(item=>item.claim_id).filter(Boolean))];
-    return {verdict:"Ảnh đã xuất hiện ở hồ sơ khác",basis:`Tìm thấy ${matches.length} kết quả trùng${exact?`, gồm ${exact} bản trùng byte`:""}${claims.length?`. Hồ sơ liên quan: ${claims.join(", ")}`:""}. Đây là dấu hiệu tái sử dụng bằng chứng, chưa phải kết luận gian lận.`,action:"Mở hồ sơ trùng và yêu cầu ảnh chụp mới có hướng dẫn nếu cần."};
+    return {verdict:"Ảnh đã xuất hiện ở hồ sơ khác",basis:`Tìm thấy ${matches.length} kết quả trùng${exact?`, gồm ${exact} bản trùng byte`:""}${claims.length?`. Hồ sơ liên quan: ${claims.join(", ")}`:""}. ${combinedBasis} Đây là dấu hiệu tái sử dụng bằng chứng, chưa phải kết luận gian lận.`,action:"Mở hồ sơ trùng và yêu cầu ảnh chụp mới có hướng dẫn nếu cần."};
   }
+  if(forensic.length) return {verdict:"Pixel forensic đề nghị rà soát",basis:combinedBasis,action:"Xem đây là tín hiệu sàng lọc; đối chiếu file gốc, Content Credentials, chuỗi tiếp nhận và ảnh chụp mới."};
+  if(edited.length) return {verdict:"Metadata khai báo phần mềm chỉnh sửa",basis:`${combinedBasis} Dấu vết này chưa cho biết vùng nào đã thay đổi.`,action:"Yêu cầu file camera gốc hoặc ảnh chụp mới có hướng dẫn; đối chiếu hash và hồ sơ liên quan."};
   return {verdict:"Chưa đủ bằng chứng xác định ảnh AI",basis:"Không tìm thấy marker AI đã xác minh. Metadata hoặc watermark có thể bị xóa khi ảnh được gửi qua ứng dụng khác.",action:"Không kết luận thật/giả. Dùng file gốc, chụp có hướng dẫn và đối chiếu các bằng chứng khác."};
 }
 
@@ -277,6 +282,10 @@ function renderGraph(a) {
   [["shared_entity_count","Thực thể dùng chung"],["two_hop_claim_count","Hồ sơ trong 2 bước liên kết"],["connected_component_size","Quy mô cụm liên kết"],["graph_degree","Số liên kết trực tiếp"]].forEach(([key,label])=>{
     const tile=document.createElement("div");tile.className="graph-metric";const number=document.createElement("strong");number.textContent=formatNumber(graph[key]);const name=document.createElement("span");name.textContent=label;tile.append(number,name);box.append(tile);
   });
+  const related=graph.related_claim_ids||[], types=graph.shared_entity_types||[];
+  if(related.length)addResult(box,"Hồ sơ được hệ thống đối chiếu",related.join(", "));
+  if(types.length)addResult(box,"Loại thông tin trùng",types.map(type=>({contact_phone:"Số điện thoại",repair_shop:"Xưởng sửa chữa",vehicle_plate:"Biển số xe"}[type]||type)).join(", "));
+  if(!related.length)addResult(box,"Kết quả đối chiếu","Chưa thấy hồ sơ trước đó dùng chung biển số, số điện thoại hoặc xưởng sửa chữa đã nhập.");
 }
 
 async function renderEvents() {

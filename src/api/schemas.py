@@ -20,6 +20,7 @@ class ClaimIntakeRequest(BaseModel):
     plate_number: str | None = None
     scored_at: str | None = None
     tabular_features: dict[str, Any] = Field(default_factory=dict)
+    relationship_entities: dict[str, str] = Field(default_factory=dict)
     required_evidence: list[str] = Field(default_factory=lambda: ["claim-intake", "vehicle_image", "claim_document"])
 
 
@@ -55,6 +56,8 @@ class EvidenceUploadRecord(BaseModel):
     size_bytes: int = Field(gt=0)
     sha256: str
     perceptual_hash: str | None = None
+    perceptual_hashes: list[str] | None = None
+    center_crop_hashes: list[str] | None = None
     color_signature: list[int] | None = None
     capture_session_id: str | None = None
     challenge_step: int | None = None

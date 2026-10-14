@@ -1,0 +1,12 @@
+{
+  "model_name": "replace-with-validated-checkpoint",
+  "model_version": "candidate-v1",
+  "positive_label": "ai_generated",
+  "threshold_review": 0.8,
+  "threshold_high": 0.95,
+  "benchmark_id": "insurance-media-authenticity-v1",
+  "domain": "Vietnam motor insurance evidence",
+  "calibrated": false,
+  "validated_for_insurance": false,
+  "notes": "Set both booleans true only after the locked domain benchmark passes."
+}

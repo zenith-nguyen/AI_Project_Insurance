@@ -31,6 +31,16 @@ AI_MARKERS = {
     "ai generated": "Metadata declares AI-generated content.",
 }
 
+EDITING_MARKERS = {
+    "adobe photoshop": "Metadata names Adobe Photoshop as editing software.",
+    "adobe lightroom": "Metadata names Adobe Lightroom as editing software.",
+    "gimp": "Metadata names GIMP as editing software.",
+    "snapseed": "Metadata names Snapseed as editing software.",
+    "picsart": "Metadata names PicsArt as editing software.",
+    "canva": "Metadata names Canva as editing software.",
+    "luminar": "Metadata names Luminar as editing software.",
+}
+
 
 def _flatten(value: Any) -> str:
     if isinstance(value, dict):
@@ -43,7 +53,7 @@ def _flatten(value: Any) -> str:
 class MediaAuthenticityAnalyzer:
     """Collect deterministic metadata and optional signed-provenance evidence."""
 
-    version = "media_authenticity_v2"
+    version = "media_authenticity_v3"
 
     def __init__(
         self,
@@ -51,10 +61,12 @@ class MediaAuthenticityAnalyzer:
         exiftool: str | None = None,
         c2patool: str | None = None,
         c2pa_runner: Callable[[Path], dict[str, Any] | None] | None = None,
+        forensic_runner: Callable[[Path], dict[str, Any] | None] | None = None,
     ) -> None:
         self.exiftool = shutil.which("exiftool") if exiftool is None else (exiftool or None)
         self.c2patool = shutil.which("c2patool") if c2patool is None else (c2patool or None)
         self.c2pa_runner = c2pa_runner
+        self.forensic_runner = forensic_runner
 
     @staticmethod
     def _run_json(command: list[str]) -> Any:
@@ -103,6 +115,12 @@ class MediaAuthenticityAnalyzer:
             findings.append(AuthenticityFinding(
                 code=f"ai_metadata_marker_{index}", source="metadata", outcome="detected", severity="review",
                 explanation=message, confidence=0.8,
+            ))
+        edited = sorted({message for marker, message in EDITING_MARKERS.items() if marker in metadata_text})
+        for index, message in enumerate(edited, start=1):
+            findings.append(AuthenticityFinding(
+                code=f"editing_software_marker_{index}", source="metadata", outcome="detected", severity="review",
+                explanation=message + " This records declared software use, not which pixels changed.", confidence=0.7,
             ))
         if not metadata:
             findings.append(AuthenticityFinding(
@@ -193,6 +211,44 @@ class MediaAuthenticityAnalyzer:
         ))
         c2pa, c2pa_findings = self._c2pa(asset)
         findings.extend(c2pa_findings)
+        if self.forensic_runner:
+            try:
+                forensic = self.forensic_runner(asset)
+                if forensic is None:
+                    raise ValueError("forensic runner returned no result")
+                score = float(forensic["score_ai"])
+                review_threshold = float(forensic["threshold_review"])
+                high_threshold = float(forensic["threshold_high"])
+                if not bool(forensic.get("calibrated")) or not 0 <= review_threshold <= high_threshold <= 1 or not 0 <= score <= 1:
+                    raise ValueError("forensic result is not calibrated")
+                image_info["forensic_model"] = {
+                    key: forensic.get(key) for key in (
+                        "model_name", "model_version", "benchmark_id", "domain", "score_ai",
+                        "threshold_review", "threshold_high", "calibrated",
+                    )
+                }
+                severity = "high" if score >= high_threshold else ("review" if score >= review_threshold else "info")
+                findings.append(AuthenticityFinding(
+                    code="forensic_model_high_score" if severity == "high" else (
+                        "forensic_model_review_score" if severity == "review" else "forensic_model_below_review_threshold"
+                    ),
+                    source="forensic_model", outcome="detected" if severity != "info" else "completed", severity=severity,
+                    explanation=(
+                        f"Calibrated pixel-forensics model scored AI likelihood {score:.3f}; "
+                        f"review/high thresholds are {review_threshold:.3f}/{high_threshold:.3f}. "
+                        "Treat this as a screening signal, not proof of generation or fraud."
+                    ), confidence=score,
+                ))
+            except Exception as error:
+                findings.append(AuthenticityFinding(
+                    code="forensic_model_error", source="forensic_model", outcome="error", severity="review",
+                    explanation=f"Pixel-forensics model could not complete: {type(error).__name__}.",
+                ))
+        else:
+            findings.append(AuthenticityFinding(
+                code="forensic_model_not_configured", source="forensic_model", outcome="unavailable", severity="info",
+                explanation="No calibrated pixel-forensics model is configured for insurance images.",
+            ))
         reuse_matches = reuse_matches or []
         if reuse_matches:
             exact = sum(item.get("match_type") == "exact" for item in reuse_matches)
@@ -208,16 +264,11 @@ class MediaAuthenticityAnalyzer:
             code="synthid_provider_not_integrated", source="synthid", outcome="unavailable", severity="info",
             explanation="No local SynthID image detector API is configured. A provider result must be recorded separately.",
         ))
-        findings.append(AuthenticityFinding(
-            code="forensic_model_not_configured", source="forensic_model", outcome="unavailable", severity="info",
-            explanation="No pixel-forensics model has been validated for insurance images yet.",
-        ))
-
         high = [item for item in findings if item.severity == "high"]
         review = [item for item in findings if item.severity == "review" and item.outcome == "detected"]
         verdict = "ai_provenance_detected" if any(item.code == "c2pa_ai_assertion_present" for item in high) else (
-            "review" if any(item.code == "cross_claim_image_reuse" for item in high) else
-            ("provenance_problem" if high else ("review" if review else "inconclusive"))
+            "provenance_problem" if any(item.code == "c2pa_validation_problem" for item in high) else
+            ("review" if high or review else "inconclusive")
         )
         return MediaAuthenticityReport(
             evidence_id=evidence_id, analyzer_version=self.version, sha256=digest, verdict=verdict,

@@ -25,4 +25,15 @@ if (Test-Path -LiteralPath $LayoutCheckpoint) {
         Write-Warning "LayoutLMv3 checkpoint exists but document dependencies are incomplete. Install requirements-document.txt and PaddlePaddle."
     }
 }
+$ForensicCheckpoint = Join-Path $RepoRoot "artifacts\models\media_authenticity\pixel_forensics_candidate"
+$ForensicCalibration = Join-Path $ForensicCheckpoint "calibration.json"
+if ((Test-Path -LiteralPath $ForensicCheckpoint -PathType Container) -and (Test-Path -LiteralPath $ForensicCalibration)) {
+    & ".venv\Scripts\python.exe" -c "import importlib.util,sys; names=('torch','transformers'); sys.exit(0 if all(importlib.util.find_spec(name) for name in names) else 1)"
+    if ($LASTEXITCODE -eq 0) {
+        $env:INSURANCE_FORENSIC_CHECKPOINT = $ForensicCheckpoint
+        $env:INSURANCE_FORENSIC_CALIBRATION = $ForensicCalibration
+    } else {
+        Write-Warning "Calibrated forensic artifact exists but torch/transformers are unavailable."
+    }
+}
 & ".venv\Scripts\python.exe" -m uvicorn src.api.app:app --host 127.0.0.1 --port 8000 --reload

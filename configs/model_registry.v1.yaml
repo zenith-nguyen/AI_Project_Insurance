@@ -1,6 +1,6 @@
 schema_version: "1.0"
 product_version: "research-v1"
-generated_at: "2026-10-13"
+generated_at: "2026-10-14"
 modules:
   tabular_risk:
     implementation: xgboost
@@ -80,12 +80,12 @@ modules:
     evaluation_split: synthetic_demo
     status: demo_only
   media_authenticity:
-    implementation: layered_provenance_reuse_and_forensics_scaffold
-    version: media_authenticity_v2
+    implementation: layered_provenance_editing_reuse_and_forensics_scaffold
+    version: media_authenticity_v3
     task: ai_generated_and_tampered_media_triage
     artifact_uri: src/media_authenticity/analyzer.py
-    artifact_hash: 443728f66b1fca1577c490aaa3e8e923fa5d4190b9828e7d9591b7626620a3a3
-    evidence: reports/MEDIA_AUTHENTICITY_V2_AND_EVIDENCE_GATE.md
+    artifact_hash: fd265ec82411c50607e62d3cdfd847263b297d794a07c80c5c38b66adaa5e56d
+    evidence: reports/MEDIA_AUTHENTICITY_AND_RELATIONSHIP_MATCHING_V3_2026-10-14.md
     primary_metric: engineering_contract_tests
     metric_value: 1.0
     evaluation_split: synthetic_unit_fixtures
