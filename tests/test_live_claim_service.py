@@ -150,6 +150,35 @@ def test_runtime_claim_can_be_intaken_uploaded_and_analyzed(tmp_path):
     assert any(item.category == "damage" for item in result.signals)
     assert result.extracted_fields["document_results"][0]["document_type"] == "invoice"
     assert any(item.category == "document" for item in result.signals)
+    image_evidence = next(item for item in result.evidence if item.kind == "image")
+    assert image_evidence.content_type == "image/png"
+    assert image_evidence.size_bytes == len(image.getvalue())
+    assert len(image_evidence.sha256) == 64
+
+
+def test_runtime_analysis_survives_service_restart_and_new_evidence_invalidates_it(tmp_path):
+    live = service(tmp_path)
+    golden = json.loads((ROOT / "data/golden/claims/CLM-GOLD-001/claim.json").read_text(encoding="utf-8"))
+    live.intake(
+        "CLM-PERSIST-001",
+        ClaimIntakeRequest(
+            claim_amount=golden["claim_amount"], incident_date=golden["incident_date"],
+            plate_number=golden["plate_number"], tabular_features=golden["tabular_features"],
+        ),
+    )
+    first = live.analyze("CLM-PERSIST-001", AnalyzeRequest())
+    assert (tmp_path / "claims/CLM-PERSIST-001/analysis.json").is_file()
+
+    restarted = service(tmp_path)
+    restored = restarted.get_analysis("CLM-PERSIST-001")
+    assert restored is not None
+    assert restored.trace_id == first.trace_id
+
+    image = BytesIO()
+    Image.new("RGB", (8, 8), (20, 40, 60)).save(image, format="PNG")
+    restarted.upload("CLM-PERSIST-001", "image", "new.png", "image/png", image.getvalue())
+    assert restarted.runtime_store.load_analysis("CLM-PERSIST-001") is None
+    assert restarted.get_analysis("CLM-PERSIST-001") is None
 
 
 def test_verified_ai_provenance_becomes_claim_signal(tmp_path):

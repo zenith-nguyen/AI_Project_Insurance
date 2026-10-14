@@ -96,7 +96,9 @@ if ($InstallMultimodalDependencies) {
     }
     if (Test-Path -LiteralPath $LayoutTarget) {
         & ".venv\Scripts\python.exe" -m pip install -r requirements-document.txt
-        & ".venv\Scripts\python.exe" -m pip install "paddlepaddle>=3,<4"
+        # Paddle 3.3.x has a Windows CPU oneDNN/PIR regression in some OCR graphs.
+        # The runtime also disables MKLDNN defensively in src/document/ocr.py.
+        & ".venv\Scripts\python.exe" -m pip install "paddlepaddle>=3,<3.3"
     }
 }
 

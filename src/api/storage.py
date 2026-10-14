@@ -13,7 +13,7 @@ from uuid import uuid4
 
 from PIL import Image, ImageStat
 
-from .schemas import CaptureSessionRecord, ClaimIntakeRequest, ClaimIntakeRecord, EvidenceUploadRecord
+from .schemas import CaptureSessionRecord, ClaimAnalysis, ClaimIntakeRequest, ClaimIntakeRecord, EvidenceUploadRecord
 
 
 CLAIM_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{2,63}$")
@@ -211,6 +211,8 @@ class RuntimeClaimStore:
         }
         manifest.append(item)
         manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        # Any cached analysis predates this evidence and must not be served as current.
+        (root / "analysis.json").unlink(missing_ok=True)
         if capture_path is not None and capture_payload is not None:
             capture_payload.setdefault("submissions", {})[str(challenge_step)] = evidence_id
             if len(capture_payload["submissions"]) == len(capture_payload["instructions"]):
@@ -276,3 +278,20 @@ class RuntimeClaimStore:
     def load_authenticity(self, claim_id: str, evidence_id: str) -> dict | None:
         target = self.claim_root(claim_id) / "authenticity" / f"{evidence_id}.json"
         return json.loads(target.read_text(encoding="utf-8")) if target.is_file() else None
+
+    def save_analysis(self, analysis: ClaimAnalysis) -> None:
+        """Persist the latest analysis so a browser refresh or API restart is cheap."""
+        root = self.claim_root(analysis.claim_id)
+        # Golden fixtures live in the repository and are intentionally read-only.
+        if not (root / "claim.json").is_file():
+            return
+        target = root / "analysis.json"
+        target.write_text(analysis.model_dump_json(indent=2) + "\n", encoding="utf-8")
+
+    def load_analysis(self, claim_id: str) -> ClaimAnalysis | None:
+        target = self.claim_root(claim_id) / "analysis.json"
+        if not target.is_file():
+            return None
+        # utf-8-sig also accepts normal UTF-8 and tolerates files copied from
+        # PowerShell versions that prepend a BOM.
+        return ClaimAnalysis.model_validate_json(target.read_text(encoding="utf-8-sig"))

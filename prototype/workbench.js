@@ -8,7 +8,10 @@ const categoryNames = {risk:"Điểm ưu tiên",damage:"Ảnh xe",document:"Ch�
 const priorityNames = {normal:"Thông thường",review:"Cần rà soát",high:"Ưu tiên cao"};
 const analysisNames = {complete:"Đủ module",partial:"Phân tích một phần",blocked:"Chưa chấm được"};
 const damageNames = {crack:"Nứt",dent:"Móp",scratch:"Trầy xước","glass shatter":"Kính vỡ","lamp broken":"Đèn vỡ","tire flat":"Lốp xẹp"};
+const documentTypeNames = {questionnaire:"Biểu mẫu / bảng hỏi",form:"Biểu mẫu",invoice:"Hóa đơn",letter:"Thư",memo:"Biên bản / ghi nhớ",email:"Email",handwritten:"Tài liệu viết tay"};
+const damageColors = {crack:"#9c4f96",dent:"#167f74",scratch:"#d45555","glass shatter":"#4f6ccf","lamp broken":"#c78619","tire flat":"#7259a8"};
 const formatNumber = (value) => value == null ? "—" : new Intl.NumberFormat("vi-VN").format(value);
+const formatBytes = (value) => value == null ? "—" : value < 1024*1024 ? `${(value/1024).toFixed(1)} KB` : `${(value/1024/1024).toFixed(2)} MB`;
 let claimId = "";
 let analysis = null;
 
@@ -125,6 +128,7 @@ function addOverlay(container, image, data, kind) {
     svg.setAttribute("preserveAspectRatio","xMidYMid meet");
     for (const item of data) {
       let shape;
+      const color=kind==="damage"?(damageColors[item.class_name]||"#16a88c"):kind==="field"?"#b66a12":"#287a9f";
       if (kind==="damage" && item.mask_polygon?.length) {
         shape=document.createElementNS("http://www.w3.org/2000/svg","polygon");
         shape.setAttribute("points",item.mask_polygon.map(point=>point.join(",")).join(" "));
@@ -134,8 +138,15 @@ function addOverlay(container, image, data, kind) {
         shape=document.createElementNS("http://www.w3.org/2000/svg","rect");
         shape.setAttribute("x",box[0]);shape.setAttribute("y",box[1]);shape.setAttribute("width",box[2]-box[0]);shape.setAttribute("height",box[3]-box[1]);
       }
-      shape.setAttribute("fill",kind==="damage"?"#17b99b55":"#d6a34333");shape.setAttribute("stroke",kind==="damage"?"#16a88c":"#bb8531");shape.setAttribute("stroke-width","3");
+      shape.setAttribute("fill",kind==="damage"?`${color}55`:kind==="field"?"#d6a34333":"#287a9f12");shape.setAttribute("stroke",color);shape.setAttribute("stroke-width",kind==="ocr"?"1.25":"3");
       shape.setAttribute("vector-effect","non-scaling-stroke");svg.append(shape);
+      if(kind==="damage"&&item.box_xyxy?.length===4){
+        const [x,y]=item.box_xyxy;const label=`${damageNames[item.class_name]||item.class_name} ${Math.round((item.confidence||0)*100)}%`;
+        const group=document.createElementNS("http://www.w3.org/2000/svg","g");
+        const text=document.createElementNS("http://www.w3.org/2000/svg","text");text.setAttribute("x",x+5);text.setAttribute("y",Math.max(16,y+15));text.setAttribute("fill","#fff");text.setAttribute("font-size","13");text.setAttribute("font-weight","700");text.textContent=label;
+        const background=document.createElementNS("http://www.w3.org/2000/svg","rect");background.setAttribute("x",x);background.setAttribute("y",Math.max(0,y));background.setAttribute("width",Math.max(86,label.length*7.2));background.setAttribute("height","20");background.setAttribute("rx","3");background.setAttribute("fill",color);background.setAttribute("opacity",".94");
+        group.append(background,text);svg.append(group);
+      }
     }
     container.append(svg);
   },{once:true});
@@ -149,7 +160,12 @@ function authenticitySummary(report) {
   const provenanceProblem=detected.find(item=>item.code==="c2pa_validation_problem");
   if(ai.length) return {verdict:"Có dấu hiệu AI được khai báo",basis:ai.map(item=>item.explanation).join(" "),action:"Kiểm tra Content Credentials/metadata và chính sách chấp nhận ảnh của doanh nghiệp."};
   if(provenanceProblem) return {verdict:"Nguồn gốc ký số có vấn đề",basis:provenanceProblem.explanation,action:"Kiểm tra chữ ký, lịch sử chỉnh sửa và yêu cầu file gốc."};
-  if(reuse) return {verdict:"Ảnh đã xuất hiện ở hồ sơ khác",basis:reuse.explanation,action:"Mở hồ sơ trùng và yêu cầu ảnh chụp mới có hướng dẫn nếu cần."};
+  if(reuse) {
+    const matches=report.image_info?.cross_claim_matches||[];
+    const exact=matches.filter(item=>item.match_type==="exact").length;
+    const claims=[...new Set(matches.map(item=>item.claim_id).filter(Boolean))];
+    return {verdict:"Ảnh đã xuất hiện ở hồ sơ khác",basis:`Tìm thấy ${matches.length} kết quả trùng${exact?`, gồm ${exact} bản trùng byte`:""}${claims.length?`. Hồ sơ liên quan: ${claims.join(", ")}`:""}. Đây là dấu hiệu tái sử dụng bằng chứng, chưa phải kết luận gian lận.`,action:"Mở hồ sơ trùng và yêu cầu ảnh chụp mới có hướng dẫn nếu cần."};
+  }
   return {verdict:"Chưa đủ bằng chứng xác định ảnh AI",basis:"Không tìm thấy marker AI đã xác minh. Metadata hoặc watermark có thể bị xóa khi ảnh được gửi qua ứng dụng khác.",action:"Không kết luận thật/giả. Dùng file gốc, chụp có hướng dẫn và đối chiếu các bằng chứng khác."};
 }
 
@@ -175,11 +191,20 @@ function renderEvidence(a) {
   if (images.length) {
     const img=document.createElement("img");img.alt="Ảnh xe đã nộp cho hồ sơ";img.src=api.evidenceContentUrl(a.claim_id,images[0].evidence_id);
     vehicle.append(img);addOverlay(vehicle,img,detections.filter(d=>d.evidence_id===images[0].evidence_id),"damage");
-    $("vehicleMeta").textContent=`${images.length} ảnh · ${images[0].label}`;
+    const imageReport=authenticity.find(row=>row.evidence_id===images[0].evidence_id);
+    const info=imageReport?.image_info||{};
+    $("vehicleMeta").textContent=`${images.length} ảnh · ${images[0].label} · ${info.width||"?"}×${info.height||"?"} px · ${formatBytes(images[0].size_bytes)}`;
   } else {vehicle.textContent="Hồ sơ này chưa có ảnh xe.";$("vehicleMeta").textContent="Không suy ra xe không hư hỏng khi thiếu ảnh.";}
   const damageList=$("damageResults");damageList.replaceChildren();
   const damage=damageSummary(a,detections,images.length);
   addResult(damageList,damage.title,damage.detail);
+  if(images.length){
+    const selected=detections.filter(item=>item.evidence_id===images[0].evidence_id);
+    const grouped=Object.entries(selected.reduce((acc,item)=>{const key=item.class_name;acc[key]??=[];acc[key].push(item.confidence||0);return acc;},{}));
+    addResult(damageList,"Tệp đã phân tích",`${images[0].label} · SHA-256 ${images[0].sha256?images[0].sha256.slice(0,12)+"…":"chưa có"}`);
+    grouped.sort((a,b)=>Math.max(...b[1])-Math.max(...a[1])).forEach(([name,scores])=>addResult(damageList,damageNames[name]||name,`${scores.length} vùng · độ tin cậy cao nhất ${Math.round(Math.max(...scores)*100)}%`));
+    if(grouped.length)addResult(damageList,"Cách đọc vùng khoanh","Màu và nhãn trên ảnh là vùng model đề nghị kiểm tra. Độ tin cậy không phải tỷ lệ thiệt hại hoặc xác suất gian lận.");
+  }
   addResult(damageList,"Hành động với ảnh hư hỏng",damage.action);
   const auth=authenticitySummary(authenticity[0]);
   addResult(damageList,"Nguồn gốc ảnh",auth.verdict);
@@ -189,12 +214,35 @@ function renderEvidence(a) {
   if (documents.length) {
     const evidence=documents[0];const url=api.evidenceContentUrl(a.claim_id,evidence.evidence_id);
     if (evidence.label.toLowerCase().endsWith(".pdf")) {const frame=document.createElement("iframe");frame.src=url;frame.title="Chứng từ gốc";preview.append(frame);}
-    else {const img=document.createElement("img");img.src=url;img.alt="Chứng từ gốc đã nộp";preview.append(img);const result=docResults.find(row=>row.document_id===evidence.evidence_id);addOverlay(preview,img,(result?.fields||[]).filter(field=>field.page_number===1),"document");}
-    $("documentMeta").textContent=`${documents.length} tệp · ${evidence.label}`;
+    else {
+      const img=document.createElement("img");img.src=url;img.alt="Chứng từ gốc đã nộp";preview.append(img);
+      const result=docResults.find(row=>row.document_id===evidence.evidence_id);
+      addOverlay(preview,img,(result?.tokens||[]).filter(token=>token.page_number===1&&token.confidence>=0.55),"ocr");
+      addOverlay(preview,img,(result?.fields||[]).filter(field=>field.page_number===1),"field");
+    }
+    $("documentMeta").textContent=`${documents.length} tệp · ${evidence.label} · ${formatBytes(evidence.size_bytes)} · SHA-256 ${evidence.sha256?evidence.sha256.slice(0,12)+"…":"chưa có"}`;
   } else {preview.textContent="Hồ sơ này chưa có chứng từ nhị phân.";$("documentMeta").textContent="Có thể vẫn có trường demo chuẩn bị sẵn.";}
   const fields=$("documentResults");fields.replaceChildren();
   if (docResults.length) {
-    docResults.flatMap(row=>row.fields||[]).forEach(field=>addResult(fields,field.field_name,String(field.normalized_value)));
+    docResults.forEach(result=>{
+      const tokens=result.tokens||[], extracted=result.fields||[];
+      const readable=tokens.filter(token=>token.confidence>=0.55);
+      const mean=readable.length?readable.reduce((sum,token)=>sum+(token.confidence||0),0)/readable.length:null;
+      const documentType=documentTypeNames[result.document_type]||result.document_type||"Chưa xác định";
+      addResult(fields,"Loại chứng từ model nhận dạng",`${documentType}${result.document_type?` (${result.document_type})`:""}${result.document_type_confidence==null?"":` · độ tin cậy ${Math.round(result.document_type_confidence*100)}%`}`);
+      addResult(fields,"Kết quả đọc chữ (OCR)",`${tokens.length} vùng chữ · ${readable.length} vùng đạt ngưỡng hiển thị${mean==null?"":` · độ tin cậy trung bình ${Math.round(mean*100)}%`}. Khung xanh trên ảnh cho biết vị trí OCR đã đọc.`);
+      if(readable.length){
+        const excerpt=readable.slice(0,12).map(token=>token.text).join(" · ");
+        addResult(fields,"Trích đoạn OCR",excerpt.length>320?`${excerpt.slice(0,320)}…`:excerpt);
+      }
+      if(extracted.length){
+        extracted.forEach(field=>addResult(fields,`Trường ${field.field_name}`,`${field.normalized_value} · độ tin cậy ${field.confidence==null?"—":Math.round(field.confidence*100)+"%"}`));
+        addResult(fields,"Cách đọc khung chứng từ","Khung cam là trường có cấu trúc do KIE trích xuất; phải đối chiếu bản gốc trước khi dùng.");
+      } else {
+        addResult(fields,"Trường có cấu trúc","Chưa trích được ngày hoặc tổng tiền từ chứng từ này. Model KIE hiện được huấn luyện trên hóa đơn SROIE tiếng Anh, nên biên bản tai nạn tiếng Việt nằm ngoài miền đánh giá.");
+        addResult(fields,"Hành động","Đọc bản gốc và nhập giá trị đã xác nhận vào phần bên dưới. Kết quả này được lưu vào nhật ký, không tự dùng để huấn luyện lại model.");
+      }
+    });
   } else if (a.module_status?.document_pipeline?.status==="completed_precomputed") {
     addResult(fields,"Trường demo chuẩn bị sẵn",`Tổng tiền: ${formatNumber(a.extracted_fields?.total_amount)} · Ngày: ${a.extracted_fields?.document_date||"—"}. Đây không phải output OCR/KIE của tệp vừa tải.`);
   } else {
@@ -203,9 +251,24 @@ function renderEvidence(a) {
     addResult(fields,"Trích xuất chứng từ",detail);
     addResult(fields,"Hành động",documents.length?"Người duyệt đọc bản gốc; sau khi bật OCR/KIE, xác nhận hoặc sửa các trường được trích xuất.":"Yêu cầu bổ sung chứng từ nếu quy trình nghiệp vụ cần.");
   }
+  refreshCorrectionContext();
 }
 
 function addResult(parent,title,detail){const item=document.createElement("div");item.className="result-item";const head=document.createElement("b");head.textContent=title;const body=document.createElement("span");body.textContent=detail;item.append(head,body);parent.append(item);}
+
+function currentFieldValue(fieldName) {
+  const direct=analysis?.extracted_fields?.[fieldName];
+  if(direct!==undefined&&direct!==null&&direct!=="")return direct;
+  const aliases={total_amount:["total_amount","total","TOTAL"],document_date:["document_date","date","DATE"],plate_number:["plate_number","plate","license_plate"]};
+  const fields=(analysis?.extracted_fields?.document_results||[]).flatMap(row=>row.fields||[]);
+  return fields.find(item=>(aliases[fieldName]||[fieldName]).includes(item.field_name))?.normalized_value??null;
+}
+
+function refreshCorrectionContext() {
+  const field=$("fieldName").value,value=currentFieldValue(field);
+  $("correctionContext").textContent=value==null?"Hệ thống chưa trích xuất được trường này. Bạn vẫn có thể nhập giá trị đúng sau khi đọc chứng từ gốc.":`Giá trị hệ thống đang đọc: ${value}. Chỉ sửa khi đã đối chiếu trực tiếp với chứng từ gốc.`;
+  $("correctedValue").placeholder=value==null?"Nhập theo chứng từ gốc":`Giá trị hiện tại: ${value}`;
+}
 
 function renderGraph(a) {
   const graph=a.graph_features||{}, box=$("graphMetrics");box.replaceChildren();
@@ -252,7 +315,12 @@ async function load() {
     const health=await api.health();
     const requested=new URLSearchParams(location.search).get("claim_id");
     const id=requested||(health.mode==="live"?"CLM-DEMO-SYN-001":"CLM-2026-00418");
-    const result=await api.analyzeClaim(id);
+    let result;
+    try {result=await api.getAnalysis(id);}
+    catch(error) {
+      if(!(error instanceof ClaimApiError)||error.status!==404)throw error;
+      result=await api.analyzeClaim(id);
+    }
     render(result,health);
   } catch(error) {
     const detail=error instanceof ClaimApiError&&error.status===404?"Hồ sơ demo chưa được nạp. Chạy scripts/seed_synthetic_demo.py, rồi tải lại trang.":error.message;
@@ -260,8 +328,14 @@ async function load() {
   } finally {$("refreshButton").disabled=false;}
 }
 
-$("refreshButton").addEventListener("click",load);
+$("refreshButton").addEventListener("click",async()=>{
+  setError("");$("refreshButton").disabled=true;
+  try {const health=await api.health();const result=await api.analyzeClaim(claimId);render(result,health);}
+  catch(error){setError(`Không phân tích lại được hồ sơ: ${error.message}`);}
+  finally{$("refreshButton").disabled=false;}
+});
 $("reloadEvents").addEventListener("click",renderEvents);
+$("fieldName").addEventListener("change",refreshCorrectionContext);
 $("saveReview").addEventListener("click",async()=>{
   const selected=document.querySelector('input[name="decision"]:checked');const reason=$("reviewReason").value.trim();const feedback=$("reviewFeedback");feedback.className="feedback";
   if(!selected||reason.split(/\s+/).length<3){feedback.textContent="Chọn hướng xử lý và ghi lý do ít nhất ba từ.";feedback.classList.add("error");return;}
@@ -272,7 +346,7 @@ $("saveCorrection").addEventListener("click",async()=>{
   const field=$("fieldName").value, corrected=$("correctedValue").value.trim(),reason=$("correctionReason").value.trim(),feedback=$("correctionFeedback");feedback.className="feedback";
   if(!corrected||reason.split(/\s+/).length<3){feedback.textContent="Nhập giá trị đúng và lý do ít nhất ba từ.";feedback.classList.add("error");return;}
   const documentId=analysis?.extracted_fields?.document_results?.[0]?.document_id || analysis?.evidence?.find(item=>item.kind==="document")?.evidence_id || "document-unidentified";
-  try {await api.saveCorrection(claimId,{reviewer_id:"demo-reviewer",document_id:documentId,field_name:field,original_value:analysis?.extracted_fields?.[field]??null,corrected_value:corrected,reason});feedback.textContent="Đã lưu chỉnh sửa vào nhật ký. Kết quả model không tự thay đổi; cần chạy quy trình xử lý lại theo nghiệp vụ.";renderEvents();}
+  try {await api.saveCorrection(claimId,{reviewer_id:"demo-reviewer",document_id:documentId,field_name:field,original_value:currentFieldValue(field),corrected_value:corrected,reason});feedback.textContent="Đã lưu chỉnh sửa vào nhật ký. Mở tab Nhật ký để xem bản ghi vừa tạo.";$("correctedValue").value="";$("correctionReason").value="";renderEvents();}
   catch(error){feedback.textContent=`Chưa lưu được: ${error.message}`;feedback.classList.add("error");}
 });
 

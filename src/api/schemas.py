@@ -92,6 +92,9 @@ class Evidence(BaseModel):
     label: str
     source_uri: str | None = None
     observed_at: str | None = None
+    content_type: str | None = None
+    size_bytes: int | None = Field(default=None, ge=0)
+    sha256: str | None = None
 
 
 class Signal(BaseModel):

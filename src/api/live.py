@@ -140,6 +140,7 @@ class LiveClaimService:
         record = self.runtime_store.save_evidence(
             claim_id, kind, filename, content_type, content, capture_session_id, challenge_step,
         )
+        self.analyses.pop(claim_id, None)
         if kind == "image":
             try:
                 report = self.authenticity(claim_id, record.evidence_id)
@@ -221,6 +222,8 @@ class LiveClaimService:
             evidence.append(Evidence(
                 evidence_id=item["evidence_id"], kind=item["kind"], label=item["original_filename"],
                 source_uri=item["stored_uri"], observed_at=item["observed_at"],
+                content_type=item.get("content_type"), size_bytes=item.get("size_bytes"),
+                sha256=item.get("sha256"),
             ))
             if item["kind"] == "document":
                 document_count += 1
@@ -430,10 +433,17 @@ class LiveClaimService:
             ],
         )
         self.analyses[claim_id] = analysis
+        self.runtime_store.save_analysis(analysis)
         return analysis
 
     def get_analysis(self, claim_id: str) -> ClaimAnalysis | None:
-        return self.analyses.get(claim_id)
+        cached = self.analyses.get(claim_id)
+        if cached is not None:
+            return cached
+        persisted = self.runtime_store.load_analysis(claim_id)
+        if persisted is not None:
+            self.analyses[claim_id] = persisted
+        return persisted
 
     def review(self, claim_id: str, request: ReviewRequest) -> ReviewRecord:
         analysis = self.get_analysis(claim_id)

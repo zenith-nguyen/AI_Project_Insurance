@@ -1,6 +1,7 @@
 """PaddleOCR adapter normalized to the repository document schema."""
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Any, Sequence
 
@@ -49,6 +50,11 @@ def normalize_paddle_output(raw: Any, page_number: int = 1) -> list[OCRToken]:
 
 class PaddleOCREngine:
     def __init__(self, lang: str = "en", **kwargs: Any) -> None:
+        # PaddlePaddle 3.3.x on Windows can fail in the oneDNN/PIR executor for
+        # PP-OCRv6. Keep the portable CPU path until upstream supports the
+        # ArrayAttribute<DoubleAttribute> conversion used by these models.
+        os.environ.setdefault("FLAGS_use_mkldnn", "0")
+        kwargs.setdefault("enable_mkldnn", False)
         try:
             from paddleocr import PaddleOCR
         except ImportError as error:
