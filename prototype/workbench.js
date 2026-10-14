@@ -160,18 +160,32 @@ function authenticitySummary(report) {
   const forensic=detected.filter(item=>item.code.startsWith("forensic_model_"));
   const reuse=detected.find(item=>item.code==="cross_claim_image_reuse");
   const provenanceProblem=detected.find(item=>item.code==="c2pa_validation_problem");
-  const combinedBasis=detected.map(item=>item.explanation).join(" ");
-  if(ai.length) return {verdict:"Có dấu hiệu AI được khai báo",basis:combinedBasis,action:"Kiểm tra Content Credentials/metadata, đối chiếu hồ sơ liên quan và yêu cầu file camera gốc nếu quy trình cần."};
-  if(provenanceProblem) return {verdict:"Nguồn gốc ký số có vấn đề",basis:provenanceProblem.explanation,action:"Kiểm tra chữ ký, lịch sử chỉnh sửa và yêu cầu file gốc."};
+  if(ai.length) return {verdict:"Có dấu hiệu AI được khai báo",basis:`Phát hiện ${ai.length} marker AI trong metadata hoặc Content Credentials. Marker là căn cứ nguồn gốc cần xác minh, chưa tự chứng minh có gian lận.`,action:"Kiểm tra Content Credentials/metadata, đối chiếu hồ sơ liên quan và yêu cầu file camera gốc nếu quy trình cần."};
+  if(provenanceProblem) return {verdict:"Nguồn gốc ký số có vấn đề",basis:"Content Credentials có manifest nhưng quá trình xác minh chữ ký/chuỗi tin cậy không đạt. Cần kiểm tra file gốc và trust policy.",action:"Kiểm tra chữ ký, lịch sử chỉnh sửa và yêu cầu file gốc."};
   if(reuse) {
     const matches=report.image_info?.cross_claim_matches||[];
     const exact=matches.filter(item=>item.match_type==="exact").length;
     const claims=[...new Set(matches.map(item=>item.claim_id).filter(Boolean))];
-    return {verdict:"Ảnh đã xuất hiện ở hồ sơ khác",basis:`Tìm thấy ${matches.length} kết quả trùng${exact?`, gồm ${exact} bản trùng byte`:""}${claims.length?`. Hồ sơ liên quan: ${claims.join(", ")}`:""}. ${combinedBasis} Đây là dấu hiệu tái sử dụng bằng chứng, chưa phải kết luận gian lận.`,action:"Mở hồ sơ trùng và yêu cầu ảnh chụp mới có hướng dẫn nếu cần."};
+    return {verdict:"Ảnh đã xuất hiện ở hồ sơ khác",basis:`Tìm thấy ${matches.length} kết quả trùng${exact?`, gồm ${exact} bản trùng byte`:""}${claims.length?`. Hồ sơ liên quan: ${claims.join(", ")}`:""}. Đây là dấu hiệu tái sử dụng bằng chứng, chưa phải kết luận gian lận.`,action:"Mở hồ sơ trùng và yêu cầu ảnh chụp mới có hướng dẫn nếu cần."};
   }
-  if(forensic.length) return {verdict:"Pixel forensic đề nghị rà soát",basis:combinedBasis,action:"Xem đây là tín hiệu sàng lọc; đối chiếu file gốc, Content Credentials, chuỗi tiếp nhận và ảnh chụp mới."};
-  if(edited.length) return {verdict:"Metadata khai báo phần mềm chỉnh sửa",basis:`${combinedBasis} Dấu vết này chưa cho biết vùng nào đã thay đổi.`,action:"Yêu cầu file camera gốc hoặc ảnh chụp mới có hướng dẫn; đối chiếu hash và hồ sơ liên quan."};
+  if(forensic.length) return {verdict:"Pixel forensic đề nghị rà soát",basis:"Model pixel forensic đã hiệu chuẩn vượt ngưỡng rà soát. Đây là tín hiệu sàng lọc, không phải chứng cứ độc lập về ảnh AI.",action:"Xem đây là tín hiệu sàng lọc; đối chiếu file gốc, Content Credentials, chuỗi tiếp nhận và ảnh chụp mới."};
+  if(edited.length) return {verdict:"Metadata khai báo phần mềm chỉnh sửa",basis:`Phát hiện ${edited.length} dấu phần mềm chỉnh sửa trong metadata. Dấu vết này chưa cho biết vùng nào đã thay đổi hoặc thay đổi có hợp lệ hay không.`,action:"Yêu cầu file camera gốc hoặc ảnh chụp mới có hướng dẫn; đối chiếu hash và hồ sơ liên quan."};
   return {verdict:"Chưa đủ bằng chứng xác định ảnh AI",basis:"Không tìm thấy marker AI đã xác minh. Metadata hoặc watermark có thể bị xóa khi ảnh được gửi qua ứng dụng khác.",action:"Không kết luận thật/giả. Dùng file gốc, chụp có hướng dẫn và đối chiếu các bằng chứng khác."};
+}
+
+function authenticityChecks(report) {
+  const findings=report?.findings||[];
+  const has=predicate=>findings.some(predicate);
+  const outcome=predicate=>findings.find(predicate)?.outcome;
+  return [
+    ["Metadata camera/EXIF",has(item=>item.code==="metadata_absent")?"Không tìm thấy":"Có dữ liệu đọc được","Thiếu EXIF có thể do mạng xã hội hoặc re-encode; không chứng minh ảnh giả."],
+    ["Content Credentials/C2PA",has(item=>item.code==="c2pa_unavailable")?"Chưa kiểm tra được":has(item=>item.code==="c2pa_validation_problem")?"Có vấn đề":"Không có cảnh báo đã xác minh","Chữ ký hợp lệ giúp truy nguồn; không có chữ ký không chứng minh ảnh thật."],
+    ["Marker AI được khai báo",has(item=>item.code.startsWith("ai_metadata_marker")||item.code==="c2pa_ai_assertion_present")?"Đã phát hiện":"Không tìm thấy","Marker có thể bị xóa, nên kết quả âm tính không loại trừ ảnh AI."],
+    ["Dấu phần mềm chỉnh sửa",has(item=>item.code.startsWith("editing_software_marker"))?"Đã phát hiện":"Không tìm thấy","Nếu có, hệ thống chỉ biết phần mềm được khai báo, chưa biết pixel nào bị sửa."],
+    ["Tái sử dụng giữa hồ sơ",outcome(item=>item.code==="cross_claim_image_reuse")==="detected"?"Đã phát hiện":"Chưa phát hiện","Ảnh trùng/gần trùng là lý do điều tra thêm, chưa tự chứng minh gian lận."],
+    ["Pixel forensic đúng miền",has(item=>item.code==="forensic_model_not_configured")?"Chưa được kích hoạt":"Đã chạy model hiệu chuẩn","Chỉ được bật khi benchmark ảnh bảo hiểm và calibration gate đạt yêu cầu."],
+    ["SynthID",has(item=>item.code==="synthid_provider_not_integrated")?"Chưa tích hợp provider":"Có kết quả provider","SynthID không phải marker phổ quát cho mọi công cụ tạo ảnh."],
+  ];
 }
 
 function damageSummary(a,detections,imageCount) {
@@ -214,6 +228,12 @@ function renderEvidence(a) {
   const auth=authenticitySummary(authenticity[0]);
   addResult(damageList,"Nguồn gốc ảnh",auth.verdict);
   addResult(damageList,"Căn cứ",auth.basis);
+  if(authenticity[0]){
+    const checklist=document.createElement("div");checklist.className="auth-checklist";
+    const heading=document.createElement("h4");heading.textContent="Ảnh đang có và còn thiếu bằng chứng gì?";checklist.append(heading);
+    authenticityChecks(authenticity[0]).forEach(([label,status,detail])=>{const row=document.createElement("div");const head=document.createElement("p");const b=document.createElement("b");b.textContent=label;const badge=document.createElement("span");badge.textContent=status;head.append(b,badge);const small=document.createElement("small");small.textContent=detail;row.append(head,small);checklist.append(row)});
+    damageList.append(checklist);
+  }
   addResult(damageList,"Hành động với nguồn gốc ảnh",auth.action);
   const preview=$("documentPreview");preview.replaceChildren();
   if (documents.length) {

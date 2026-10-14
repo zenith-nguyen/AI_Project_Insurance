@@ -36,39 +36,52 @@ app = FastAPI(
 )
 
 
+def _ui_file(name: str, media_type: str | None = None) -> FileResponse:
+    return FileResponse(
+        ROOT / "prototype" / name,
+        media_type=media_type,
+        headers={"Cache-Control": "no-store, max-age=0", "Pragma": "no-cache"},
+    )
+
+
 @app.get("/", include_in_schema=False)
-def index() -> FileResponse:
-    return FileResponse(ROOT / "prototype/claim_review_workbench_v3.html")
+def index(view: str = "dashboard") -> FileResponse:
+    pages = {
+        "dashboard": "admin_dashboard.html",
+        "workbench": "claim_review_workbench_v3.html",
+        "intake": "claim_intake.html",
+    }
+    return _ui_file(pages.get(view, pages["dashboard"]))
 
 
 @app.get("/workbench.css", include_in_schema=False)
 def workbench_css() -> FileResponse:
-    return FileResponse(ROOT / "prototype/workbench.css", media_type="text/css")
+    return _ui_file("workbench.css", "text/css")
 
 
 @app.get("/workbench.js", include_in_schema=False)
 def workbench_js() -> FileResponse:
-    return FileResponse(ROOT / "prototype/workbench.js", media_type="text/javascript")
+    return _ui_file("workbench.js", "text/javascript")
 
 
 @app.get("/intake", include_in_schema=False)
 def intake_page() -> FileResponse:
-    return FileResponse(ROOT / "prototype/claim_intake.html")
+    return _ui_file("claim_intake.html")
 
 
 @app.get("/dashboard", include_in_schema=False)
 def dashboard_page() -> FileResponse:
-    return FileResponse(ROOT / "prototype/admin_dashboard.html")
+    return _ui_file("admin_dashboard.html")
 
 
 @app.get("/dashboard.js", include_in_schema=False)
 def dashboard_js() -> FileResponse:
-    return FileResponse(ROOT / "prototype/dashboard.js", media_type="text/javascript")
+    return _ui_file("dashboard.js", "text/javascript")
 
 
 @app.get("/api-client.js", include_in_schema=False)
 def api_client() -> FileResponse:
-    return FileResponse(ROOT / "prototype/api-client.js", media_type="text/javascript")
+    return _ui_file("api-client.js", "text/javascript")
 
 
 @app.get("/health", response_model=HealthResponse)

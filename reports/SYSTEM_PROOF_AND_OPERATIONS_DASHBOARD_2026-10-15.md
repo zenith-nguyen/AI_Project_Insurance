@@ -4,7 +4,7 @@ Ngày cập nhật: 2026-10-15.
 
 ## Dashboard quản lý
 
-Mở `http://127.0.0.1:8000/dashboard` để xem tất cả claim runtime. Dashboard mặc định xếp **ưu tiên cao → cần rà soát → thông thường → chưa phân tích**, và trong mỗi nhóm hiển thị hồ sơ mới trước.
+Mở duy nhất `http://127.0.0.1:8000/` để vào sản phẩm. Trang đầu là dashboard; dùng menu trong ứng dụng để chuyển sang nạp hồ sơ, workbench và lịch sử. Dashboard mặc định xếp **ưu tiên cao → cần rà soát → thông thường → chưa phân tích**, và trong mỗi nhóm hiển thị hồ sơ mới trước.
 
 Mỗi dòng giải thích riêng:
 

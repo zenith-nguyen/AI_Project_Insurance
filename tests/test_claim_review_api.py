@@ -14,9 +14,13 @@ def test_browser_api_client_is_served_by_the_backend():
     response = client.get("/api-client.js")
     assert response.status_code == 200
     assert "export class ClaimReviewClient" in response.text
-    workbench = client.get("/")
+    landing = client.get("/")
+    assert landing.status_code == 200
+    assert 'id="claimRows"' in landing.text
+    assert landing.headers["cache-control"] == "no-store, max-age=0"
+    workbench = client.get("/?view=workbench")
     assert workbench.status_code == 200
-    assert 'src="/workbench.js"' in workbench.text
+    assert 'src="/workbench.js?v=20261015c"' in workbench.text
     assert "Quyết định của người duyệt" in workbench.text
     assert "DIỄN GIẢI NGHIỆP VỤ" in workbench.text
     assert "Phát hiện → ý nghĩa → hành động" in workbench.text
@@ -27,7 +31,7 @@ def test_browser_api_client_is_served_by_the_backend():
     assert "addOverlay" in script.text
     dashboard = client.get("/dashboard")
     assert dashboard.status_code == 200
-    assert 'src="/dashboard.js"' in dashboard.text
+    assert 'src="/dashboard.js?v=20261015c"' in dashboard.text
     assert "OPERATIONS" in dashboard.text
     assert 'id="claimRows"' in dashboard.text
 

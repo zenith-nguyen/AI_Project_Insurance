@@ -4,30 +4,30 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Claim Review · Dashboard quản lý</title>
-  <link rel="stylesheet" href="/workbench.css">
+  <link rel="stylesheet" href="/workbench.css?v=20261015c">
 </head>
 <body>
 <div class="shell">
   <aside class="sidebar" aria-label="Điều hướng">
-    <a class="brand" href="/dashboard"><span class="brand-mark">C</span><span>Claim Review<small>OPERATIONS DASHBOARD</small></span></a>
+    <a class="brand" href="/"><span class="brand-mark">C</span><span>Claim Review<small>ONE APP · RESEARCH V1</small></span></a>
     <div class="side-label">Không gian làm việc</div>
-    <a class="side-link current" href="/dashboard">▦ <span>Danh sách hồ sơ</span></a>
-    <a class="side-link" href="/">◫ <span>Xem workbench</span></a>
-    <a class="side-link" href="/intake">＋ <span>Nạp hồ sơ mới</span></a>
+    <a class="side-link current" href="/?view=dashboard">▦ <span>Danh sách hồ sơ</span></a>
+    <a class="side-link" href="/?view=workbench">◫ <span>Xem workbench</span></a>
+    <a class="side-link" href="/?view=intake">＋ <span>Nạp hồ sơ mới</span></a>
     <a class="side-link" href="/docs" target="_blank" rel="noopener">⌘ <span>API kỹ thuật</span></a>
     <div class="side-spacer"></div>
     <div class="side-note"><strong>Dữ liệu bản research</strong><p>Claim, kết quả phân tích và audit log đang lưu cục bộ. Pilot phải chuyển sang kho có xác thực, phân quyền và retention policy.</p></div>
     <div class="side-foot" id="sideMode">Đang kết nối API…</div>
   </aside>
   <main class="main">
-    <header class="topbar"><div class="breadcrumb">Quản lý <span>/</span> <strong>Hàng đợi hồ sơ</strong></div><div class="top-actions"><a href="/intake">Nạp hồ sơ</a><button id="reload" class="text-button" type="button">Tải lại</button><span id="modeBadge" class="mode-badge">Đang kết nối</span></div></header>
+    <header class="topbar"><div class="breadcrumb">Quản lý <span>/</span> <strong>Hàng đợi hồ sơ</strong></div><div class="top-actions"><a href="/?view=intake">Nạp hồ sơ</a><button id="reload" class="text-button" type="button">Tải lại</button><span id="modeBadge" class="mode-badge">Đang kết nối</span></div></header>
     <div class="page admin-page">
       <div class="hero"><div><div class="eyebrow">OPERATIONS · AUDIT · MODEL PROOF</div><h1>Hàng đợi và lịch sử xử lý</h1><p>Xem hồ sơ theo mức cần xử lý, mở lại quyết định đã lưu và kiểm tra model nào đang thực sự chạy.</p></div></div>
       <div id="errorBox" class="error-box" hidden></div>
       <div class="stats admin-stats">
-        <article class="stat primary"><span>Tổng hồ sơ đã nạp</span><strong id="totalClaims">—</strong><small>Đọc từ runtime claim store</small></article>
+        <article class="stat primary"><span>Hồ sơ đã phân tích</span><strong id="totalClaims">—</strong><small>Đã có kết quả để mở trong workbench</small></article>
         <article class="stat"><span>Cần xử lý ưu tiên</span><strong id="highClaims">—</strong><small>Do cờ mức high, không đồng nghĩa đã gian lận</small></article>
-        <article class="stat"><span>Chưa có điểm XGBoost</span><strong id="unscoredClaims">—</strong><small>Thiếu feature bảng nhưng module khác vẫn có thể chạy</small></article>
+        <article class="stat"><span>Chưa chạy phân tích</span><strong id="unscoredClaims">—</strong><small>Hồ sơ nháp hoặc lượt upload chưa bấm phân tích</small></article>
         <article class="stat"><span>Đã có quyết định</span><strong id="reviewedClaims">—</strong><small>Quyết định gần nhất nằm trong audit log</small></article>
       </div>
 
@@ -42,12 +42,13 @@
       <section class="card proof-card">
         <div class="section-heading"><div><div class="eyebrow">CHỨNG MINH HỆ THỐNG</div><h2>Model local, checkpoint và nơi lưu dữ liệu</h2></div><span id="externalApiBadge" class="business-badge">—</span></div>
         <div class="proof-summary"><div><span>Suy luận</span><strong id="processingLocation">—</strong></div><div><span>Dữ liệu claim gửi LLM ngoài</span><strong id="externalData">—</strong></div><div><span>Kho claim</span><strong id="claimStorage">—</strong></div><div><span>Audit log</span><strong id="auditStorage">—</strong></div></div>
+        <div class="proof-explainer"><article><b>Giá trị nghiệp vụ</b><p>Model tự động gom bằng chứng, xếp hàng chờ và chỉ đúng nơi con người cần kiểm tra. Mục tiêu là giảm thời gian rà soát và tránh bỏ sót tín hiệu; hệ thống không tự kết luận gian lận.</p></article><article><b>Cách chứng minh</b><p>Mỗi kết quả gắn với model version, checkpoint hash, metric và tập đánh giá. Trạng thái active cho biết model thật đang chạy trên máy demo.</p></article><article><b>Giới hạn chung</b><p>Metric trên dữ liệu nghiên cứu chưa chứng minh hiệu quả tại bảo hiểm Việt Nam. Module yếu hoặc ngoài miền phải chuyển người duyệt và được nêu rõ.</p></article></div>
         <div id="modelProof" class="model-proof"></div>
         <p class="muted">Hash checkpoint, metric và evaluation split lấy trực tiếp từ model registry. Đây là bằng chứng tái lập kỹ thuật; không thay cho validation trên dữ liệu bảo hiểm Việt Nam.</p>
       </section>
     </div>
   </main>
 </div>
-<script type="module" src="/dashboard.js"></script>
+<script type="module" src="/dashboard.js?v=20261015c"></script>
 </body>
 </html>

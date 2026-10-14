@@ -28,10 +28,9 @@ Authenticity chạy tự động khi upload ảnh. Guided capture giúp yêu c�
 
 Reviewer chọn tiếp tục xử lý, yêu cầu bổ sung bằng chứng hoặc chuyển rà soát chuyên sâu. Điểm model là điểm xếp hạng nghiên cứu, không phải xác suất gian lận đã hiệu chuẩn cho production.
 
-## Hai màn hình dùng khi demo
+## Một địa chỉ dùng khi demo
 
-- `http://127.0.0.1:8000/dashboard`: hàng đợi vận hành, bộ lọc, quyết định gần nhất và đường dẫn xem lịch sử.
-- `http://127.0.0.1:8000/`: workbench của một hồ sơ, gồm bằng chứng, vùng hư hỏng, trường chứng từ, quan hệ và nhật ký.
+Chỉ mở `http://127.0.0.1:8000/`. Trang chủ là hàng đợi vận hành; menu trong ứng dụng chuyển sang nạp hồ sơ, workbench, bằng chứng, quan hệ và nhật ký. `/dashboard` và `/intake` vẫn được giữ làm alias kỹ thuật nhưng người demo không cần nhớ.
 
 Ba chỉ số đầu trang có nghĩa riêng:
 

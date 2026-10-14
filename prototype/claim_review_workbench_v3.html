@@ -4,16 +4,16 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Claim Review · Hồ sơ và bằng chứng</title>
-  <link rel="stylesheet" href="/workbench.css">
+  <link rel="stylesheet" href="/workbench.css?v=20261015c">
 </head>
 <body>
   <div class="shell">
     <aside class="sidebar" aria-label="Điều hướng">
-      <a class="brand" href="/"><span class="brand-mark">C</span><span>Claim Review<small>WORKBENCH · RESEARCH V1</small></span></a>
+      <a class="brand" href="/"><span class="brand-mark">C</span><span>Claim Review<small>ONE APP · RESEARCH V1</small></span></a>
       <div class="side-label">Không gian làm việc</div>
-      <a class="side-link" href="/dashboard">▦ <span>Dashboard quản lý</span></a>
-      <a class="side-link current" href="/">◫ <span>Xem hồ sơ</span></a>
-      <a class="side-link" href="/intake">＋ <span>Nạp hồ sơ mới</span></a>
+      <a class="side-link" href="/?view=dashboard">▦ <span>Dashboard quản lý</span></a>
+      <a class="side-link current" href="/?view=workbench">◫ <span>Xem hồ sơ</span></a>
+      <a class="side-link" href="/?view=intake">＋ <span>Nạp hồ sơ mới</span></a>
       <a class="side-link" href="/docs" target="_blank" rel="noopener">⌘ <span>API cho đội kỹ thuật</span></a>
       <div class="side-spacer"></div>
       <div class="side-note"><strong>Quyết định thuộc về con người</strong><p>AI xếp ưu tiên và chỉ ra bằng chứng cần kiểm tra. Không tự động kết luận gian lận.</p></div>
@@ -21,7 +21,7 @@
     </aside>
 
     <main class="main">
-      <header class="topbar"><div class="breadcrumb">Hồ sơ <span>/</span> <strong id="crumbId">Đang tải</strong></div><div class="top-actions"><a href="/dashboard">Dashboard</a><a href="/intake">Nạp hồ sơ</a><span id="modeBadge" class="mode-badge">Đang kết nối</span></div></header>
+      <header class="topbar"><div class="breadcrumb">Hồ sơ <span>/</span> <strong id="crumbId">Đang tải</strong></div><div class="top-actions"><a href="/?view=dashboard">Dashboard</a><a href="/?view=intake">Nạp hồ sơ</a><span id="modeBadge" class="mode-badge">Đang kết nối</span></div></header>
       <div class="page">
         <div id="demoBanner" class="demo-banner" hidden><strong>HỒ SƠ DEMO GIẢ LẬP</strong><span>Ảnh xe do AI tạo; chứng từ, danh tính và quan hệ đều là mẫu tổng hợp. Chỉ dùng để trình diễn luồng sản phẩm.</span></div>
         <div class="hero"><div><div class="eyebrow">HỒ SƠ ĐANG XEM · <span id="heroId">—</span></div><h1>Hiểu hồ sơ và chọn bước xử lý</h1><p id="heroSubtitle">Hệ thống giải thích điều đã thấy, ý nghĩa nghiệp vụ và việc nên làm tiếp theo.</p></div><button id="refreshButton" class="refresh" type="button">↻ Phân tích lại</button></div>
@@ -32,6 +32,7 @@
           <article class="stat"><span>Loại đầu vào đã nhận</span><strong id="evidenceValue">—</strong><small id="missingValue">—</small></article>
           <article class="stat"><span>Cờ cần kiểm tra</span><strong id="signalValue">—</strong><small id="signalBreakdown">—</small></article>
         </div>
+        <details class="metric-guide"><summary>Hiểu bốn chỉ số trên như thế nào?</summary><div class="metric-guide-grid"><div><b>Hướng xử lý</b><p>Đề xuất thao tác tiếp theo từ các bằng chứng hiện có. Quyết định cuối thuộc người duyệt.</p></div><div><b>Điểm XGBoost</b><p>Điểm xếp thứ tự hàng chờ. Điểm cao giúp xem trước, không phải xác suất gian lận và không dùng riêng để từ chối claim.</p></div><div><b>Loại đầu vào</b><p>Cho biết đã nhận bao nhiêu nhóm dữ liệu yêu cầu. Đủ loại không có nghĩa nội dung đúng hoặc ảnh thật.</p></div><div><b>Cờ cần kiểm tra</b><p>Mỗi cờ là một lý do cụ thể cần đối chiếu. Cờ high được xem trước; cờ review cần xác minh thêm.</p></div></div></details>
 
         <div class="layout">
           <div class="left-column">
@@ -49,6 +50,6 @@
       </div>
     </main>
   </div>
-  <script type="module" src="/workbench.js"></script>
+  <script type="module" src="/workbench.js?v=20261015c"></script>
 </body>
 </html>

@@ -26,3 +26,5 @@ Không tối ưu tiếp theo final test đã khóa. Cải thiện bằng validat
 
 Không có model LLM bên ngoài trong luồng phân tích claim. “Chạy local” có thể kiểm chứng qua model registry, hash artifact, `/readiness`, `/system/model-evidence` và log test. Việc không tìm thấy C2PA/SynthID/metadata không chứng minh ảnh thật; detector AI phổ quát chưa có đủ bằng chứng để dùng làm kết luận nghiệp vụ.
 
+Kế hoạch nâng cấp có technical gate và business KPI cho từng module nằm tại `reports/MODEL_IMPROVEMENT_ROADMAP_2026-10-15.md`.
+
