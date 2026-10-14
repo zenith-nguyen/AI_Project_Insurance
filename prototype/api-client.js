@@ -26,6 +26,8 @@ export class ClaimReviewClient {
   health() { return this.request("/health"); }
   readiness() { return this.request("/readiness"); }
   version() { return this.request("/version"); }
+  modelEvidence() { return this.request("/system/model-evidence"); }
+  listClaims() { return this.request("/claims"); }
 
   createClaim(claimId, payload) {
     return this.request(`/claims/${encodeURIComponent(claimId)}/intake`, {

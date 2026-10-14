@@ -328,3 +328,24 @@ def test_relationship_graph_matches_prior_claims_by_hashed_entities(tmp_path):
     assert result.graph_features["shared_entity_count"] == 2
     assert result.graph_features["two_hop_claim_count"] == 1
     assert any(signal.category == "relationship" for signal in result.signals)
+
+
+def test_admin_queue_reads_persisted_analysis_and_latest_review(tmp_path):
+    live = service(tmp_path)
+    golden = json.loads((ROOT / "data/golden/claims/CLM-GOLD-001/claim.json").read_text(encoding="utf-8"))
+    live.intake("CLM-QUEUE-001", ClaimIntakeRequest(
+        plate_number="51A-909.09", tabular_features=golden["tabular_features"], required_evidence=["claim-intake"],
+    ))
+    live.analyze("CLM-QUEUE-001", AnalyzeRequest())
+    live.review("CLM-QUEUE-001", ReviewRequest(
+        reviewer_id="reviewer-01", decision="special_review", reason="Kiá»ƒm tra báº±ng chá»©ng bá»• sung",
+    ))
+
+    restarted = service(tmp_path)
+    row = next(item for item in restarted.list_claims() if item["claim_id"] == "CLM-QUEUE-001")
+
+    assert row["risk_score_available"] is True
+    assert row["required_evidence_count"] == 1
+    assert row["present_required_count"] == 1
+    assert row["latest_decision"] == "special_review"
+    assert row["event_count"] == 1

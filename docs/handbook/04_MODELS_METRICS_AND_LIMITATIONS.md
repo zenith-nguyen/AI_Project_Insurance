@@ -15,3 +15,14 @@ KPI Recall@10% tuyệt đối 60% không khả thi trên dataset có prevalence 
 
 Không tối ưu tiếp theo final test đã khóa. Cải thiện bằng validation, dữ liệu mới, error analysis và domain validation.
 
+## Model nào do nhóm huấn luyện?
+
+- **XGBoost** được nhóm huấn luyện trên dữ liệu bảng Layer B, với preprocessing fit trong fold/split huấn luyện. Artifact dùng để chấm live là `bundle.joblib` và được kiểm tra SHA-256.
+- **YOLOv8s-seg** được fine-tune trên CarDD để phân vùng hư hỏng; checkpoint được chọn bằng validation rồi mở final test đúng một lần.
+- **LayoutLMv3** được fine-tune để trích xuất `date` và `total`; checkpoint 264 được chọn trên validation và final test đã khóa.
+- **DiT** và **PaddleOCR** là model pretrained chạy cục bộ. Nhóm đã đánh giá độc lập DiT và benchmark OCR; không tuyên bố đã huấn luyện hai model này từ đầu.
+- **Rules** và **NetworkX** là thuật toán xác định, không phải LLM.
+- **Media authenticity** hiện là pipeline provenance, metadata, dấu phần mềm chỉnh sửa, exact/near-duplicate và kiểm tra reuse giữa claim. Pixel forensic adapter chỉ được bật khi có checkpoint đã hiệu chuẩn trên benchmark ảnh bảo hiểm.
+
+Không có model LLM bên ngoài trong luồng phân tích claim. “Chạy local” có thể kiểm chứng qua model registry, hash artifact, `/readiness`, `/system/model-evidence` và log test. Việc không tìm thấy C2PA/SynthID/metadata không chứng minh ảnh thật; detector AI phổ quát chưa có đủ bằng chứng để dùng làm kết luận nghiệp vụ.
+

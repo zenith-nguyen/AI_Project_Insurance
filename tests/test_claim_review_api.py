@@ -25,6 +25,35 @@ def test_browser_api_client_is_served_by_the_backend():
     assert 'import {ClaimReviewClient, ClaimApiError} from "/api-client.js"' in script.text
     assert "evidenceContentUrl" in script.text
     assert "addOverlay" in script.text
+    dashboard = client.get("/dashboard")
+    assert dashboard.status_code == 200
+    assert 'src="/dashboard.js"' in dashboard.text
+    assert "OPERATIONS" in dashboard.text
+    assert 'id="claimRows"' in dashboard.text
+
+
+def test_dashboard_queue_and_model_proof_are_available():
+    claim_id = f"CLM-DASH-{uuid4().hex[:8]}"
+    analysis = client.post(f"/claims/{claim_id}/analyze", json={})
+    assert analysis.status_code == 200
+    review = client.post(
+        f"/claims/{claim_id}/review",
+        json={"reviewer_id": "reviewer-01", "decision": "special_review", "reason": "Kiá»ƒm tra nguá»“n gá»‘c áº£nh"},
+    )
+    assert review.status_code == 200
+
+    queue = client.get("/claims")
+    assert queue.status_code == 200
+    row = next(item for item in queue.json() if item["claim_id"] == claim_id)
+    assert row["latest_decision"] == "special_review"
+    assert row["event_count"] == 1
+
+    proof = client.get("/system/model-evidence")
+    assert proof.status_code == 200
+    payload = proof.json()
+    assert payload["external_llm_api_used"] is False
+    assert payload["claim_data_sent_to_external_llm"] is False
+    assert payload["models"]["tabular_risk"]["artifact_hash"]
 
 
 def test_fixture_claim_lifecycle_and_human_review_contract():

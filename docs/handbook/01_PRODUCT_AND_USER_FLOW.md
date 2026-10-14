@@ -28,3 +28,16 @@ Authenticity chạy tự động khi upload ảnh. Guided capture giúp yêu c�
 
 Reviewer chọn tiếp tục xử lý, yêu cầu bổ sung bằng chứng hoặc chuyển rà soát chuyên sâu. Điểm model là điểm xếp hạng nghiên cứu, không phải xác suất gian lận đã hiệu chuẩn cho production.
 
+## Hai màn hình dùng khi demo
+
+- `http://127.0.0.1:8000/dashboard`: hàng đợi vận hành, bộ lọc, quyết định gần nhất và đường dẫn xem lịch sử.
+- `http://127.0.0.1:8000/`: workbench của một hồ sơ, gồm bằng chứng, vùng hư hỏng, trường chứng từ, quan hệ và nhật ký.
+
+Ba chỉ số đầu trang có nghĩa riêng:
+
+- **Điểm xếp hạng XGBoost**: vị trí ưu tiên nghiên cứu trên thang 0–100. Đây không phải xác suất gian lận.
+- **Loại đầu vào đã nhận**: ví dụ `3/3 loại` nghĩa là đã nhận dữ liệu khai báo, ảnh và chứng từ. Nó không đo độ đúng hoặc chất lượng của nội dung.
+- **Cờ cần kiểm tra**: tổng số phát hiện mà người duyệt phải mở xem; giao diện tách số cờ mức cao và số cờ cần rà soát.
+
+`Ưu tiên cao` phải luôn đi cùng lý do cụ thể như ảnh bị dùng lại, thông tin không khớp hoặc điểm xếp hạng cao. Khi thiếu feature bảng, giao diện hiển thị `Chưa chấm` và vẫn cho phép xử lý các cờ ảnh/chứng từ đã có.
+

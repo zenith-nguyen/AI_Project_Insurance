@@ -124,6 +124,8 @@ class ClaimAnalysis(BaseModel):
     research_risk_score: float | None = Field(default=None, ge=0, le=1)
     risk_score_is_probability: bool = False
     evidence_completeness: float = Field(ge=0, le=1)
+    required_evidence_count: int = Field(default=0, ge=0)
+    present_required_count: int = Field(default=0, ge=0)
     missing_evidence: list[str] = Field(default_factory=list)
     evidence: list[Evidence] = Field(default_factory=list)
     signals: list[Signal] = Field(default_factory=list)

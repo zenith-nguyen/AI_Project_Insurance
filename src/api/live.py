@@ -130,6 +130,13 @@ class JsonlAuditStore:
             rows = [json.loads(line) for line in stream if line.strip()]
         return [row for row in rows if row.get("claim_id") == claim_id][-limit:]
 
+    def list_all(self, limit: int = 5000) -> list[dict]:
+        if not self.path.is_file():
+            return []
+        with self._lock, self.path.open("r", encoding="utf-8") as stream:
+            rows = [json.loads(line) for line in stream if line.strip()]
+        return rows[-limit:]
+
 
 class LiveClaimService:
     def __init__(self, root: Path, registry: ModelRegistry, audit_log: str | Path, runtime_claim_root: str | Path | None = None) -> None:
@@ -470,7 +477,9 @@ class LiveClaimService:
             claim_id=claim_id, trace_id=uuid4().hex, created_at=datetime.now(timezone.utc).isoformat(), mode="live",
             analysis_status=analysis_status, priority=priority,
             research_risk_score=risk["score"] if risk is not None else None, risk_score_is_probability=False,
-            evidence_completeness=completeness, missing_evidence=missing, evidence=evidence, signals=signals,
+            evidence_completeness=completeness, required_evidence_count=len(required),
+            present_required_count=max(0, len(required) - len(missing)), missing_evidence=missing,
+            evidence=evidence, signals=signals,
             extracted_fields=extracted, graph_features=graph_values,
             model_versions={
                 "tabular_risk": "tabular_v1", "consistency": "consistency_v1",
@@ -523,3 +532,53 @@ class LiveClaimService:
     def events(self, claim_id: str) -> list[dict]:
         self.repository.load(claim_id)
         return self.store.list_claim(claim_id)
+
+    def list_claims(self) -> list[dict]:
+        events: dict[str, list[dict]] = {}
+        for event in self.store.list_all():
+            events.setdefault(str(event.get("claim_id")), []).append(event)
+        rows = []
+        for claim_file in sorted(self.runtime_store.root.glob("*/claim.json")):
+            claim = json.loads(claim_file.read_text(encoding="utf-8-sig"))
+            claim_id = str(claim["claim_id"])
+            analysis = self.get_analysis(claim_id)
+            manifest_path = claim_file.parent / "evidence_manifest.json"
+            evidence_files = json.loads(manifest_path.read_text(encoding="utf-8-sig")) if manifest_path.is_file() else []
+            required = list(claim.get("required_evidence", []))
+            missing = list(analysis.missing_evidence) if analysis else required
+            claim_events = events.get(claim_id, [])
+            reviews = [item for item in claim_events if item.get("event_type") == "review"]
+            latest_review = reviews[-1] if reviews else None
+            highest_signal = None
+            if analysis and analysis.signals:
+                order = {"high": 2, "review": 1, "info": 0}
+                highest_signal = max(analysis.signals, key=lambda item: order[item.severity])
+            rows.append({
+                "claim_id": claim_id,
+                "created_at": claim.get("created_at"),
+                "incident_date": claim.get("incident_date"),
+                "plate_number": claim.get("plate_number"),
+                "analysis_status": analysis.analysis_status if analysis else "not_analyzed",
+                "priority": analysis.priority if analysis else "unscored",
+                "priority_reason": highest_signal.title if highest_signal else (
+                    "Chưa chạy phân tích" if analysis is None else "Chưa có cờ tự động nổi bật"
+                ),
+                "research_risk_score": analysis.research_risk_score if analysis else None,
+                "risk_score_available": bool(analysis and analysis.research_risk_score is not None),
+                "required_evidence_count": len(required),
+                "present_required_count": max(0, len(required) - len(missing)),
+                "uploaded_file_count": len(evidence_files),
+                "missing_evidence": missing,
+                "signal_count": len(analysis.signals) if analysis else 0,
+                "high_signal_count": sum(item.severity == "high" for item in analysis.signals) if analysis else 0,
+                "review_signal_count": sum(item.severity == "review" for item in analysis.signals) if analysis else 0,
+                "latest_decision": latest_review.get("decision") if latest_review else None,
+                "latest_reviewer": latest_review.get("reviewer_id") if latest_review else None,
+                "latest_event_at": claim_events[-1].get("created_at") if claim_events else None,
+                "event_count": len(claim_events),
+                "trace_id": analysis.trace_id if analysis else None,
+            })
+        priority_order = {"high": 0, "review": 1, "normal": 2, "unscored": 3}
+        rows.sort(key=lambda row: str(row["created_at"] or ""), reverse=True)
+        rows.sort(key=lambda row: priority_order[row["priority"]])
+        return rows

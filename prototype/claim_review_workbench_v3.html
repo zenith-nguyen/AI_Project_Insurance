@@ -11,6 +11,7 @@
     <aside class="sidebar" aria-label="Điều hướng">
       <a class="brand" href="/"><span class="brand-mark">C</span><span>Claim Review<small>WORKBENCH · RESEARCH V1</small></span></a>
       <div class="side-label">Không gian làm việc</div>
+      <a class="side-link" href="/dashboard">▦ <span>Dashboard quản lý</span></a>
       <a class="side-link current" href="/">◫ <span>Xem hồ sơ</span></a>
       <a class="side-link" href="/intake">＋ <span>Nạp hồ sơ mới</span></a>
       <a class="side-link" href="/docs" target="_blank" rel="noopener">⌘ <span>API cho đội kỹ thuật</span></a>
@@ -20,16 +21,16 @@
     </aside>
 
     <main class="main">
-      <header class="topbar"><div class="breadcrumb">Hồ sơ <span>/</span> <strong id="crumbId">Đang tải</strong></div><div class="top-actions"><a href="/intake">Nạp hồ sơ</a><span id="modeBadge" class="mode-badge">Đang kết nối</span></div></header>
+      <header class="topbar"><div class="breadcrumb">Hồ sơ <span>/</span> <strong id="crumbId">Đang tải</strong></div><div class="top-actions"><a href="/dashboard">Dashboard</a><a href="/intake">Nạp hồ sơ</a><span id="modeBadge" class="mode-badge">Đang kết nối</span></div></header>
       <div class="page">
         <div id="demoBanner" class="demo-banner" hidden><strong>HỒ SƠ DEMO GIẢ LẬP</strong><span>Ảnh xe do AI tạo; chứng từ, danh tính và quan hệ đều là mẫu tổng hợp. Chỉ dùng để trình diễn luồng sản phẩm.</span></div>
         <div class="hero"><div><div class="eyebrow">HỒ SƠ ĐANG XEM · <span id="heroId">—</span></div><h1>Hiểu hồ sơ và chọn bước xử lý</h1><p id="heroSubtitle">Hệ thống giải thích điều đã thấy, ý nghĩa nghiệp vụ và việc nên làm tiếp theo.</p></div><button id="refreshButton" class="refresh" type="button">↻ Phân tích lại</button></div>
         <div id="errorBox" class="error-box" role="alert" hidden></div>
         <div class="stats">
           <article class="stat primary"><span>Hướng xử lý đề xuất</span><strong id="actionValue">—</strong><small id="actionReason">Chờ phân tích</small></article>
-          <article class="stat"><span>Mức ưu tiên hàng đợi</span><strong id="priorityValue">—</strong><small id="analysisValue">Chờ phân tích</small></article>
-          <article class="stat"><span>Bằng chứng yêu cầu</span><strong id="evidenceValue">—</strong><small id="missingValue">—</small></article>
-          <article class="stat"><span>Tín hiệu cần xem</span><strong id="signalValue">—</strong><small>Luôn đối chiếu nguồn gốc</small></article>
+          <article class="stat"><span>Điểm xếp hạng XGBoost</span><strong id="priorityValue">—</strong><small id="analysisValue">Chờ phân tích</small></article>
+          <article class="stat"><span>Loại đầu vào đã nhận</span><strong id="evidenceValue">—</strong><small id="missingValue">—</small></article>
+          <article class="stat"><span>Cờ cần kiểm tra</span><strong id="signalValue">—</strong><small id="signalBreakdown">—</small></article>
         </div>
 
         <div class="layout">

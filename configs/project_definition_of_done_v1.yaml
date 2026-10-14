@@ -34,6 +34,8 @@ required_files:
   - prototype/claim_review_workbench_v3.html
   - prototype/workbench.css
   - prototype/workbench.js
+  - prototype/admin_dashboard.html
+  - prototype/dashboard.js
   - configs/model_registry.v1.yaml
   - artifacts/models/tabular_v1/bundle.joblib
   - reports/RESULTS.md
@@ -48,6 +50,8 @@ required_endpoints:
   - /health
   - /readiness
   - /version
+  - /system/model-evidence
+  - /claims
   - /claims/{claim_id}/intake
   - /claims/{claim_id}/capture-sessions
   - /claims/{claim_id}/evidence

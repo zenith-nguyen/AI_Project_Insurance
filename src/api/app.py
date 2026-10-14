@@ -56,6 +56,16 @@ def intake_page() -> FileResponse:
     return FileResponse(ROOT / "prototype/claim_intake.html")
 
 
+@app.get("/dashboard", include_in_schema=False)
+def dashboard_page() -> FileResponse:
+    return FileResponse(ROOT / "prototype/admin_dashboard.html")
+
+
+@app.get("/dashboard.js", include_in_schema=False)
+def dashboard_js() -> FileResponse:
+    return FileResponse(ROOT / "prototype/dashboard.js", media_type="text/javascript")
+
+
 @app.get("/api-client.js", include_in_schema=False)
 def api_client() -> FileResponse:
     return FileResponse(ROOT / "prototype/api-client.js", media_type="text/javascript")
@@ -74,6 +84,48 @@ def version() -> dict:
 @app.get("/readiness")
 def readiness() -> dict:
     return SERVICE.readiness()
+
+
+@app.get("/system/model-evidence")
+def model_evidence() -> dict:
+    training = {
+        "tabular_risk": "Nhóm huấn luyện XGBoost trong dự án; có pipeline, hiệu chuẩn và đánh giá khóa.",
+        "damage_segmentation": "Nhóm fine-tune YOLOv8s-seg trên CarDD; final test đã khóa.",
+        "document_classifier": "Checkpoint DiT pretrained; nhóm đánh giá độc lập, không huấn luyện model này từ đầu.",
+        "document_ocr": "PaddleOCR pretrained; nhóm benchmark, không huấn luyện engine này từ đầu.",
+        "ocr": "PaddleOCR pretrained; nhóm benchmark, không huấn luyện engine này từ đầu.",
+        "document_kie": "Nhóm fine-tune LayoutLMv3 trên split SROIE sạch; final test đã khóa.",
+        "consistency_rules": "Luật Python xác định; không có bước huấn luyện.",
+        "consistency": "Luật Python xác định; không có bước huấn luyện.",
+        "relationships": "Feature NetworkX theo thời điểm; không có bước huấn luyện.",
+        "media_authenticity": "Kiểm tra provenance, metadata và reuse chạy local; pixel model chỉ bật sau khi hiệu chuẩn đúng miền.",
+    }
+    return {
+        "processing_location": "local_process",
+        "external_llm_api_used": False,
+        "claim_data_sent_to_external_llm": False,
+        "runtime": SERVICE.readiness(),
+        "storage": {
+            "claim_files": "runtime/claims/{claim_id}/",
+            "analysis": "runtime/claims/{claim_id}/analysis.json",
+            "audit_log": "runtime/audit/reviews.jsonl",
+            "production_note": "Research storage only; pilot requires authenticated database/object storage and retention policy.",
+        },
+        "models": {
+            name: {
+                "implementation": model.implementation, "version": model.version,
+                "artifact_hash": model.artifact_hash, "metric": model.primary_metric,
+                "metric_value": model.metric_value, "evaluation_split": model.evaluation_split,
+                "status": model.status, "training_origin": training.get(name, "See registry/report."),
+            }
+            for name, model in REGISTRY.modules.items()
+        },
+    }
+
+
+@app.get("/claims")
+def list_claims() -> list[dict]:
+    return SERVICE.list_claims()
 
 
 @app.post("/claims/{claim_id}/intake", response_model=ClaimIntakeRecord, status_code=201)

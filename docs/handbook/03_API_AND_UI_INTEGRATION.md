@@ -31,3 +31,25 @@ Contract chuẩn nằm tại `contracts/claim_review_openapi.v1.json`. Hướng 
 
 Trang `/` hiện là Claim Review Workbench v3. Team UI có thể xem demo với `?claim_id=CLM-DEMO-SYN-001` và dùng cùng `prototype/api-client.js` để tích hợp giao diện riêng. `module_status.document_pipeline.status=completed_precomputed` nghĩa là có trường chứng từ chuẩn bị sẵn; file upload chưa được OCR/KIE đọc. Chỉ `completed` mới là module đã chạy thật. `GET /claims/{claim_id}/events` đọc lại review và correction đã lưu để hiển thị nhật ký; bản demo local chưa có xác thực người dùng, vì vậy không đưa endpoint này lên môi trường công khai.
 
+## Dashboard và bằng chứng kỹ thuật
+
+```text
+GET /claims
+GET /system/model-evidence
+```
+
+`GET /claims` cấp dữ liệu cho `/dashboard`: điểm xếp hạng, số loại đầu vào, cờ theo mức độ, quyết định gần nhất và số sự kiện audit. `GET /system/model-evidence` công bố chế độ xử lý, trạng thái module, phiên bản, SHA-256, metric và nguồn huấn luyện. Endpoint này giúp người trình bày chứng minh request được xử lý bằng artifact cục bộ và không gửi hồ sơ sang LLM bên ngoài.
+
+Các đường dẫn lưu local trong bản research:
+
+```text
+runtime/claims/{claim_id}/claim.json
+runtime/claims/{claim_id}/evidence_manifest.json
+runtime/claims/{claim_id}/analysis.json
+runtime/claims/{claim_id}/vehicle_images/
+runtime/claims/{claim_id}/documents/
+runtime/audit/reviews.jsonl
+```
+
+Đây là lưu trữ demo một máy. Trước pilot nhiều người dùng cần database, object storage, đăng nhập/phân quyền, backup và chính sách lưu/xóa dữ liệu.
+

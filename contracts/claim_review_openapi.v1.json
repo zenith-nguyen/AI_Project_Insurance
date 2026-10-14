@@ -64,6 +64,49 @@
         }
       }
     },
+    "/system/model-evidence": {
+      "get": {
+        "summary": "Model Evidence",
+        "operationId": "model_evidence_system_model_evidence_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Model Evidence System Model Evidence Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/claims": {
+      "get": {
+        "summary": "List Claims",
+        "operationId": "list_claims_claims_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "type": "array",
+                  "title": "Response List Claims Claims Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/claims/{claim_id}/intake": {
       "post": {
         "summary": "Intake",
@@ -836,6 +879,18 @@
             "minimum": 0.0,
             "title": "Evidence Completeness"
           },
+          "required_evidence_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Required Evidence Count",
+            "default": 0
+          },
+          "present_required_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Present Required Count",
+            "default": 0
+          },
           "missing_evidence": {
             "items": {
               "type": "string"
@@ -976,6 +1031,13 @@
             "additionalProperties": true,
             "type": "object",
             "title": "Tabular Features"
+          },
+          "relationship_entities": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Relationship Entities"
           },
           "required_evidence": {
             "items": {
@@ -1123,6 +1185,40 @@
               }
             ],
             "title": "Observed At"
+          },
+          "content_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Type"
+          },
+          "size_bytes": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Size Bytes"
+          },
+          "sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sha256"
           }
         },
         "type": "object",
@@ -1189,6 +1285,34 @@
               }
             ],
             "title": "Perceptual Hash"
+          },
+          "perceptual_hashes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Perceptual Hashes"
+          },
+          "center_crop_hashes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Center Crop Hashes"
           },
           "color_signature": {
             "anyOf": [

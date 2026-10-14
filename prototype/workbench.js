@@ -304,12 +304,20 @@ function render(a,health) {
   $("modeBadge").textContent=health.mode==="live"?"API live · research v1":"API fixture · prototype";
   $("sideMode").textContent=`${health.mode.toUpperCase()} · ${health.product_version}`;
   $("demoBanner").hidden=!claimId.startsWith("CLM-DEMO-SYN");
-  $("priorityValue").textContent=priorityNames[a.priority]||a.priority;
-  $("analysisValue").textContent=analysisNames[a.analysis_status]||a.analysis_status;
+  $("priorityValue").textContent=a.research_risk_score==null?"Chưa chấm":`${(a.research_risk_score*100).toFixed(1)}/100`;
+  $("analysisValue").textContent=a.research_risk_score==null?"Thiếu feature bảng; hướng xử lý vẫn có thể dựa trên cờ ảnh/chứng từ":"Điểm xếp hàng nghiên cứu, không phải xác suất gian lận";
   $("scoreValue").textContent=a.research_risk_score==null?"Chưa chấm":`${(a.research_risk_score*100).toFixed(1)} / 100`;
-  $("evidenceValue").textContent=`${Math.round(a.evidence_completeness*100)}%`;
-  $("missingValue").textContent=a.missing_evidence.length?`Thiếu ${a.missing_evidence.length} loại bằng chứng`:"Đã đủ loại bằng chứng yêu cầu";
-  $("signalValue").textContent=formatNumber(a.signals.length);
+  let required=a.required_evidence_count||0,present=a.present_required_count||0;
+  if(!required){
+    const presentKinds=new Set((a.evidence||[]).map(item=>item.kind).filter(kind=>["claim","image","document"].includes(kind))).size;
+    required=presentKinds+(a.missing_evidence?.length||0);
+    present=presentKinds;
+  }
+  $("evidenceValue").textContent=required?`${present}/${required} loại`:`${Math.round(a.evidence_completeness*100)}%`;
+  $("missingValue").textContent=a.missing_evidence.length?`Thiếu: ${a.missing_evidence.join(", ")}`:"Đủ loại đầu vào; chưa khẳng định nội dung đúng hoặc chất lượng tốt";
+  const highCount=a.signals.filter(signal=>signal.severity==="high").length,reviewCount=a.signals.filter(signal=>signal.severity==="review").length;
+  $("signalValue").textContent=`${formatNumber(a.signals.length)} cờ`;
+  $("signalBreakdown").textContent=`${highCount} mức cao · ${reviewCount} cần rà soát`;
   $("heroSubtitle").textContent=a.analysis_status==="partial"?"Hệ thống đã phân tích phần có thể và chỉ rõ phần chưa kiểm tra; thiếu module không được hiểu là hồ sơ bình thường.":"Mở từng tín hiệu để xem bằng chứng, ý nghĩa và hành động trước khi quyết định.";
   renderBusiness(a);renderModules(a);renderSignals(a);renderEvidence(a);renderGraph(a);renderEvents();
   const requestedTab=new URLSearchParams(location.search).get("tab") || location.hash.slice(1);
@@ -348,7 +356,7 @@ $("fieldName").addEventListener("change",refreshCorrectionContext);
 $("saveReview").addEventListener("click",async()=>{
   const selected=document.querySelector('input[name="decision"]:checked');const reason=$("reviewReason").value.trim();const feedback=$("reviewFeedback");feedback.className="feedback";
   if(!selected||reason.split(/\s+/).length<3){feedback.textContent="Chọn hướng xử lý và ghi lý do ít nhất ba từ.";feedback.classList.add("error");return;}
-  try {await api.saveReview(claimId,{reviewer_id:"demo-reviewer",decision:selected.value,reason});feedback.textContent="Đã lưu quyết định vào nhật ký; người duyệt vẫn chịu trách nhiệm xác minh.";renderEvents();}
+  try {await api.saveReview(claimId,{reviewer_id:"demo-reviewer",decision:selected.value,reason});feedback.textContent="Đã lưu quyết định. Đang mở tab Nhật ký; Dashboard quản lý cũng sẽ hiển thị quyết định này.";await renderEvents();openTab("audit");}
   catch(error){feedback.textContent=`Chưa lưu được: ${error.message}`;feedback.classList.add("error");}
 });
 $("saveCorrection").addEventListener("click",async()=>{

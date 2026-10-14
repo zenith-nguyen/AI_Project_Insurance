@@ -75,6 +75,8 @@ class FixtureClaimService:
             payload["extracted_fields"]["incident_date"] = request.incident_date
         if request.plate_number:
             payload["extracted_fields"]["plate_number"] = request.plate_number
+        payload.setdefault("required_evidence_count", 3)
+        payload.setdefault("present_required_count", round(float(payload.get("evidence_completeness", 0)) * 3))
         analysis = ClaimAnalysis.model_validate(payload)
         self.analyses[claim_id] = analysis
         return analysis
@@ -103,3 +105,29 @@ class FixtureClaimService:
             *({"event_type": "review", **record.model_dump()} for record in self.reviews.get(claim_id, [])),
             *({"event_type": "field_correction", **record.model_dump()} for record in self.corrections.get(claim_id, [])),
         ]
+
+    def list_claims(self) -> list[dict]:
+        rows = []
+        for claim_id, analysis in self.analyses.items():
+            events = self.events(claim_id)
+            reviews = [item for item in events if item["event_type"] == "review"]
+            latest = reviews[-1] if reviews else None
+            rows.append({
+                "claim_id": claim_id, "created_at": analysis.created_at, "incident_date": None,
+                "plate_number": analysis.extracted_fields.get("plate_number"),
+                "analysis_status": analysis.analysis_status, "priority": analysis.priority,
+                "priority_reason": analysis.signals[0].title if analysis.signals else "Chưa có cờ tự động nổi bật",
+                "research_risk_score": analysis.research_risk_score,
+                "risk_score_available": analysis.research_risk_score is not None,
+                "required_evidence_count": analysis.required_evidence_count,
+                "present_required_count": analysis.present_required_count,
+                "uploaded_file_count": sum(item.kind in {"image", "document"} for item in analysis.evidence),
+                "missing_evidence": analysis.missing_evidence, "signal_count": len(analysis.signals),
+                "high_signal_count": sum(item.severity == "high" for item in analysis.signals),
+                "review_signal_count": sum(item.severity == "review" for item in analysis.signals),
+                "latest_decision": latest.get("decision") if latest else None,
+                "latest_reviewer": latest.get("reviewer_id") if latest else None,
+                "latest_event_at": events[-1].get("created_at") if events else None,
+                "event_count": len(events), "trace_id": analysis.trace_id,
+            })
+        return rows
