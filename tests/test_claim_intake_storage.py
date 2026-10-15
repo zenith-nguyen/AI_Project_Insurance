@@ -36,3 +36,23 @@ def test_claim_id_path_traversal_and_unsupported_files_are_rejected(tmp_path: Pa
         store.save_evidence("CLM-SAFE-001", "document", "malware.exe", "application/octet-stream", b"bad")
     with pytest.raises(ValueError):
         store.save_evidence("CLM-SAFE-001", "document", "fake.pdf", "application/pdf", b"not really a PDF")
+
+
+def test_per_evidence_inference_cache_requires_matching_key(tmp_path: Path):
+    store = RuntimeClaimStore(tmp_path)
+    store.create("CLM-CACHE-001", ClaimIntakeRequest())
+    upload = store.save_evidence(
+        "CLM-CACHE-001", "document", "claim.pdf", "application/pdf", b"%PDF-1.4 cache fixture",
+    )
+    store.save_inference_cache(
+        "CLM-CACHE-001", upload.evidence_id, "document", "file-and-model-v1",
+        {"field": "cached"},
+    )
+    assert store.load_inference_cache(
+        "CLM-CACHE-001", upload.evidence_id, "document", "file-and-model-v1",
+    ) == {"field": "cached"}
+    assert store.load_inference_cache(
+        "CLM-CACHE-001", upload.evidence_id, "document", "different-model",
+    ) is None
+    with pytest.raises(ValueError):
+        store.load_inference_cache("CLM-CACHE-001", upload.evidence_id, "../escape", "key")

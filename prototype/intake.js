@@ -8,6 +8,17 @@ function makeClaimId(){const now=new Date(),p=n=>String(n).padStart(2,"0");retur
 function setStep(id,state,text){const node=byId(id);node.className=`progress-step ${state}`;node.querySelector("span").textContent=text}
 function newClaim(){activeClaim=null;captureSession=null;regularEvidenceUploaded=false;byId("claimId").value=makeClaimId();["stepStore","stepUpload","stepAnalyze","stepOpen"].forEach(id=>setStep(id,"","Chờ thực hiện"))}
 function setMessage(text,error=false){message.textContent=text;message.classList.toggle("error",error)}
+async function showServerState(){
+  try{
+    const response=await fetch("/readiness"),payload=await response.json();
+    if(!response.ok)throw new Error(payload.detail||JSON.stringify(payload));
+    const documentModule=payload.modules?.document_pipeline||{},warmup=documentModule.warmup||{};
+    if(!documentModule.active)setMessage("Model đọc chứng từ chưa được cài trên máy chủ. Ảnh và các module còn lại vẫn có thể chạy; phần thiếu sẽ được ghi rõ trong kết quả.");
+    else if(["scheduled","warming"].includes(warmup.status))setMessage("Máy chủ đang nạp DiT, PaddleOCR và LayoutLMv3 vào bộ nhớ. Bạn vẫn có thể tạo hồ sơ; bước chứng từ sẽ chờ model sẵn sàng thay vì nạp lại từ đầu.");
+    else if(warmup.status==="error")setMessage(`Không nạp sẵn được model chứng từ: ${warmup.error||"lỗi chưa xác định"}. Hệ thống sẽ ghi rõ module không chạy được.`,true);
+    else if(warmup.status==="ready")setMessage("Các model chứng từ đã được nạp sẵn. Hồ sơ mới sẽ bỏ qua thời gian khởi động model.");
+  }catch(error){setMessage(`Chưa đọc được trạng thái model: ${error.message}`,true)}
+}
 function listFiles(input,target){byId(target).textContent=[...input.files].map(file=>`${file.name} · ${(file.size/1024).toFixed(1)} KB`).join("\n")||"Chưa chọn tệp."}
 function formatElapsed(seconds){const total=Math.max(0,Math.floor(seconds||0));return `${String(Math.floor(total/60)).padStart(2,"0")}:${String(total%60).padStart(2,"0")}`}
 function slowestStage(job){const rows=Object.entries(job.stage_durations_seconds||{}).filter(([,seconds])=>Number(seconds)>0).sort((a,b)=>Number(b[1])-Number(a[1]));if(!rows.length)return null;const [stage,seconds]=rows[0];return {stage:stageNames[stage]||stage,seconds:Number(seconds)}}
@@ -76,4 +87,4 @@ byId("capture").onclick=async()=>{try{
 
 byId("uploadCapture").onclick=async()=>{try{const inputs=[...byId("captureSteps").querySelectorAll('input[type="file"]')];if(inputs.some(input=>!input.files[0]))throw new Error("Cần chọn đủ ba ảnh theo ba hướng dẫn.");for(const input of inputs){const body=new FormData();body.append("kind","image");body.append("capture_session_id",captureSession.session_id);body.append("challenge_step",input.dataset.step);body.append("file",input.files[0]);const response=await fetch(`/claims/${activeClaim}/evidence`,{method:"POST",body});if(!response.ok)throw new Error(await response.text())}setMessage("Đã lưu đủ 3 ảnh có kiểm soát. Bây giờ bấm Phân tích hồ sơ.")}catch(error){setMessage(`Không tải được phiên chụp: ${error.message}`,true)}};
 
-newClaim();
+newClaim();showServerState();

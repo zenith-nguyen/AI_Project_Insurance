@@ -58,6 +58,8 @@ Lưu ý: PASS mốc này chứng minh luồng sản phẩm; chưa chứng minh �
 
 ## Mốc C — Giảm thời gian phản hồi
 
+Trạng thái 2026-10-16: **đã hoàn thành preload và cache theo từng evidence**. Kịch bản thêm một ảnh giảm từ lần chạy đầy đủ 145,6 giây xuống 2,5 giây; ảnh và chứng từ cũ không chạy lại. Phần còn lại của mốc là tối ưu thời gian OCR cho evidence mới trên validation đúng miền.
+
 Chỉ thực hiện sau khi có benchmark Mốc A.
 
 ### Hướng tối ưu theo thứ tự

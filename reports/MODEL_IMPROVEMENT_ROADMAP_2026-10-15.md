@@ -6,6 +6,8 @@ Kế hoạch thực thi theo mốc, KPI và Definition of Done: [NEXT_UPGRADE_EX
 
 Kết quả candidate OCR/KIE và benchmark ba hồ sơ: [OCR_KIE_CANDIDATE_BENCHMARK_2026-10-15.md](OCR_KIE_CANDIDATE_BENCHMARK_2026-10-15.md).
 
+Kết quả preload và cache theo từng evidence: [INCREMENTAL_CACHE_AND_PRELOAD_VALIDATION_2026-10-16.md](INCREMENTAL_CACHE_AND_PRELOAD_VALIDATION_2026-10-16.md).
+
 ## Nguyên tắc
 
 Mỗi nâng cấp phải đồng thời trả lời hai câu hỏi:

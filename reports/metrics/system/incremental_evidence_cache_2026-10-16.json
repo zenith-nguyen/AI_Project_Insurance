@@ -1,0 +1,94 @@
+{
+  "schema_version": "1.0",
+  "created_at": "2026-10-15T17:00:10.585216+00:00",
+  "claim_id": "CLM-CACHE-1015165731-6b00e",
+  "scope": "synthetic_incremental_cache_benchmark",
+  "initial": {
+    "job": {
+      "job_id": "db5dd4e5b9ec48c7a241e599b8192b3e",
+      "claim_id": "CLM-CACHE-1015165731-6b00e",
+      "status": "completed",
+      "stage": "completed",
+      "message": "Đã hoàn tất; kết quả sẵn sàng mở.",
+      "created_at": "2026-10-15T16:57:40.932053+00:00",
+      "started_at": "2026-10-15T16:57:40.935543+00:00",
+      "finished_at": "2026-10-15T17:00:06.515404+00:00",
+      "elapsed_seconds": 145.6,
+      "current_stage_elapsed_seconds": 0.0,
+      "stage_durations_seconds": {
+        "queued": 0.0,
+        "preparing": 0.4,
+        "tabular": 0.5,
+        "evidence": 0.0,
+        "image_authenticity": 0.4,
+        "damage": 8.9,
+        "document_loading": 20.7,
+        "document_classifier": 1.5,
+        "document_ocr": 107.3,
+        "document_kie": 4.7,
+        "relationships": 1.1,
+        "finalizing": 0.0
+      },
+      "result_available": true,
+      "cache_hit": false,
+      "error": null
+    },
+    "wall_seconds": 145.7
+  },
+  "incremental": {
+    "job": {
+      "job_id": "13d1656b33ec47a480c51a7b3315462a",
+      "claim_id": "CLM-CACHE-1015165731-6b00e",
+      "status": "completed",
+      "stage": "completed",
+      "message": "Đã hoàn tất; kết quả sẵn sàng mở.",
+      "created_at": "2026-10-15T17:00:07.509348+00:00",
+      "started_at": "2026-10-15T17:00:07.509348+00:00",
+      "finished_at": "2026-10-15T17:00:09.960132+00:00",
+      "elapsed_seconds": 2.5,
+      "current_stage_elapsed_seconds": 0.0,
+      "stage_durations_seconds": {
+        "queued": 0.0,
+        "preparing": 0.1,
+        "tabular": 0.4,
+        "evidence": 0.0,
+        "image_authenticity": 0.2,
+        "damage": 1.7,
+        "document_loading": 0.0,
+        "relationships": 0.0,
+        "finalizing": 0.0
+      },
+      "result_available": true,
+      "cache_hit": false,
+      "error": null
+    },
+    "wall_seconds": 3.1
+  },
+  "module_status": {
+    "document_pipeline": {
+      "status": "completed",
+      "reason": null,
+      "evidence_cache_hits": 1,
+      "evidence_processed": 1
+    },
+    "damage_segmentation": {
+      "status": "completed",
+      "reason": null,
+      "evidence_cache_hits": 1,
+      "evidence_processed": 2
+    }
+  },
+  "checks": {
+    "unchanged_document_reused": true,
+    "old_image_reused": true,
+    "two_images_processed": true,
+    "ocr_not_repeated": true,
+    "kie_not_repeated": true
+  },
+  "passed": true,
+  "business_meaning": "Adding one new image reuses unchanged document and image outputs; only the new evidence requires model inference.",
+  "limitations": [
+    "Synthetic runtime benchmark, not a model-accuracy evaluation.",
+    "Timing applies to the current machine and active model versions."
+  ]
+}

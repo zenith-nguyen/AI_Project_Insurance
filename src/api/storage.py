@@ -17,6 +17,7 @@ from .schemas import CaptureSessionRecord, ClaimAnalysis, ClaimIntakeRequest, Cl
 
 
 CLAIM_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{2,63}$")
+CACHE_MODULE = re.compile(r"^[a-z][a-z0-9_-]{1,63}$")
 ALLOWED_EXTENSIONS = {
     "image": {".jpg", ".jpeg", ".png", ".webp", ".tif", ".tiff"},
     "document": {".pdf", ".jpg", ".jpeg", ".png", ".tif", ".tiff"},
@@ -109,6 +110,7 @@ class RuntimeClaimStore:
         (root / "documents").mkdir()
         (root / "vehicle_images").mkdir()
         (root / "authenticity").mkdir()
+        (root / "inference_cache").mkdir()
         (root / "capture_sessions").mkdir()
         claim_file.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         (root / "evidence_manifest.json").write_text("[]\n", encoding="utf-8")
@@ -306,6 +308,39 @@ class RuntimeClaimStore:
     def load_authenticity(self, claim_id: str, evidence_id: str) -> dict | None:
         target = self.claim_root(claim_id) / "authenticity" / f"{evidence_id}.json"
         return json.loads(target.read_text(encoding="utf-8")) if target.is_file() else None
+
+    def _inference_cache_path(self, claim_id: str, evidence_id: str, module: str) -> Path:
+        if not CACHE_MODULE.fullmatch(module):
+            raise ValueError("Invalid inference cache module name.")
+        self.evidence_path(claim_id, evidence_id)
+        return self.claim_root(claim_id) / "inference_cache" / f"{evidence_id}.{module}.json"
+
+    def save_inference_cache(
+        self, claim_id: str, evidence_id: str, module: str, cache_key: str, payload: dict,
+    ) -> None:
+        target = self._inference_cache_path(claim_id, evidence_id, module)
+        target.parent.mkdir(exist_ok=True)
+        record = {
+            "schema_version": "1.0", "cache_key": cache_key,
+            "created_at": datetime.now(timezone.utc).isoformat(), "payload": payload,
+        }
+        temporary = target.with_suffix(target.suffix + ".tmp")
+        temporary.write_text(json.dumps(record, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        temporary.replace(target)
+
+    def load_inference_cache(
+        self, claim_id: str, evidence_id: str, module: str, cache_key: str,
+    ) -> dict | None:
+        target = self._inference_cache_path(claim_id, evidence_id, module)
+        if not target.is_file():
+            return None
+        try:
+            record = json.loads(target.read_text(encoding="utf-8-sig"))
+        except (OSError, json.JSONDecodeError):
+            return None
+        if record.get("cache_key") != cache_key or not isinstance(record.get("payload"), dict):
+            return None
+        return record["payload"]
 
     def save_analysis(self, analysis: ClaimAnalysis) -> None:
         """Persist the latest analysis so a browser refresh or API restart is cheap."""

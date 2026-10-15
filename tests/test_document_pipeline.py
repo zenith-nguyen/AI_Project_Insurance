@@ -7,7 +7,7 @@ from src.document.kie import HybridKIE, LayoutLMv3KIE, RuleBasedKIE
 from src.document.metrics import character_error_rate, field_micro_scores, word_error_rate
 from src.document.ocr import normalize_paddle_output
 from src.document.pipeline import DocumentPipeline
-from src.document.schema import BoundingBox, OCRToken
+from src.document.schema import BoundingBox, DocumentResult, OCRToken
 
 
 def test_normalizes_legacy_paddle_output():
@@ -145,3 +145,4 @@ def test_pipeline_returns_stable_contract():
     assert result.model_versions["classifier"] == "mock-classifier@v1"
     assert result.trace_id
     assert stages == ["document_classifier", "document_ocr", "document_kie"]
+    assert DocumentResult.from_dict(result.to_dict()) == result

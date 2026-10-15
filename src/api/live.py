@@ -13,7 +13,7 @@ from uuid import uuid4
 import numpy as np
 import pandas as pd
 from src.data.common import sha256
-from src.document.schema import ExtractedField
+from src.document.schema import DocumentResult, ExtractedField
 from src.document.runtime import DocumentRuntimeAdapter
 from src.features.preprocessing import features
 from src.graph.claim_graph import build_graph, claim_features, normalize_entity
@@ -209,6 +209,8 @@ class LiveClaimService:
                 expected_tree_hash=registered_kie.artifact_hash,
                 device=os.getenv("INSURANCE_DOCUMENT_DEVICE"),
             )
+            if os.getenv("INSURANCE_PRELOAD_MODELS", "0").lower() in {"1", "true", "yes"}:
+                self.document_runtime.start_warmup()
         self.store = JsonlAuditStore(audit_log)
         self.analyses: dict[str, ClaimAnalysis] = {}
 
@@ -264,6 +266,8 @@ class LiveClaimService:
             "document_pipeline": {
                 "active": self.document_runtime is not None,
                 "reason": None if self.document_runtime is not None else "Set INSURANCE_LAYOUTLM_CHECKPOINT and install document dependencies.",
+                "warmup": self.document_runtime.readiness() if self.document_runtime is not None else None,
+                "cache_version": self.document_runtime.cache_version if self.document_runtime is not None else None,
             },
         }
         return {
@@ -328,6 +332,8 @@ class LiveClaimService:
         authenticity_failures = 0
         damage_failures = 0
         document_failures = 0
+        damage_cache_hits = 0
+        document_cache_hits = 0
         capture_steps: dict[str, set[int]] = {}
 
         uploaded_evidence = payload.get("uploaded_evidence", [])
@@ -379,13 +385,34 @@ class LiveClaimService:
                     })
                 if self.damage is not None:
                     try:
+                        damage_cache_key = hashlib.sha256(
+                            (
+                                f"{item.get('sha256', '')}:damage-v1:{self.damage.model_name}:"
+                                f"{self.damage.model_version}:{self.registry.modules['damage_segmentation'].artifact_hash}"
+                            ).encode()
+                        ).hexdigest()
+                        cached_damage = None if request.force_recompute else self.runtime_store.load_inference_cache(
+                            claim_id, item["evidence_id"], "damage", damage_cache_key,
+                        )
                         if progress:
                             progress(
                                 "damage",
-                                f"Ảnh {image_index}/{image_total}: YOLO đang khoanh vùng hư hỏng.",
+                                (
+                                    f"Ảnh {image_index}/{image_total}: dùng lại vùng hư hỏng đã lưu vì tệp và model không đổi."
+                                    if cached_damage is not None else
+                                    f"Ảnh {image_index}/{image_total}: YOLO đang khoanh vùng hư hỏng."
+                                ),
                             )
-                        image_path = self.runtime_store.evidence_path(claim_id, item["evidence_id"])
-                        detections = self.damage.predict(image_path)
+                        if cached_damage is not None:
+                            detections = [dict(row) for row in cached_damage.get("detections", [])]
+                            damage_cache_hits += 1
+                        else:
+                            image_path = self.runtime_store.evidence_path(claim_id, item["evidence_id"])
+                            detections = self.damage.predict(image_path)
+                            self.runtime_store.save_inference_cache(
+                                claim_id, item["evidence_id"], "damage", damage_cache_key,
+                                {"detections": detections},
+                            )
                         for detection in detections:
                             detection.update({"evidence_id": item["evidence_id"]})
                         damage_detections.extend(detections)
@@ -405,18 +432,40 @@ class LiveClaimService:
             elif item["kind"] == "document" and self.document_runtime is not None:
                 document_index += 1
                 try:
+                    cache_key_builder = getattr(self.document_runtime, "cache_key", None)
+                    document_cache_key = (
+                        cache_key_builder(item.get("sha256", ""))
+                        if callable(cache_key_builder) else
+                        hashlib.sha256(
+                            f"{item.get('sha256', '')}:document-v1:{type(self.document_runtime).__name__}".encode()
+                        ).hexdigest()
+                    )
+                    cached_document = None if request.force_recompute else self.runtime_store.load_inference_cache(
+                        claim_id, item["evidence_id"], "document", document_cache_key,
+                    )
                     if progress:
                         progress(
                             "document_loading",
-                            f"Chứng từ {document_index}/{uploaded_document_total}: đang chuẩn bị DiT, PaddleOCR và LayoutLMv3.",
+                            (
+                                f"Chứng từ {document_index}/{uploaded_document_total}: dùng lại kết quả OCR/KIE đã lưu vì tệp và model không đổi."
+                                if cached_document is not None else
+                                f"Chứng từ {document_index}/{uploaded_document_total}: đang chuẩn bị DiT, PaddleOCR và LayoutLMv3."
+                            ),
                         )
-                    document_path = self.runtime_store.evidence_path(claim_id, item["evidence_id"])
-                    result = self.document_runtime.process(
-                        document_path,
-                        claim_id,
-                        item["evidence_id"],
-                        progress=(lambda stage: progress(stage, None)) if progress else None,
-                    )
+                    if cached_document is not None:
+                        result = DocumentResult.from_dict(cached_document)
+                        document_cache_hits += 1
+                    else:
+                        document_path = self.runtime_store.evidence_path(claim_id, item["evidence_id"])
+                        result = self.document_runtime.process(
+                            document_path,
+                            claim_id,
+                            item["evidence_id"],
+                            progress=(lambda stage: progress(stage, None)) if progress else None,
+                        )
+                        self.runtime_store.save_inference_cache(
+                            claim_id, item["evidence_id"], "document", document_cache_key, result.to_dict(),
+                        )
                     document_results.append(result.to_dict())
                     for warning in result.warnings:
                         runtime_warnings.append(f"{item['evidence_id']}: {warning}")
@@ -556,10 +605,14 @@ class LiveClaimService:
                 "Document inference failed." if document_failures else
                 "Document checkpoint/dependencies are not configured." if has_documents else "No claim document was provided."
             ),
+            "evidence_cache_hits": document_cache_hits,
+            "evidence_processed": uploaded_document_total,
         }
         module_status["damage_segmentation"] = {
             "status": ("error" if damage_failures else "completed" if self.damage is not None else "unavailable") if image_count else "skipped_missing_input",
             "reason": ("Damage inference failed." if damage_failures else None if self.damage is not None else "YOLO checkpoint is not configured.") if image_count else "No vehicle image was provided.",
+            "evidence_cache_hits": damage_cache_hits,
+            "evidence_processed": image_total,
         }
         module_status["media_authenticity"] = {
             "status": ("error" if authenticity_failures == image_count else "completed") if image_count else "skipped_missing_input",
@@ -598,7 +651,7 @@ class LiveClaimService:
                 "relationships": self.registry.modules["relationships"].version,
                 "media_authenticity": MediaAuthenticityAnalyzer.version,
                 **({"damage_segmentation": self.damage.model_version} if self.damage is not None else {}),
-                **({"document_pipeline": "dit-paddleocr-layoutlmv3-hybrid-v2"} if self.document_runtime is not None else {}),
+                **({"document_pipeline": getattr(self.document_runtime, "pipeline_version", "document-runtime-v1")} if self.document_runtime is not None else {}),
             },
             module_status=module_status,
             warnings=[

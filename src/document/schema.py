@@ -70,3 +70,30 @@ class DocumentResult:
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
+
+    @classmethod
+    def from_dict(cls, payload: dict[str, Any]) -> "DocumentResult":
+        """Restore a cached result without loading any model dependencies."""
+        tokens = []
+        for row in payload.get("tokens", []):
+            values = dict(row)
+            if values.get("bbox") is not None:
+                values["bbox"] = BoundingBox(**values["bbox"])
+            tokens.append(OCRToken(**values))
+        fields = []
+        for row in payload.get("fields", []):
+            values = dict(row)
+            if values.get("bbox") is not None:
+                values["bbox"] = BoundingBox(**values["bbox"])
+            if isinstance(values.get("evidence_token_indexes"), list):
+                values["evidence_token_indexes"] = tuple(values["evidence_token_indexes"])
+            fields.append(ExtractedField(**values))
+        return cls(
+            claim_id=payload["claim_id"], document_id=payload["document_id"],
+            document_type=payload["document_type"],
+            document_type_confidence=payload["document_type_confidence"],
+            tokens=tokens, fields=fields,
+            model_versions=dict(payload.get("model_versions", {})),
+            trace_id=payload.get("trace_id"),
+            warnings=list(payload.get("warnings", [])),
+        )

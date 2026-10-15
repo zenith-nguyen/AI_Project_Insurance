@@ -112,12 +112,20 @@ def test_runtime_claim_can_be_intaken_uploaded_and_analyzed(tmp_path):
     class Damage:
         model_name = "yolov8s-seg"
         model_version = "cardd_candidate_v1"
+        calls = 0
         def predict(self, image):
+            self.calls += 1
             return [{"class_id": 4, "class_name": "scratch", "confidence": 0.8, "box_xyxy": [1, 2, 3, 4], "mask_polygon": None}]
 
-    live.damage = Damage()
+    damage = Damage()
+    live.damage = damage
     class Documents:
+        pipeline_version = "document-test-v1"
+        calls = 0
+        def cache_key(self, evidence_sha256):
+            return f"document-test-v1:{evidence_sha256}"
         def process(self, path, claim_id, document_id, progress=None):
+            self.calls += 1
             return DocumentResult(
                 claim_id, document_id, "invoice", 0.92,
                 tokens=[OCRToken("Total 61680", 0.9)],
@@ -126,7 +134,8 @@ def test_runtime_claim_can_be_intaken_uploaded_and_analyzed(tmp_path):
                 warnings=["kie_model_rule_conflict:total_amount"],
             )
 
-    live.document_runtime = Documents()
+    documents = Documents()
+    live.document_runtime = documents
     golden = json.loads((ROOT / "data/golden/claims/CLM-GOLD-001/claim.json").read_text(encoding="utf-8"))
     live.intake(
         "CLM-RUNTIME-001",
@@ -158,6 +167,23 @@ def test_runtime_claim_can_be_intaken_uploaded_and_analyzed(tmp_path):
     assert image_evidence.content_type == "image/png"
     assert image_evidence.size_bytes == len(image.getvalue())
     assert len(image_evidence.sha256) == 64
+    assert damage.calls == 1
+    assert documents.calls == 1
+
+    second_image = BytesIO()
+    Image.new("RGB", (8, 8), (80, 30, 10)).save(second_image, format="PNG")
+    live.upload("CLM-RUNTIME-001", "image", "damage-2.png", "image/png", second_image.getvalue())
+    incremental = live.analyze("CLM-RUNTIME-001", AnalyzeRequest())
+    assert damage.calls == 2  # old image reused; only the new image invokes YOLO
+    assert documents.calls == 1  # unchanged document reused
+    assert incremental.module_status["damage_segmentation"]["evidence_cache_hits"] == 1
+    assert incremental.module_status["document_pipeline"]["evidence_cache_hits"] == 1
+
+    forced = live.analyze("CLM-RUNTIME-001", AnalyzeRequest(force_recompute=True))
+    assert damage.calls == 4
+    assert documents.calls == 2
+    assert forced.module_status["damage_segmentation"]["evidence_cache_hits"] == 0
+    assert forced.module_status["document_pipeline"]["evidence_cache_hits"] == 0
 
 
 def test_runtime_analysis_survives_service_restart_and_new_evidence_invalidates_it(tmp_path):

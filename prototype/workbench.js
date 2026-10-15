@@ -109,6 +109,7 @@ function renderModules(a) {
 
 function moduleDetail(key,value) {
   const status=statusNames[value.status]||value.status;
+  if(value.status==="completed"&&Number(value.evidence_cache_hits)>0)return `Hoàn tất · dùng lại kết quả đã kiểm tra cho ${value.evidence_cache_hits}/${value.evidence_processed||value.evidence_cache_hits} tệp không đổi.`;
   if(value.status==="completed_precomputed") return "Trường demo đã chuẩn bị sẵn; chưa đọc tệp bằng OCR/KIE.";
   if(key==="damage_segmentation" && value.status==="unavailable") return "Chưa có checkpoint YOLO trên máy demo.";
   if(key==="document_pipeline" && value.status==="unavailable") return "Chưa có checkpoint chứng từ trên máy demo.";

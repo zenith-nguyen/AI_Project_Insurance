@@ -10,6 +10,7 @@ $env:INSURANCE_API_MODE = "live"
 # Keep the validated profile as the default. Experimental profiles can be
 # enabled explicitly, but must pass the three-case business gate before release.
 if (-not $env:INSURANCE_OCR_PROFILE) { $env:INSURANCE_OCR_PROFILE = "robust" }
+if (-not $env:INSURANCE_PRELOAD_MODELS) { $env:INSURANCE_PRELOAD_MODELS = "1" }
 $YoloWeights = Join-Path $RepoRoot "artifacts\models\damage_segmentation\cardd_candidate_v1\best.pt"
 if (Test-Path -LiteralPath $YoloWeights) {
     & ".venv\Scripts\python.exe" -c "import importlib.util,sys; sys.exit(0 if importlib.util.find_spec('ultralytics') else 1)"
