@@ -32,7 +32,7 @@ Người demo biết hệ thống vẫn đang chạy ở bước nào. Đội ph
 - Cache hit không chạy lại model nếu hồ sơ và bằng chứng không đổi.
 - Có số đo cho ba hồ sơ demo v2 trên cùng một cấu hình máy.
 
-Trạng thái: **đã hoàn thành phần instrumentation; còn chạy benchmark ba case**.
+Trạng thái: **hoàn thành**. Benchmark Hybrid KIE v2 đạt 3/3 business gate; cache hit đạt 0,0 giây. PaddleOCR chiếm 328,3/389,2 giây và là nút thắt cần xử lý tiếp.
 
 ## Mốc B — Golden rehearsal và UAT nghiên cứu
 

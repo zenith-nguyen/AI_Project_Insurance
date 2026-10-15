@@ -8,7 +8,7 @@ from decimal import Decimal, InvalidOperation
 from .schema import BoundingBox, ExtractedField, OCRToken
 
 
-DATE_RE = re.compile(r"\b(?:\d{1,2}[/-]){2}\d{2,4}\b")
+DATE_RE = re.compile(r"\b(?:(?:\d{1,2}[/-]){2}\d{2,4}|\d{4}-\d{1,2}-\d{1,2})\b")
 PLATE_RE = re.compile(r"\b\d{2}[A-Z]-?\d{3,5}(?:\.\d{2})?\b", re.IGNORECASE)
 DOC_ID_RE = re.compile(
     r"(?:invoice|receipt|document|claim|h[oó]a\s*đ[oơ]n|s[oố])\s*(?:no\.?|number)?\s*[:#]?\s*([A-Z0-9][A-Z0-9./-]{3,})",
@@ -19,10 +19,11 @@ AMOUNT_RE = re.compile(
     r"(?:VND|VNĐ|USD|\$)?\s*([0-9][0-9.,\s]{2,})(?:\s*(?:VND|VNĐ|USD|đ))?",
     re.IGNORECASE,
 )
+CURRENCY_AMOUNT_RE = re.compile(r"\b([0-9]{1,3}(?:[.,][0-9]{3})+)\s*(?:VND|VNĐ|đ)\b", re.IGNORECASE)
 
 
 def _normalize_date(value: str) -> str | None:
-    for fmt in ("%d/%m/%Y", "%d-%m-%Y", "%d/%m/%y", "%d-%m-%y"):
+    for fmt in ("%d/%m/%Y", "%d-%m-%Y", "%d/%m/%y", "%d-%m-%y", "%Y-%m-%d"):
         try:
             return datetime.strptime(value, fmt).date().isoformat()
         except ValueError:
@@ -73,10 +74,20 @@ class RuleBasedKIE:
             if normalized:
                 fields.append(ExtractedField("document_date", date.group(0), normalized, confidence, bbox=bbox, evidence_token_indexes=evidence))
         amount = AMOUNT_RE.search(text)
-        if amount:
-            normalized_amount = _normalize_amount(amount.group(1))
+        amount_text = amount.group(1) if amount else None
+        if amount_text is None:
+            # OCR can lose Vietnamese accents in "Tổng tiền" while preserving
+            # currency values. Prefer the largest VND value as an explicit rule
+            # fallback; model-derived fields still take precedence downstream.
+            candidates = [match.group(1) for match in CURRENCY_AMOUNT_RE.finditer(text)]
+            normalized_candidates = [(_normalize_amount(value), value) for value in candidates]
+            valid_candidates = [(value, raw) for value, raw in normalized_candidates if value is not None]
+            if valid_candidates:
+                _, amount_text = max(valid_candidates, key=lambda item: item[0])
+        if amount_text is not None:
+            normalized_amount = _normalize_amount(amount_text)
             if normalized_amount is not None:
-                fields.append(ExtractedField("total_amount", amount.group(1).strip(), normalized_amount, confidence, bbox=bbox, evidence_token_indexes=evidence))
+                fields.append(ExtractedField("total_amount", amount_text.strip(), normalized_amount, confidence, bbox=bbox, evidence_token_indexes=evidence))
         document_id = DOC_ID_RE.search(text)
         if document_id:
             fields.append(ExtractedField("document_number", document_id.group(1), document_id.group(1).upper(), confidence, bbox=bbox, evidence_token_indexes=evidence))
@@ -85,6 +96,53 @@ class RuleBasedKIE:
             normalized_plate = re.sub(r"[^A-Z0-9]", "", plate.group(0).upper())
             fields.append(ExtractedField("plate_number", plate.group(0), normalized_plate, confidence, bbox=bbox, evidence_token_indexes=evidence))
         return fields
+
+
+class HybridKIE:
+    """Merge LayoutLMv3 with deterministic rules and expose disagreements."""
+
+    model_name = "layoutlmv3-with-rule-fallback"
+    model_version = "v2"
+
+    def __init__(
+        self,
+        primary,
+        fallback: RuleBasedKIE | None = None,
+        *,
+        conflict_confidence_threshold: float = 0.75,
+    ) -> None:
+        if not 0.0 <= conflict_confidence_threshold <= 1.0:
+            raise ValueError("Conflict confidence threshold must be between 0 and 1.")
+        self.primary = primary
+        self.fallback = fallback or RuleBasedKIE()
+        self.conflict_confidence_threshold = conflict_confidence_threshold
+        self.last_warnings: list[str] = []
+        self.model_name = f"{primary.model_name}+rule-fallback"
+        self.model_version = f"{primary.model_version}+rule-v2"
+
+    @staticmethod
+    def _with_method(field: ExtractedField, method: str) -> ExtractedField:
+        return ExtractedField(
+            field.field_name, field.raw_text, field.normalized_value, field.confidence,
+            page_number=field.page_number, bbox=field.bbox,
+            evidence_token_indexes=field.evidence_token_indexes, method=method,
+        )
+
+    def extract(self, tokens: list[OCRToken], image=None) -> list[ExtractedField]:
+        self.last_warnings = []
+        primary_fields = self.primary.extract(tokens, image=image)
+        merged = {field.field_name: field for field in primary_fields if field.normalized_value is not None}
+        for field in self.fallback.extract(tokens, image=image):
+            if field.field_name not in merged:
+                merged[field.field_name] = self._with_method(field, "rule_fallback")
+                continue
+            primary = merged[field.field_name]
+            if primary.normalized_value == field.normalized_value:
+                continue
+            self.last_warnings.append(f"kie_model_rule_conflict:{field.field_name}")
+            if primary.confidence < self.conflict_confidence_threshold:
+                merged[field.field_name] = self._with_method(field, "rule_override_low_confidence")
+        return list(merged.values())
 
 
 class LayoutLMv3KIE:

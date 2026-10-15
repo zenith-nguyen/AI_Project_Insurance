@@ -1,0 +1,345 @@
+{
+  "schema_version": "1.0",
+  "created_at": "2026-10-15T11:36:32.473947+00:00",
+  "scope": "synthetic_demo_runtime_benchmark_only",
+  "accuracy_claim_allowed": false,
+  "pack_root": "D:\\My Dowload\\Practive_00_DEMO_LOP_MOI_3_HO_SO_2026-10-15_v2",
+  "base_url": "http://127.0.0.1:8000",
+  "health": {
+    "status": "ok",
+    "mode": "live",
+    "product_version": "research-v1"
+  },
+  "readiness": {
+    "mode": "live",
+    "fully_live": true,
+    "modules": {
+      "tabular_risk": {
+        "active": true,
+        "version": "tabular_v1"
+      },
+      "consistency": {
+        "active": true,
+        "version": "consistency_v2"
+      },
+      "relationships": {
+        "active": true,
+        "version": "point_in_time_v2"
+      },
+      "media_authenticity": {
+        "active": true,
+        "version": "media_authenticity_v3",
+        "exiftool": false,
+        "c2patool": false,
+        "synthid": false,
+        "pixel_forensics": false
+      },
+      "damage_segmentation": {
+        "active": true,
+        "reason": null
+      },
+      "document_pipeline": {
+        "active": true,
+        "reason": null
+      }
+    }
+  },
+  "cases": [
+    {
+      "case_key": "hatchback_full",
+      "claim_id": "CLM-BENCH-1015113047-HATCHBACK-FULL-f9e53",
+      "elapsed_seconds": 101.9,
+      "cache_hit": false,
+      "stage_durations_seconds": {
+        "queued": 0.0,
+        "preparing": 0.0,
+        "tabular": 0.2,
+        "evidence": 0.0,
+        "image_authenticity": 0.0,
+        "damage": 4.3,
+        "document_loading": 15.5,
+        "document_classifier": 1.2,
+        "document_ocr": 78.0,
+        "document_kie": 2.2,
+        "relationships": 0.4,
+        "finalizing": 0.0
+      },
+      "analysis_status": "complete",
+      "priority": "high",
+      "signal_count": 5,
+      "module_status": {
+        "tabular_risk": {
+          "status": "completed",
+          "reason": null,
+          "required_field_count": 29,
+          "provided_field_count": 29,
+          "missing_field_count": 0,
+          "missing_fields": [],
+          "missing_business_groups": []
+        },
+        "relationships": {
+          "status": "completed",
+          "reason": null
+        },
+        "document_pipeline": {
+          "status": "completed",
+          "reason": null
+        },
+        "damage_segmentation": {
+          "status": "completed",
+          "reason": null
+        },
+        "media_authenticity": {
+          "status": "completed",
+          "reason": null
+        },
+        "consistency": {
+          "status": "completed",
+          "reason": null
+        },
+        "guided_capture": {
+          "status": "skipped_optional",
+          "reason": "Guided capture was not requested."
+        }
+      },
+      "business_gate": {
+        "checks": {
+          "image_and_document_received": true,
+          "required_modules_completed": true,
+          "traceability_present": true,
+          "critical_document_fields_recovered": true
+        },
+        "expected_fields": {
+          "document_date": "2026-10-09",
+          "total_amount": 31600000.0,
+          "plate_number": "59H24681"
+        },
+        "recovered_fields": {
+          "document_date": "2026-10-09",
+          "total_amount": 31600000.0,
+          "plate_number": "59H24681"
+        },
+        "passed": true
+      }
+    },
+    {
+      "case_key": "van_relationship",
+      "claim_id": "CLM-BENCH-1015113047-VAN-RELATIONSHIP-05827",
+      "elapsed_seconds": 78.4,
+      "cache_hit": false,
+      "stage_durations_seconds": {
+        "queued": 0.0,
+        "preparing": 0.0,
+        "tabular": 0.0,
+        "evidence": 0.0,
+        "image_authenticity": 0.0,
+        "damage": 1.0,
+        "document_loading": 0.0,
+        "document_classifier": 0.3,
+        "document_ocr": 74.8,
+        "document_kie": 2.2,
+        "relationships": 0.0,
+        "finalizing": 0.0
+      },
+      "analysis_status": "complete",
+      "priority": "high",
+      "signal_count": 6,
+      "module_status": {
+        "tabular_risk": {
+          "status": "completed",
+          "reason": null,
+          "required_field_count": 29,
+          "provided_field_count": 29,
+          "missing_field_count": 0,
+          "missing_fields": [],
+          "missing_business_groups": []
+        },
+        "relationships": {
+          "status": "completed",
+          "reason": null
+        },
+        "document_pipeline": {
+          "status": "completed",
+          "reason": null
+        },
+        "damage_segmentation": {
+          "status": "completed",
+          "reason": null
+        },
+        "media_authenticity": {
+          "status": "completed",
+          "reason": null
+        },
+        "consistency": {
+          "status": "completed",
+          "reason": null
+        },
+        "guided_capture": {
+          "status": "skipped_optional",
+          "reason": "Guided capture was not requested."
+        }
+      },
+      "business_gate": {
+        "checks": {
+          "image_and_document_received": true,
+          "required_modules_completed": true,
+          "traceability_present": true,
+          "critical_document_fields_recovered": false,
+          "relationship_found": true
+        },
+        "expected_fields": {
+          "document_date": "2026-10-10",
+          "total_amount": 24900000.0,
+          "plate_number": "50D61537"
+        },
+        "recovered_fields": {
+          "total_amount": 14442000.0,
+          "document_date": "2026-10-10",
+          "plate_number": "50D61537"
+        },
+        "passed": false
+      }
+    },
+    {
+      "case_key": "sedan_authenticity",
+      "claim_id": "CLM-BENCH-1015113047-SEDAN-AUTHENTICITY-377bb",
+      "elapsed_seconds": 159.9,
+      "cache_hit": false,
+      "stage_durations_seconds": {
+        "queued": 0.0,
+        "preparing": 0.0,
+        "tabular": 0.0,
+        "evidence": 0.0,
+        "image_authenticity": 0.0,
+        "damage": 0.7,
+        "document_loading": 0.0,
+        "document_classifier": 0.2,
+        "document_ocr": 148.7,
+        "document_kie": 10.1,
+        "relationships": 0.0,
+        "finalizing": 0.1
+      },
+      "analysis_status": "complete",
+      "priority": "high",
+      "signal_count": 6,
+      "module_status": {
+        "tabular_risk": {
+          "status": "completed",
+          "reason": null,
+          "required_field_count": 29,
+          "provided_field_count": 29,
+          "missing_field_count": 0,
+          "missing_fields": [],
+          "missing_business_groups": []
+        },
+        "relationships": {
+          "status": "completed",
+          "reason": null
+        },
+        "document_pipeline": {
+          "status": "completed",
+          "reason": null
+        },
+        "damage_segmentation": {
+          "status": "completed",
+          "reason": null
+        },
+        "media_authenticity": {
+          "status": "completed",
+          "reason": null
+        },
+        "consistency": {
+          "status": "completed",
+          "reason": null
+        },
+        "guided_capture": {
+          "status": "skipped_optional",
+          "reason": "Guided capture was not requested."
+        }
+      },
+      "business_gate": {
+        "checks": {
+          "image_and_document_received": true,
+          "required_modules_completed": true,
+          "traceability_present": true,
+          "critical_document_fields_recovered": false,
+          "authenticity_review_signal": true
+        },
+        "expected_fields": {
+          "document_date": "2026-10-11",
+          "total_amount": 36750000.0,
+          "plate_number": "61A90426"
+        },
+        "recovered_fields": {
+          "total_amount": 21315000.0,
+          "document_date": "2026-10-11",
+          "plate_number": "61A90426"
+        },
+        "passed": false
+      }
+    }
+  ],
+  "summary": {
+    "case_count": 3,
+    "business_gate_passed": 1,
+    "full_run_seconds": 344.9,
+    "slowest_stages_total": [
+      {
+        "stage": "document_ocr",
+        "seconds": 301.5
+      },
+      {
+        "stage": "document_loading",
+        "seconds": 15.5
+      },
+      {
+        "stage": "document_kie",
+        "seconds": 14.5
+      },
+      {
+        "stage": "damage",
+        "seconds": 6.0
+      },
+      {
+        "stage": "document_classifier",
+        "seconds": 1.7
+      },
+      {
+        "stage": "relationships",
+        "seconds": 0.4
+      },
+      {
+        "stage": "tabular",
+        "seconds": 0.2
+      },
+      {
+        "stage": "finalizing",
+        "seconds": 0.1
+      },
+      {
+        "stage": "queued",
+        "seconds": 0.0
+      },
+      {
+        "stage": "preparing",
+        "seconds": 0.0
+      },
+      {
+        "stage": "evidence",
+        "seconds": 0.0
+      },
+      {
+        "stage": "image_authenticity",
+        "seconds": 0.0
+      }
+    ],
+    "cache_rerun_seconds": 0.0,
+    "cache_hit": true,
+    "cold_baseline": null
+  },
+  "limitations": [
+    "Synthetic cases measure orchestration and latency, not model accuracy.",
+    "Cold/warm timing applies only to the current machine and dependency versions.",
+    "Business UAT and Vietnamese-domain validation remain required."
+  ]
+}

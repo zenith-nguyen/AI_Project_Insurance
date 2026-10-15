@@ -324,7 +324,11 @@ function renderEvidence(a) {
         addResult(fields,"Trích đoạn OCR",excerpt.length>320?`${excerpt.slice(0,320)}…`:excerpt);
       }
       if(extracted.length){
-        extracted.forEach(field=>addResult(fields,`Trường ${field.field_name}`,`${field.normalized_value} · độ tin cậy ${field.confidence==null?"—":Math.round(field.confidence*100)+"%"}`));
+        const fieldNames={total_amount:"Tổng tiền",document_date:"Ngày chứng từ",plate_number:"Biển số xe",document_number:"Số chứng từ"};
+        const methodNames={layoutlmv3:"LayoutLMv3",rule_fallback:"quy tắc dự phòng vì model chưa có kết quả",rule_override_low_confidence:"quy tắc được chọn vì model confidence thấp và hai bên mâu thuẫn",rule:"quy tắc xác định"};
+        extracted.forEach(field=>addResult(fields,`Trường ${fieldNames[field.field_name]||field.field_name}`,`${field.normalized_value} · độ tin cậy ${field.confidence==null?"—":Math.round(field.confidence*100)+"%"} · nguồn: ${methodNames[field.method]||field.method||"không xác định"}`));
+        const conflicts=(result.warnings||[]).filter(warning=>warning.startsWith("kie_model_rule_conflict:"));
+        if(conflicts.length)addResult(fields,"⚑ Vì sao chứng từ có cờ",`Model học máy và quy tắc đọc chứng từ cho kết quả khác nhau ở ${conflicts.map(value=>fieldNames[value.split(":")[1]]||value.split(":")[1]).join(", ")}. Giá trị đang hiển thị đã đi qua chính sách confidence; người duyệt cần đối chiếu vùng khoanh với bản gốc trước khi lưu quyết định.`);
         addResult(fields,"Cách đọc khung chứng từ","Khung cam là trường có cấu trúc do KIE trích xuất; phải đối chiếu bản gốc trước khi dùng.");
       } else {
         addResult(fields,"Trường có cấu trúc","Chưa trích được ngày hoặc tổng tiền từ chứng từ này. Model KIE hiện được huấn luyện trên hóa đơn SROIE tiếng Anh, nên biên bản tai nạn tiếng Việt nằm ngoài miền đánh giá.");

@@ -2,8 +2,11 @@
 from __future__ import annotations
 
 import os
+import tempfile
 from pathlib import Path
 from typing import Any, Sequence
+
+from PIL import Image
 
 from .schema import BoundingBox, OCRToken
 
@@ -49,7 +52,14 @@ def normalize_paddle_output(raw: Any, page_number: int = 1) -> list[OCRToken]:
 
 
 class PaddleOCREngine:
-    def __init__(self, lang: str = "en", **kwargs: Any) -> None:
+    def __init__(
+        self,
+        lang: str = "en",
+        *,
+        profile: str = "robust",
+        max_side: int | None = None,
+        **kwargs: Any,
+    ) -> None:
         # PaddlePaddle 3.3.x on Windows can fail in the oneDNN/PIR executor for
         # PP-OCRv6. Keep the portable CPU path until upstream supports the
         # ArrayAttribute<DoubleAttribute> conversion used by these models.
@@ -61,13 +71,62 @@ class PaddleOCREngine:
             raise RuntimeError(
                 "PaddleOCR is optional; install requirements-document.txt and a compatible PaddlePaddle wheel."
             ) from error
+        if profile not in {"robust", "fast_upright"}:
+            raise ValueError(f"Unknown PaddleOCR profile: {profile}")
+        if max_side is not None and max_side < 640:
+            raise ValueError("OCR max_side must be at least 640 pixels.")
+        if profile == "fast_upright":
+            kwargs.setdefault("use_doc_orientation_classify", False)
+            kwargs.setdefault("use_doc_unwarping", False)
+            kwargs.setdefault("use_textline_orientation", False)
         self.model_name = "PaddleOCR"
-        self.model_version = "runtime"
+        self.profile = profile
+        self.max_side = max_side
+        size_label = f"-max{max_side}" if max_side else ""
+        self.model_version = f"runtime-{lang}-{profile}{size_label}"
         self._engine = PaddleOCR(lang=lang, **kwargs)
 
     def predict(self, image: Path, page_number: int = 1) -> list[OCRToken]:
-        if hasattr(self._engine, "predict"):
-            raw = list(self._engine.predict(str(image)))
-        else:
-            raw = self._engine.ocr(str(image), cls=True)
-        return normalize_paddle_output(raw, page_number)
+        source = Path(image)
+        temporary: Path | None = None
+        scale_x = scale_y = 1.0
+        try:
+            inference_path = source
+            if self.max_side:
+                with Image.open(source) as opened:
+                    width, height = opened.size
+                    if max(width, height) > self.max_side:
+                        resized = opened.convert("RGB")
+                        resized.thumbnail((self.max_side, self.max_side), Image.Resampling.LANCZOS)
+                        handle = tempfile.NamedTemporaryFile(prefix="insurance-ocr-", suffix=".png", delete=False)
+                        handle.close()
+                        temporary = Path(handle.name)
+                        resized.save(temporary, optimize=True)
+                        inference_path = temporary
+                        scale_x = width / resized.width
+                        scale_y = height / resized.height
+            if hasattr(self._engine, "predict"):
+                raw = list(self._engine.predict(str(inference_path)))
+            else:
+                raw = self._engine.ocr(str(inference_path), cls=True)
+            tokens = normalize_paddle_output(raw, page_number)
+            if scale_x == 1.0 and scale_y == 1.0:
+                return tokens
+            return [
+                OCRToken(
+                    token.text,
+                    token.confidence,
+                    (
+                        BoundingBox(
+                            token.bbox.x1 * scale_x, token.bbox.y1 * scale_y,
+                            token.bbox.x2 * scale_x, token.bbox.y2 * scale_y,
+                        )
+                        if token.bbox else None
+                    ),
+                    token.page_number,
+                )
+                for token in tokens
+            ]
+        finally:
+            if temporary is not None:
+                temporary.unlink(missing_ok=True)

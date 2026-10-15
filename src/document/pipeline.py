@@ -31,6 +31,7 @@ class DocumentPipeline:
             progress("document_kie")
         fields = self.kie.extract(tokens, image=image)
         warnings = []
+        warnings.extend(getattr(self.kie, "last_warnings", []))
         if not tokens:
             warnings.append("ocr_no_text")
         if classification.confidence < 0.5:

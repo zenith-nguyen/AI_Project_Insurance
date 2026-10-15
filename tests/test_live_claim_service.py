@@ -123,6 +123,7 @@ def test_runtime_claim_can_be_intaken_uploaded_and_analyzed(tmp_path):
                 tokens=[OCRToken("Total 61680", 0.9)],
                 fields=[ExtractedField("total_amount", "61680", 61680.0, 0.9)],
                 model_versions={"classifier": "mock", "ocr": "mock", "kie": "mock"},
+                warnings=["kie_model_rule_conflict:total_amount"],
             )
 
     live.document_runtime = Documents()
@@ -150,6 +151,9 @@ def test_runtime_claim_can_be_intaken_uploaded_and_analyzed(tmp_path):
     assert any(item.category == "damage" for item in result.signals)
     assert result.extracted_fields["document_results"][0]["document_type"] == "invoice"
     assert any(item.category == "document" for item in result.signals)
+    conflict = next(item for item in result.signals if item.signal_id.endswith("kie-conflict-total_amount"))
+    assert conflict.severity == "review"
+    assert any("kie_model_rule_conflict:total_amount" in warning for warning in result.warnings)
     image_evidence = next(item for item in result.evidence if item.kind == "image")
     assert image_evidence.content_type == "image/png"
     assert image_evidence.size_bytes == len(image.getvalue())

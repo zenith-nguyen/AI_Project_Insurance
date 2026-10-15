@@ -418,6 +418,21 @@ class LiveClaimService:
                         progress=(lambda stage: progress(stage, None)) if progress else None,
                     )
                     document_results.append(result.to_dict())
+                    for warning in result.warnings:
+                        runtime_warnings.append(f"{item['evidence_id']}: {warning}")
+                        if warning.startswith("kie_model_rule_conflict:"):
+                            field_name = warning.split(":", 1)[1]
+                            signals.append(Signal(
+                                signal_id=f"{item['evidence_id']}-kie-conflict-{field_name}",
+                                category="document",
+                                title="Trường chứng từ có hai kết quả cần đối chiếu",
+                                explanation=(
+                                    f"LayoutLMv3 và quy tắc đọc chứng từ không đồng ý ở trường {field_name}. "
+                                    "Hệ thống đã áp dụng chính sách confidence đã khóa và lưu nguồn của giá trị được chọn."
+                                ),
+                                severity="review", evidence_ids=[item["evidence_id"]],
+                                model_name="layoutlmv3-rule-hybrid", model_version="v2",
+                            ))
                     extracted.update({field.field_name: field.normalized_value for field in result.fields})
                     checks = [
                         check_amount(claim_id, claim_amount, result.fields, result.document_id),
@@ -583,7 +598,7 @@ class LiveClaimService:
                 "relationships": self.registry.modules["relationships"].version,
                 "media_authenticity": MediaAuthenticityAnalyzer.version,
                 **({"damage_segmentation": self.damage.model_version} if self.damage is not None else {}),
-                **({"document_pipeline": "dit-paddleocr-layoutlmv3-live-v1"} if self.document_runtime is not None else {}),
+                **({"document_pipeline": "dit-paddleocr-layoutlmv3-hybrid-v2"} if self.document_runtime is not None else {}),
             },
             module_status=module_status,
             warnings=[

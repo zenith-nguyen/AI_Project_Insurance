@@ -2,12 +2,13 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import tempfile
 from pathlib import Path
 from typing import Callable
 
 from .classifier import DiTClassifier
-from .kie import LayoutLMv3KIE
+from .kie import HybridKIE, LayoutLMv3KIE
 from .ocr import PaddleOCREngine
 from .pipeline import DocumentPipeline
 from .schema import DocumentResult
@@ -47,10 +48,18 @@ class DocumentRuntimeAdapter:
 
     def _get_pipeline(self) -> DocumentPipeline:
         if self._pipeline is None:
+            ocr_profile = os.getenv("INSURANCE_OCR_PROFILE", "robust")
+            max_side_value = os.getenv("INSURANCE_OCR_MAX_SIDE", "").strip()
+            max_side = int(max_side_value) if max_side_value else None
+            layout_kie = LayoutLMv3KIE(str(self.checkpoint), device=self.device)
             self._pipeline = DocumentPipeline(
                 DiTClassifier(device=self.device),
-                PaddleOCREngine(lang="en"),
-                LayoutLMv3KIE(str(self.checkpoint), device=self.device),
+                PaddleOCREngine(
+                    lang=os.getenv("INSURANCE_OCR_LANG", "en"),
+                    profile=ocr_profile,
+                    max_side=max_side,
+                ),
+                HybridKIE(layout_kie),
             )
         return self._pipeline
 
