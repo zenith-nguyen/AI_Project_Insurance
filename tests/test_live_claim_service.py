@@ -388,6 +388,39 @@ def test_relationship_graph_matches_prior_claims_by_hashed_entities(tmp_path):
     assert "0909000111" not in json.dumps(result.graph_features, ensure_ascii=False)
 
 
+def test_relationship_graph_uses_scored_at_for_imported_history(tmp_path):
+    live = service(tmp_path)
+    common = {"contact_id": "CONTACT-DEMO-01", "repair_shop": "GARAGE-DEMO-01"}
+    live.intake("CLM-HISTORY-001", ClaimIntakeRequest(
+        scored_at="2026-09-20T09:00:00+07:00", plate_number="51A-111.11", relationship_entities=common,
+    ))
+    live.intake("CLM-HISTORY-002", ClaimIntakeRequest(
+        scored_at="2026-09-22T09:00:00+07:00", plate_number="51A-222.22", relationship_entities=common,
+    ))
+
+    result = live.analyze("CLM-HISTORY-002", AnalyzeRequest())
+
+    assert result.graph_features["two_hop_claim_count"] == 1
+    assert result.graph_features["related_claim_ids"] == ["CLM-HISTORY-001"]
+
+
+def test_relationship_graph_scope_prevents_cross_run_contamination(tmp_path):
+    live = service(tmp_path)
+    shared = {"contact_id": "CONTACT-DEMO-01", "repair_shop": "GARAGE-DEMO-01"}
+    live.intake("CLM-RUN-A", ClaimIntakeRequest(
+        scored_at="2026-09-20T09:00:00+07:00", plate_number="51A-111.11",
+        relationship_entities={**shared, "relationship_scope": "run-a"},
+    ))
+    live.intake("CLM-RUN-B", ClaimIntakeRequest(
+        scored_at="2026-09-21T09:00:00+07:00", plate_number="51A-111.11",
+        relationship_entities={**shared, "relationship_scope": "run-b"},
+    ))
+
+    result = live.analyze("CLM-RUN-B", AnalyzeRequest())
+
+    assert result.graph_features["related_claim_ids"] == []
+
+
 def test_admin_queue_reads_persisted_analysis_and_latest_review(tmp_path):
     live = service(tmp_path)
     golden = json.loads((ROOT / "data/golden/claims/CLM-GOLD-001/claim.json").read_text(encoding="utf-8"))

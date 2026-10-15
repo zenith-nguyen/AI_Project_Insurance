@@ -36,6 +36,8 @@ Trạng thái: **hoàn thành**. Benchmark Hybrid KIE v2 đạt 3/3 business gat
 
 ## Mốc B — Golden rehearsal và UAT nghiên cứu
 
+Trạng thái 2026-10-16: **đã chuẩn hóa bộ mở rộng 27 case/9 scenario và tách expected khỏi model input**. Importer từng case và scoped history đã có; actual-vs-expected run toàn bộ và business sign-off vẫn đang chờ.
+
 ### Công việc
 
 1. Chạy ba hồ sơ demo v2 theo thứ tự 01 → 02 → 03.
@@ -45,6 +47,7 @@ Trạng thái: **hoàn thành**. Benchmark Hybrid KIE v2 đạt 3/3 business gat
    - case 03: phát hiện metadata khai báo AI/chỉnh sửa và yêu cầu rà soát.
 3. Kiểm tra audit replay: quyết định và correction vẫn đọc lại được sau khi tải lại trang.
 4. Ghi task completion, lỗi hiểu sai, thời gian hoàn thành và góp ý wording.
+5. Sau ba case trình diễn chính, chạy ma trận 27 case tổng hợp để kiểm tra positive, negative và hard-negative cho completeness, amount/plate consistency, reuse, metadata, graph và ảnh chỉnh sửa.
 
 ### Definition of Done
 
@@ -53,6 +56,7 @@ Trạng thái: **hoàn thành**. Benchmark Hybrid KIE v2 đạt 3/3 business gat
 - 3/3 review được lưu và đọc lại.
 - Một thành viên không viết backend chạy được theo hướng dẫn.
 - Có biên bản UAT nghiên cứu và chữ ký/người xác nhận.
+- Bộ 27 case phải được chạy tách phạm vi history; expected outcome chỉ được mở sau inference.
 
 Lưu ý: PASS mốc này chứng minh luồng sản phẩm; chưa chứng minh độ chính xác trên claim bảo hiểm Việt Nam thật.
 
@@ -80,6 +84,8 @@ Chỉ thực hiện sau khi có benchmark Mốc A.
 ## Mốc D — Chất lượng chứng từ Việt Nam
 
 Trạng thái 2026-10-16: **đã hoàn thành protocol, manifest validation, metric runner và candidate runner có resume**. Chưa có 50–100 trang được adjudicate nên chưa có metric độ chính xác đúng miền và chưa được chọn cấu hình OCR mới.
+
+Đã bổ sung labeling kit private, metric field-level cho ngày/tổng tiền/biển số và promotion gate bắt buộc candidate cải thiện CER lẫn mean latency mà không làm giảm field accuracy.
 
 ### Dữ liệu cần có
 

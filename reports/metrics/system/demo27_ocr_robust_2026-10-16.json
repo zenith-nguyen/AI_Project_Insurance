@@ -1,0 +1,144 @@
+{
+  "schema_version": "vietnamese_ocr_benchmark_v1",
+  "benchmark_tier": "synthetic_engineering",
+  "normalization_policy": "unicode_nfc_whitespace_v1_case_sensitive_diacritics_preserved",
+  "gate": {
+    "minimum_pages": 27,
+    "observed_pages": 27,
+    "enough_pages_for_declared_tier": true,
+    "enough_pages_for_domain_claim": false,
+    "passed": true,
+    "meaning": "PASS permits synthetic engineering comparison only; it does not support real-domain accuracy claims."
+  },
+  "overall": {
+    "pages": 27,
+    "cer": 0.18015414258188825,
+    "wer": 0.49745385105028644,
+    "exact_match_rate": 0.0,
+    "character_edits": 2805,
+    "reference_characters": 15570
+  },
+  "latency_seconds": {
+    "mean": 89.01645185185185,
+    "median": 88.2891,
+    "p95": 97.40067,
+    "total": 2403.4442
+  },
+  "error_indicators": {
+    "empty_prediction_pages": 0,
+    "accent_only_mismatch_pages": 0
+  },
+  "business_field_accuracy": {
+    "document_date": {
+      "pages": 27,
+      "matched_pages": 27,
+      "exact_presence_rate": 1.0
+    },
+    "plate_number": {
+      "pages": 27,
+      "matched_pages": 27,
+      "exact_presence_rate": 1.0
+    },
+    "total_vnd": {
+      "pages": 27,
+      "matched_pages": 27,
+      "exact_presence_rate": 1.0
+    }
+  },
+  "by_document_type": {
+    "repair_estimate": {
+      "pages": 27,
+      "cer": 0.18015414258188825,
+      "wer": 0.49745385105028644,
+      "exact_match_rate": 0.0,
+      "character_edits": 2805,
+      "reference_characters": 15570
+    }
+  },
+  "worst_pages": [
+    {
+      "sample_id": "DEMO27-CLM-03-H",
+      "document_type": "repair_estimate",
+      "cer": 0.18292682926829268,
+      "wer": 0.5086206896551724,
+      "exact_match": false,
+      "latency_seconds": 86.3109
+    },
+    {
+      "sample_id": "DEMO27-CLM-08-H",
+      "document_type": "repair_estimate",
+      "cer": 0.18292682926829268,
+      "wer": 0.5086206896551724,
+      "exact_match": false,
+      "latency_seconds": 100.0266
+    },
+    {
+      "sample_id": "DEMO27-CLM-08-N",
+      "document_type": "repair_estimate",
+      "cer": 0.18292682926829268,
+      "wer": 0.5086206896551724,
+      "exact_match": false,
+      "latency_seconds": 96.5822
+    },
+    {
+      "sample_id": "DEMO27-CLM-00-N",
+      "document_type": "repair_estimate",
+      "cer": 0.18118466898954705,
+      "wer": 0.5,
+      "exact_match": false,
+      "latency_seconds": 86.9779
+    },
+    {
+      "sample_id": "DEMO27-CLM-01-N",
+      "document_type": "repair_estimate",
+      "cer": 0.18118466898954705,
+      "wer": 0.5,
+      "exact_match": false,
+      "latency_seconds": 89.7757
+    },
+    {
+      "sample_id": "DEMO27-CLM-02-N",
+      "document_type": "repair_estimate",
+      "cer": 0.18118466898954705,
+      "wer": 0.5,
+      "exact_match": false,
+      "latency_seconds": 88.0787
+    },
+    {
+      "sample_id": "DEMO27-CLM-03-N",
+      "document_type": "repair_estimate",
+      "cer": 0.18118466898954705,
+      "wer": 0.5,
+      "exact_match": false,
+      "latency_seconds": 81.93
+    },
+    {
+      "sample_id": "DEMO27-CLM-04-P",
+      "document_type": "repair_estimate",
+      "cer": 0.18118466898954705,
+      "wer": 0.5,
+      "exact_match": false,
+      "latency_seconds": 81.2841
+    },
+    {
+      "sample_id": "DEMO27-CLM-05-H",
+      "document_type": "repair_estimate",
+      "cer": 0.18118466898954705,
+      "wer": 0.5,
+      "exact_match": false,
+      "latency_seconds": 90.7961
+    },
+    {
+      "sample_id": "DEMO27-CLM-05-N",
+      "document_type": "repair_estimate",
+      "cer": 0.18118466898954705,
+      "wer": 0.5,
+      "exact_match": false,
+      "latency_seconds": 94.616
+    }
+  ],
+  "privacy": "Raw reference and predicted text are intentionally excluded from this report.",
+  "created_at": "2026-10-15T18:37:10.304339+00:00",
+  "manifest_sha256": "ffe5dbca5004e0f673b2c13a20112b8038dad36208002cacc8f32448aed796f1",
+  "predictions_sha256": "d1bc22dd48f18e19ea79a53e9733bce4e73ae82e4198dcf4102d4e7ea44c4397"
+}

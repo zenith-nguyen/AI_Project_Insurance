@@ -1,0 +1,21 @@
+{
+  "schema_version": "vietnamese_ocr_candidate_comparison_v1",
+  "selected": false,
+  "checks": {
+    "same_benchmark_tier": true,
+    "same_page_count": true,
+    "candidate_gate_passed": true,
+    "business_fields_present": true,
+    "business_field_non_regression": true,
+    "cer_improved": false,
+    "mean_latency_improved": true
+  },
+  "improvement": {
+    "absolute_cer_reduction": -0.12100192678227359,
+    "mean_latency_seconds_reduction": 36.58531851851853
+  },
+  "meaning": "Candidate remains experimental because one or more locked promotion checks failed.",
+  "created_at": "2026-10-15T19:03:51.665927+00:00",
+  "baseline_report": "report_robust.json",
+  "candidate_report": "report_fast_upright_max640.json"
+}

@@ -1,5 +1,5 @@
 schema_version: "1.0"
-updated_at: "2026-10-15"
+updated_at: "2026-10-16"
 release_target: research_handoff
 summary:
   message: >-
@@ -15,29 +15,32 @@ milestones:
     title: Golden claims end-to-end
     status: in_progress
     technical_evidence: >-
-      Có 5 golden claims xác định; golden nhị phân tổng hợp đã PASS 6/6 module,
-      audit replay và traceability. Sign-off nghiên cứu chưa đạt vì bộ 20–50 claim
-      đúng miền cùng expected action chưa được nghiệp vụ duyệt.
-    current_metric: "Binary gate 6/6 PASS; 4 damage regions; 1 document result; CPU analysis 144.7s"
+      Có 5 golden claims trong repo và bộ 27 hồ sơ tổng hợp ngoài Git đã được kiểm toán,
+      chuẩn hóa thành 9 scenario có positive/negative/hard-negative. Sign-off nghiên cứu
+      chưa đạt vì expected action chưa được nghiệp vụ duyệt và bộ này không phải claim thật.
+    current_metric: "27/27 synthetic cases normalized; 9 scenarios; 222 output files hash-locked"
     business_value: >-
       Chứng minh một hồ sơ đi xuyên suốt từ nạp dữ liệu, phân tích, xem bằng chứng,
       sửa trường đến lưu quyết định mà không mất liên kết.
     business_kpi: "Tỷ lệ chạy đủ module; thời gian xử lý; correction rate; audit replay"
     gate: "20–50 claim, không lỗi im lặng, expected action được nghiệp vụ ký duyệt"
-    next_action: "Thu thập và ẩn danh bộ claim đa phương thức; chạy strict golden gate"
-    blocked_by: "Thiếu 20–50 claim đúng miền và business sign-off"
+    next_action: "Chạy 27-case rehearsal, ghi actual/expected và xin business sign-off; tiếp tục thu thập claim đúng miền"
+    blocked_by: "Thiếu business sign-off và claim đúng miền dù synthetic coverage đã đủ 27 case"
   paddleocr:
     order: 2
     title: PaddleOCR trên chứng từ Việt Nam
     status: waiting_for_domain_data
-    technical_evidence: "Baseline SROIE: CER 40,97%; document adapter đã nối live"
-    current_metric: "CER 0.4097; WER 0.5592"
+    technical_evidence: >-
+      Baseline SROIE CER 40,97%; document adapter đã nối live. Benchmark tổng hợp 27 trang:
+      robust CER 18,02%, mean 89,0 giây/trang; fast640 CER 30,12%, mean 52,4 giây/trang;
+      cả hai tìm thấy ngày/tổng tiền/biển số 27/27. Fast640 bị promotion gate loại vì CER giảm chất lượng.
+    current_metric: "Synthetic robust CER 0.1802, WER 0.4975, mean 89.0s; domain claim locked"
     business_value: >-
       Tự điền ngày, tổng tiền và biển số để giảm nhập tay; confidence thấp vẫn
       chuyển người duyệt xác nhận.
     business_kpi: "Field accuracy trọng yếu; correction rate; thời gian đọc/chứng từ"
     gate: "Validation tiếng Việt tách biệt; business field accuracy và latency đạt ngưỡng đã khóa"
-    next_action: "Gắn nhãn chứng từ Việt Nam; benchmark orientation, deskew, crop, contrast và OCR tiếng Việt"
+    next_action: "Chốt benchmark 27 trang tổng hợp rồi gắn nhãn 50–100 trang đúng miền; so sánh orientation, deskew, crop, contrast và OCR tiếng Việt"
     blocked_by: "Chưa có validation set chứng từ bảo hiểm Việt Nam có ground truth"
   xgboost:
     order: 3
@@ -89,14 +92,14 @@ milestones:
     technical_evidence: >-
       Rule v2 và point-in-time graph v2 chạy local, có timestamp gate, entity hashing,
       chuẩn hóa biển số/điện thoại/xưởng và fallback khi field sai định dạng;
-      validation hiện mới là synthetic engineering demo.
-    current_metric: "Engineering contract tests PASS; chưa có precision nghiệp vụ"
+      validation hiện có thêm 3 case graph P/N/H trong bộ demo27 và importer seed history tách biệt.
+    current_metric: "SC07-P scoped smoke: 2/2 history matched in 2.7s; 3 scenarios normalized; chưa có precision nghiệp vụ"
     business_value: >-
       Nêu rõ thông tin không khớp và mở rộng điều tra sang claim dùng chung biển số,
       điện thoại hoặc xưởng trước thời điểm chấm.
     business_kpi: "Alert precision; số liên kết hữu ích; false investigation rate"
     gate: "Rule owner phê duyệt tolerance; entity-resolution benchmark; mọi edge có available_at"
-    next_action: "Tạo tập case đã xác minh, đo alert precision và xin rule-owner sign-off"
+    next_action: "Chạy SC07 P/N/H, ghi false-positive guard; sau đó tạo tập case thật đã xác minh và xin rule-owner sign-off"
     blocked_by: "Chưa có case lịch sử đã xác minh và rule sign-off"
   authenticity_benchmark:
     order: 7
@@ -104,8 +107,8 @@ milestones:
     status: in_progress
     technical_evidence: >-
       Metadata, C2PA hook, exact/near reuse, editing trace và guided capture chạy local;
-      manifest/evaluation scaffold đã có.
-    current_metric: "Engineering contract tests PASS; chưa có domain precision/recall"
+      manifest/evaluation scaffold và các scenario reuse/screen/edit tổng hợp trong demo27 đã có.
+    current_metric: "Engineering contract tests PASS; SC02/04/05/08 available; chưa có domain precision/recall"
     business_value: >-
       Tìm bằng chứng tái sử dụng hoặc dấu chỉnh sửa để yêu cầu ảnh tốt hơn mà không
       cáo buộc nhầm khách hàng là gian lận.

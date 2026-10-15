@@ -105,3 +105,25 @@ powershell -ExecutionPolicy Bypass -File scripts/run_live.ps1
 Swagger: `http://127.0.0.1:8000/docs`. Contract khóa để sinh client nằm tại `contracts/claim_review_openapi.v1.json`.
 
 UI không gửi đường dẫn máy local cho endpoint nội dung. API chỉ stream file đã đăng ký trong evidence manifest của đúng `claim_id`.
+
+## Nạp bộ 27 hồ sơ demo
+
+Bộ đã chuẩn hóa nằm ngoài Git để không đưa ảnh/PDF vào source control. Dùng importer thay vì nhập JSON kỹ thuật trên UI:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\import_demo27_case.py `
+  --pack "D:\My Dowload\00_DEMO27_NORMALIZED_2026-10-16_v1" `
+  --case CLM-07-P `
+  --seed-history `
+  --documents minimal `
+  --analyze
+```
+
+- `minimal`: một hoặc nhiều ảnh xe và một báo giá đã render, phù hợp demo nhanh.
+- `full`: toàn bộ nhóm chứng từ đã khử đường dẫn trùng, phù hợp test pipeline nhưng chậm hơn.
+- `none`: không tải chứng từ; chỉ dùng để cô lập test ảnh/graph, không dùng cho demo end-to-end.
+- `--seed-history`: chỉ dùng khi case có lịch sử riêng như SC02/SC07; reference claim được tạo trước target theo `scored_at`.
+- SC07 nguồn có reference nằm sau target. Importer phản chiếu các khoảng thời gian này về trước target để kiểm thử point-in-time mà không cho graph nhìn tương lai; receipt lưu timestamp gốc và timestamp đã import.
+- Receipt được ghi vào `run_receipts/`, chứa ID runtime, evidence hash, expected route và actual summary.
+
+Không nhập đồng thời toàn bộ 27 case vào cùng kho runtime để test ảnh trùng. Nhiều case cố ý dùng chung ảnh nguồn; chạy chung sẽ tạo cảnh báo cross-claim ngoài phạm vi expected của từng case.

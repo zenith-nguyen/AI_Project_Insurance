@@ -24,6 +24,7 @@ REQUIRED_MANIFEST_FIELDS = {
     "consent_or_legal_basis",
     "pii_treatment",
 }
+BENCHMARK_TIERS = {"domain_validation", "synthetic_engineering"}
 
 
 def sha256_file(path: Path) -> str:
@@ -99,8 +100,14 @@ def load_ground_truth(
         seen_ids.add(sample_id)
         if row["split"] not in allowed:
             raise ValueError(f"{sample_id}: split {row['split']!r} is not allowed for this evaluation")
-        if row["annotation_status"] != "adjudicated":
-            raise ValueError(f"{sample_id}: annotation_status must be 'adjudicated'")
+        benchmark_tier = str(row.get("benchmark_tier", "domain_validation"))
+        if benchmark_tier not in BENCHMARK_TIERS:
+            raise ValueError(f"{sample_id}: unsupported benchmark_tier")
+        allowed_statuses = {"adjudicated"} if benchmark_tier == "domain_validation" else {"source_verified", "adjudicated"}
+        if row["annotation_status"] not in allowed_statuses:
+            raise ValueError(
+                f"{sample_id}: annotation_status must be one of {sorted(allowed_statuses)} for {benchmark_tier}"
+            )
         if not str(row["consent_or_legal_basis"]).strip():
             raise ValueError(f"{sample_id}: consent_or_legal_basis is required")
         if row["pii_treatment"] not in {"synthetic", "redacted", "controlled_private"}:
@@ -121,6 +128,7 @@ def load_ground_truth(
             if actual_hash != expected_hash:
                 raise ValueError(f"{sample_id}: image SHA-256 does not match the manifest")
         row["sample_id"] = sample_id
+        row["benchmark_tier"] = benchmark_tier
         row["resolved_image_path"] = str(image_path)
         row["reference_text_normalized"] = normalize_text(_reference_text(row, manifest_dir))
         validated.append(row)
@@ -162,6 +170,17 @@ def _strip_diacritics(value: str) -> str:
     return "".join(character for character in unicodedata.normalize("NFD", value) if not unicodedata.combining(character))
 
 
+def _canonical_field(value: Any) -> str:
+    return "".join(character for character in normalize_text(str(value)).upper() if character.isalnum())
+
+
+def _field_present(reference: Any, predicted_text: str) -> bool:
+    expected = _canonical_field(reference)
+    if not expected:
+        return False
+    return any(expected in _canonical_field(line) for line in predicted_text.splitlines())
+
+
 def _aggregate(pairs: list[tuple[str, str]]) -> dict[str, Any]:
     char_edits = sum(edit_distance(list(reference), list(prediction)) for reference, prediction in pairs)
     char_count = sum(len(reference) for reference, _ in pairs)
@@ -184,6 +203,10 @@ def evaluate_ocr(
     *,
     minimum_pages: int = 50,
 ) -> dict[str, Any]:
+    tiers = {row.get("benchmark_tier", "domain_validation") for row in ground_truth}
+    if len(tiers) != 1:
+        raise ValueError(f"A benchmark report cannot mix tiers: {sorted(tiers)}")
+    benchmark_tier = next(iter(tiers))
     expected_ids = {row["sample_id"] for row in ground_truth}
     missing = sorted(expected_ids - predictions.keys())
     unexpected = sorted(predictions.keys() - expected_ids)
@@ -195,6 +218,7 @@ def evaluate_ocr(
     latencies: list[float] = []
     accent_only_pages = 0
     empty_prediction_pages = 0
+    business_field_counts: dict[str, dict[str, int]] = defaultdict(lambda: {"pages": 0, "matched_pages": 0})
     page_results: list[dict[str, Any]] = []
     for row in ground_truth:
         prediction = predictions[row["sample_id"]]
@@ -208,6 +232,10 @@ def evaluate_ocr(
             empty_prediction_pages += 1
         if reference_text != predicted_text and _strip_diacritics(reference_text) == _strip_diacritics(predicted_text):
             accent_only_pages += 1
+        for field_name, expected_value in row.get("reference_fields", {}).items():
+            business_field_counts[str(field_name)]["pages"] += 1
+            if _field_present(expected_value, predicted_text):
+                business_field_counts[str(field_name)]["matched_pages"] += 1
         page_metric = _aggregate([pair])
         page_results.append({
             "sample_id": row["sample_id"],
@@ -219,15 +247,23 @@ def evaluate_ocr(
         })
 
     overall = _aggregate(overall_pairs)
+    enough_pages = len(ground_truth) >= minimum_pages
+    domain_claim_allowed = benchmark_tier == "domain_validation" and enough_pages
     return {
         "schema_version": "vietnamese_ocr_benchmark_v1",
+        "benchmark_tier": benchmark_tier,
         "normalization_policy": "unicode_nfc_whitespace_v1_case_sensitive_diacritics_preserved",
         "gate": {
             "minimum_pages": minimum_pages,
             "observed_pages": len(ground_truth),
-            "enough_pages_for_domain_claim": len(ground_truth) >= minimum_pages,
-            "passed": len(ground_truth) >= minimum_pages,
-            "meaning": "PASS permits reporting domain metrics; it does not certify production readiness.",
+            "enough_pages_for_declared_tier": enough_pages,
+            "enough_pages_for_domain_claim": domain_claim_allowed,
+            "passed": enough_pages,
+            "meaning": (
+                "PASS permits reporting domain metrics; it does not certify production readiness."
+                if benchmark_tier == "domain_validation"
+                else "PASS permits synthetic engineering comparison only; it does not support real-domain accuracy claims."
+            ),
         },
         "overall": overall,
         "latency_seconds": {
@@ -240,7 +276,53 @@ def evaluate_ocr(
             "empty_prediction_pages": empty_prediction_pages,
             "accent_only_mismatch_pages": accent_only_pages,
         },
+        "business_field_accuracy": {
+            name: {
+                **counts,
+                "exact_presence_rate": counts["matched_pages"] / counts["pages"] if counts["pages"] else 0.0,
+            }
+            for name, counts in sorted(business_field_counts.items())
+        },
         "by_document_type": {name: _aggregate(pairs) for name, pairs in sorted(by_type.items())},
         "worst_pages": sorted(page_results, key=lambda row: (-row["cer"], row["sample_id"]))[:10],
         "privacy": "Raw reference and predicted text are intentionally excluded from this report.",
+    }
+
+
+def compare_ocr_reports(baseline: dict[str, Any], candidate: dict[str, Any]) -> dict[str, Any]:
+    """Apply the locked quality, business-field and latency promotion gate."""
+    same_tier = baseline.get("benchmark_tier") == candidate.get("benchmark_tier")
+    same_pages = baseline.get("overall", {}).get("pages") == candidate.get("overall", {}).get("pages")
+    baseline_fields = baseline.get("business_field_accuracy", {})
+    candidate_fields = candidate.get("business_field_accuracy", {})
+    required_fields_present = bool(baseline_fields) and set(baseline_fields) <= set(candidate_fields)
+    field_non_regression = required_fields_present and all(
+        candidate_fields[name]["exact_presence_rate"] >= item["exact_presence_rate"]
+        for name, item in baseline_fields.items()
+    )
+    cer_delta = baseline.get("overall", {}).get("cer", 0.0) - candidate.get("overall", {}).get("cer", 0.0)
+    latency_delta = baseline.get("latency_seconds", {}).get("mean", 0.0) - candidate.get("latency_seconds", {}).get("mean", 0.0)
+    checks = {
+        "same_benchmark_tier": same_tier,
+        "same_page_count": same_pages,
+        "candidate_gate_passed": bool(candidate.get("gate", {}).get("passed")),
+        "business_fields_present": required_fields_present,
+        "business_field_non_regression": field_non_regression,
+        "cer_improved": cer_delta > 0,
+        "mean_latency_improved": latency_delta > 0,
+    }
+    selected = all(checks.values())
+    return {
+        "schema_version": "vietnamese_ocr_candidate_comparison_v1",
+        "selected": selected,
+        "checks": checks,
+        "improvement": {
+            "absolute_cer_reduction": cer_delta,
+            "mean_latency_seconds_reduction": latency_delta,
+        },
+        "meaning": (
+            "Candidate may replace the baseline for this benchmark tier; domain validation rules still apply."
+            if selected
+            else "Candidate remains experimental because one or more locked promotion checks failed."
+        ),
     }

@@ -93,7 +93,7 @@ def main() -> None:
     contract, completed = _prepare_run(args)
     engine = PaddleOCREngine(lang=args.lang, profile=args.profile, max_side=args.max_side)
     pending = [row for row in rows if row["sample_id"] not in completed]
-    print(f"Candidate: {engine.model_version}; completed={len(completed)}; pending={len(pending)}")
+    print(f"Candidate: {engine.model_version}; completed={len(completed)}; pending={len(pending)}", flush=True)
     with args.output.open("a", encoding="utf-8", newline="\n") as stream:
         for index, row in enumerate(pending, start=1):
             started = time.perf_counter()
@@ -109,7 +109,10 @@ def main() -> None:
             }
             stream.write(json.dumps(prediction, ensure_ascii=False) + "\n")
             stream.flush()
-            print(f"[{len(completed) + index}/{len(rows)}] {row['sample_id']}: {latency:.1f}s, {len(tokens)} token(s)")
+            print(
+                f"[{len(completed) + index}/{len(rows)}] {row['sample_id']}: {latency:.1f}s, {len(tokens)} token(s)",
+                flush=True,
+            )
     metadata_path = _metadata_path(args.output)
     metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
     metadata.update({
@@ -121,7 +124,7 @@ def main() -> None:
         "privacy": "Prediction text is private and must not be committed to Git.",
     })
     metadata_path.write_text(json.dumps(metadata, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print(f"Completed: {args.output.resolve()}")
+    print(f"Completed: {args.output.resolve()}", flush=True)
 
 
 if __name__ == "__main__":

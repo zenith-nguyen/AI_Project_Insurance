@@ -10,6 +10,12 @@ Kết quả preload và cache theo từng evidence: [INCREMENTAL_CACHE_AND_PRELO
 
 Protocol và runner benchmark OCR đúng miền: [VIETNAMESE_OCR_BENCHMARK_PROTOCOL_V1.md](VIETNAMESE_OCR_BENCHMARK_PROTOCOL_V1.md).
 
+Workspace gán nhãn private có thể tạo bằng `scripts/create_vietnamese_ocr_labeling_kit.py`; gate so sánh candidate được thực thi bằng `scripts/compare_vietnamese_ocr_candidates.py`.
+
+Audit và cách sử dụng bộ 27 hồ sơ tổng hợp: [DEMO27_DATA_AUDIT_AND_ADOPTION_2026-10-16.md](DEMO27_DATA_AUDIT_AND_ADOPTION_2026-10-16.md).
+
+Benchmark OCR 27 trang và quyết định candidate: [DEMO27_OCR_CANDIDATE_BENCHMARK_2026-10-16.md](DEMO27_OCR_CANDIDATE_BENCHMARK_2026-10-16.md).
+
 ## Nguyên tắc
 
 Mỗi nâng cấp phải đồng thời trả lời hai câu hỏi:

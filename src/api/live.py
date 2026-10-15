@@ -55,13 +55,17 @@ class ClaimRepository:
 
     @staticmethod
     def _relationship_values(claim: dict) -> dict[str, str]:
-        values = {key: value for key, value in claim.get("relationship_entities", {}).items() if value}
+        values = {
+            key: value for key, value in claim.get("relationship_entities", {}).items()
+            if value and key != "relationship_scope"
+        }
         if claim.get("plate_number"):
             values.setdefault("vehicle_plate", claim["plate_number"])
         return {key: normalize_entity(key, value) for key, value in values.items() if value}
 
     def _runtime_relationship_graph(self, claim_id: str, claim: dict) -> dict:
         target_values = self._relationship_values(claim)
+        target_scope = claim.get("relationship_entities", {}).get("relationship_scope")
         scored_at = claim.get("scored_at") or claim.get("created_at")
         if not target_values:
             return {"data_status": "not_provided", "scored_at": scored_at, "known_risky_claims": [], "nodes": [], "edges": []}
@@ -70,7 +74,12 @@ class ClaimRepository:
         edges: list[dict] = []
         for candidate_file in sorted(self.runtime_root.glob("*/claim.json")):
             candidate = json.loads(candidate_file.read_text(encoding="utf-8"))
-            available_at = candidate.get("created_at") or candidate.get("scored_at")
+            if target_scope and candidate.get("relationship_entities", {}).get("relationship_scope") != target_scope:
+                continue
+            # scored_at is the point-in-time business timestamp. created_at is
+            # only the ingestion timestamp and may be later when importing an
+            # approved historical record for graph evaluation.
+            available_at = candidate.get("scored_at") or candidate.get("created_at")
             if not available_at or datetime.fromisoformat(available_at.replace("Z", "+00:00")) > datetime.fromisoformat(scored_at.replace("Z", "+00:00")):
                 continue
             candidate_id = candidate.get("claim_id")

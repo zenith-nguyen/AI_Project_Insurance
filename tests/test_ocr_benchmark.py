@@ -3,7 +3,7 @@ import json
 
 import pytest
 
-from src.document.ocr_benchmark import evaluate_ocr, load_ground_truth, load_predictions, normalize_text
+from src.document.ocr_benchmark import compare_ocr_reports, evaluate_ocr, load_ground_truth, load_predictions, normalize_text
 
 
 def _write_jsonl(path, rows):
@@ -73,3 +73,56 @@ def test_evaluation_rejects_incomplete_prediction_coverage(tmp_path):
     truth = load_ground_truth(_dataset(tmp_path))
     with pytest.raises(ValueError, match="coverage mismatch"):
         evaluate_ocr(truth, {}, minimum_pages=1)
+
+
+def test_synthetic_engineering_tier_never_unlocks_domain_claim(tmp_path):
+    manifest = _dataset(tmp_path)
+    row = json.loads(manifest.read_text(encoding="utf-8"))
+    row["benchmark_tier"] = "synthetic_engineering"
+    row["annotation_status"] = "source_verified"
+    _write_jsonl(manifest, [row])
+    predictions_path = tmp_path / "predictions.jsonl"
+    _write_jsonl(predictions_path, [{
+        "sample_id": "VN-OCR-001", "predicted_text": "x", "latency_seconds": 1,
+    }])
+    result = evaluate_ocr(load_ground_truth(manifest), load_predictions(predictions_path), minimum_pages=1)
+    assert result["gate"]["passed"] is True
+    assert result["benchmark_tier"] == "synthetic_engineering"
+    assert result["gate"]["enough_pages_for_domain_claim"] is False
+
+
+def test_business_field_accuracy_matches_formatted_values(tmp_path):
+    manifest = _dataset(tmp_path)
+    row = json.loads(manifest.read_text(encoding="utf-8"))
+    row["reference_fields"] = {
+        "total_vnd": "3600000", "document_date": "22/09/2026", "plate_number": "51A-123.45",
+    }
+    _write_jsonl(manifest, [row])
+    predictions_path = tmp_path / "predictions.jsonl"
+    _write_jsonl(predictions_path, [{
+        "sample_id": "VN-OCR-001",
+        "predicted_text": "Ngày 22-09-2026\nBiển số 51A 12345\nTỔNG CỘNG 3.600.000 VND",
+        "latency_seconds": 1,
+    }])
+    result = evaluate_ocr(load_ground_truth(manifest), load_predictions(predictions_path), minimum_pages=1)
+    assert {name: item["exact_presence_rate"] for name, item in result["business_field_accuracy"].items()} == {
+        "document_date": 1.0, "plate_number": 1.0, "total_vnd": 1.0,
+    }
+
+
+def test_candidate_promotion_requires_quality_fields_and_latency():
+    baseline = {
+        "benchmark_tier": "synthetic_engineering", "gate": {"passed": True},
+        "overall": {"pages": 27, "cer": 0.4}, "latency_seconds": {"mean": 20.0},
+        "business_field_accuracy": {"total_vnd": {"exact_presence_rate": 0.8}},
+    }
+    candidate = {
+        "benchmark_tier": "synthetic_engineering", "gate": {"passed": True},
+        "overall": {"pages": 27, "cer": 0.3}, "latency_seconds": {"mean": 10.0},
+        "business_field_accuracy": {"total_vnd": {"exact_presence_rate": 0.9}},
+    }
+    assert compare_ocr_reports(baseline, candidate)["selected"] is True
+    candidate["business_field_accuracy"]["total_vnd"]["exact_presence_rate"] = 0.7
+    result = compare_ocr_reports(baseline, candidate)
+    assert result["selected"] is False
+    assert result["checks"]["business_field_non_regression"] is False

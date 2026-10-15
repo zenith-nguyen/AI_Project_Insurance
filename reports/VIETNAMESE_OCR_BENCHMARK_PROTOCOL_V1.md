@@ -4,6 +4,8 @@
 
 Quy trình này biến 50–100 trang chứng từ có quyền sử dụng thành một validation set có thể kiểm toán. Nó đo chất lượng và tốc độ của PaddleOCR trên đúng miền nghiệp vụ, không dùng ba hồ sơ demo để tuyên bố độ chính xác.
 
+Tạo workspace private có sẵn biểu mẫu quyền sử dụng và adjudication bằng `scripts/create_vietnamese_ocr_labeling_kit.py --output <thu_muc_private>`.
+
 ## Dữ liệu tối thiểu
 
 Mỗi trang là một dòng JSONL với các trường:
@@ -19,6 +21,8 @@ Mỗi trang là một dòng JSONL với các trường:
 | `annotation_status` | Phải là `adjudicated` |
 | `consent_or_legal_basis` | Mã consent/quyền sử dụng, không ghi PII vào Git |
 | `pii_treatment` | `synthetic`, `redacted` hoặc `controlled_private` |
+| `benchmark_tier` | `domain_validation` cho dữ liệu thật đã duyệt; `synthetic_engineering` cho bộ tổng hợp |
+| `reference_fields` | Trường nghiệp vụ đã xác minh như `total_vnd`, `document_date`, `plate_number`; không bắt buộc ở v1 |
 
 Ví dụ cấu trúc private:
 
@@ -34,7 +38,7 @@ vietnamese_ocr_validation_v1/
 Ví dụ một dòng manifest:
 
 ```json
-{"sample_id":"VN-OCR-0001","split":"validation","image_path":"images/VN-OCR-0001.png","image_sha256":"<64 hex>","document_type":"repair_estimate","reference_text_path":"transcripts/VN-OCR-0001.txt","annotation_status":"adjudicated","consent_or_legal_basis":"CONSENT-BATCH-01","pii_treatment":"redacted"}
+{"sample_id":"VN-OCR-0001","split":"validation","image_path":"images/VN-OCR-0001.png","image_sha256":"<64 hex>","document_type":"repair_estimate","reference_text_path":"transcripts/VN-OCR-0001.txt","annotation_status":"adjudicated","consent_or_legal_basis":"CONSENT-BATCH-01","pii_treatment":"redacted","benchmark_tier":"domain_validation"}
 ```
 
 Prediction JSONL chỉ cần:
@@ -80,6 +84,7 @@ Mỗi run có file sidecar `.run.json` khóa SHA-256 manifest và cấu hình. R
 Runner khóa manifest/prediction bằng SHA-256 và xuất:
 
 - CER, WER và exact match toàn tập;
+- tỷ lệ hiện diện chính xác theo từng trường nghiệp vụ để đo khả năng giảm nhập tay;
 - metric theo loại chứng từ;
 - latency mean, median và p95;
 - số trang OCR trả rỗng;
@@ -100,4 +105,8 @@ Mỗi cấu hình như `robust`, deskew, crop hoặc model tiếng Việt phải
 5. checkpoint, dependency, cấu hình và hash prediction được lưu;
 6. không xem final test trong lúc chọn cấu hình.
 
+Gate này được thực thi bằng `scripts/compare_vietnamese_ocr_candidates.py`: candidate chỉ được chọn khi chạy cùng tier/cùng số trang, CER và mean latency đều tốt hơn, đồng thời mọi field nghiệp vụ không giảm. Nếu thiếu field ground truth thì candidate vẫn ở trạng thái thử nghiệm.
+
 Gate 50 trang chỉ cho phép công bố metric đúng miền ở mức nghiên cứu. Nó không tự động chứng minh production readiness.
+
+Bộ tổng hợp có thể dùng `benchmark_tier=synthetic_engineering` và `annotation_status=source_verified` khi transcript lấy từ nguồn sinh tài liệu. Gate của tier này chỉ cho phép so sánh kỹ thuật giữa candidate; dù đủ số trang, report vẫn khóa `enough_pages_for_domain_claim=false`.

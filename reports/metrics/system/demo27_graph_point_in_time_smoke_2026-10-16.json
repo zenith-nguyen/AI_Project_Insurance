@@ -1,0 +1,15 @@
+{
+  "schema_version": "demo27_graph_point_in_time_smoke_v1",
+  "source_case_id": "CLM-07-P",
+  "expected_route": "review_priority",
+  "point_in_time_rebase_recorded": true,
+  "seeded_history_count": 2,
+  "related_claim_count": 2,
+  "scoped_history_exact_match": true,
+  "priority": "high",
+  "analysis_status": "blocked",
+  "elapsed_seconds": 2.7,
+  "documents_uploaded": 0,
+  "meaning": "Graph found exactly the two scoped historical references. Analysis remains blocked because this isolated smoke intentionally omitted claim documents.",
+  "domain_claim_allowed": false
+}

@@ -1,0 +1,404 @@
+{
+  "schema_version": "demo27_audit_v1",
+  "source_schema_version": "demo_suite_v1",
+  "case_count": 27,
+  "scenario_counts": {
+    "SC00": 3,
+    "SC01": 3,
+    "SC02": 3,
+    "SC03": 3,
+    "SC04": 3,
+    "SC05": 3,
+    "SC06": 3,
+    "SC07": 3,
+    "SC08": 3
+  },
+  "role_counts": {
+    "C": 1,
+    "H": 9,
+    "N": 9,
+    "P": 8
+  },
+  "mode_counts": {
+    "assets": 17,
+    "fixture_metadata": 3,
+    "fixture_ocr": 1,
+    "graph_records": 3,
+    "image_demo_not_codec_benchmark": 3
+  },
+  "asset_manifest_entries": 224,
+  "asset_manifest_missing": [],
+  "asset_manifest_hash_mismatch": [],
+  "fatal_issue_count": 0,
+  "repairable_issue_count": 16,
+  "semantic_limitation_count": 3,
+  "cases": [
+    {
+      "claim_id": "CLM-00-C",
+      "scenario": "SC00",
+      "role": "C",
+      "mode": "assets",
+      "expected_route": "review_normal",
+      "quote_png_valid": true,
+      "quote_transcript_characters": 574
+    },
+    {
+      "claim_id": "CLM-00-N",
+      "scenario": "SC00",
+      "role": "N",
+      "mode": "assets",
+      "expected_route": "request_evidence",
+      "quote_png_valid": true,
+      "quote_transcript_characters": 574
+    },
+    {
+      "claim_id": "CLM-00-H",
+      "scenario": "SC00",
+      "role": "H",
+      "mode": "assets",
+      "expected_route": "review_normal",
+      "quote_png_valid": true,
+      "quote_transcript_characters": 583
+    },
+    {
+      "claim_id": "CLM-01-P",
+      "scenario": "SC01",
+      "role": "P",
+      "mode": "assets",
+      "expected_route": "request_evidence",
+      "quote_png_valid": true,
+      "quote_transcript_characters": 568
+    },
+    {
+      "claim_id": "CLM-01-N",
+      "scenario": "SC01",
+      "role": "N",
+      "mode": "assets",
+      "expected_route": "review_normal",
+      "quote_png_valid": true,
+      "quote_transcript_characters": 574
+    },
+    {
+      "claim_id": "CLM-01-H",
+      "scenario": "SC01",
+      "role": "H",
+      "mode": "assets",
+      "expected_route": "review_normal",
+      "quote_png_valid": true,
+      "quote_transcript_characters": 583
+    },
+    {
+      "claim_id": "CLM-02-P",
+      "scenario": "SC02",
+      "role": "P",
+      "mode": "assets",
+      "expected_route": "review_priority",
+      "quote_png_valid": true,
+      "quote_transcript_characters": 574
+    },
+    {
+      "claim_id": "CLM-02-N",
+      "scenario": "SC02",
+      "role": "N",
+      "mode": "assets",
+      "expected_route": "review_normal",
+      "quote_png_valid": true,
+      "quote_transcript_characters": 574
+    },
+    {
+      "claim_id": "CLM-02-H",
+      "scenario": "SC02",
+      "role": "H",
+      "mode": "assets",
+      "expected_route": "review_normal",
+      "quote_png_valid": true,
+      "quote_transcript_characters": 565
+    },
+    {
+      "claim_id": "CLM-03-P",
+      "scenario": "SC03",
+      "role": "P",
+      "mode": "assets",
+      "expected_route": "review_priority",
+      "quote_png_valid": false,
+      "quote_transcript_characters": 574
+    },
+    {
+      "claim_id": "CLM-03-N",
+      "scenario": "SC03",
+      "role": "N",
+      "mode": "assets",
+      "expected_route": "review_normal",
+      "quote_png_valid": true,
+      "quote_transcript_characters": 574
+    },
+    {
+      "claim_id": "CLM-03-H",
+      "scenario": "SC03",
+      "role": "H",
+      "mode": "assets",
+      "expected_route": "request_evidence",
+      "quote_png_valid": true,
+      "quote_transcript_characters": 574
+    },
+    {
+      "claim_id": "CLM-04-P",
+      "scenario": "SC04",
+      "role": "P",
+      "mode": "assets",
+      "expected_route": "request_evidence",
+      "quote_png_valid": true,
+      "quote_transcript_characters": 574
+    },
+    {
+      "claim_id": "CLM-04-N",
+      "scenario": "SC04",
+      "role": "N",
+      "mode": "assets",
+      "expected_route": "review_normal",
+      "quote_png_valid": true,
+      "quote_transcript_characters": 574
+    },
+    {
+      "claim_id": "CLM-04-H",
+      "scenario": "SC04",
+      "role": "H",
+      "mode": "assets",
+      "expected_route": "request_evidence",
+      "quote_png_valid": true,
+      "quote_transcript_characters": 574
+    },
+    {
+      "claim_id": "CLM-05-P",
+      "scenario": "SC05",
+      "role": "P",
+      "mode": "fixture_metadata",
+      "expected_route": "review_priority",
+      "quote_png_valid": true,
+      "quote_transcript_characters": 574
+    },
+    {
+      "claim_id": "CLM-05-N",
+      "scenario": "SC05",
+      "role": "N",
+      "mode": "fixture_metadata",
+      "expected_route": "review_normal",
+      "quote_png_valid": true,
+      "quote_transcript_characters": 574
+    },
+    {
+      "claim_id": "CLM-05-H",
+      "scenario": "SC05",
+      "role": "H",
+      "mode": "fixture_metadata",
+      "expected_route": "metadata_unknown",
+      "quote_png_valid": true,
+      "quote_transcript_characters": 574
+    },
+    {
+      "claim_id": "CLM-06-P",
+      "scenario": "SC06",
+      "role": "P",
+      "mode": "assets",
+      "expected_route": "review_priority",
+      "quote_png_valid": true,
+      "quote_transcript_characters": 595
+    },
+    {
+      "claim_id": "CLM-06-N",
+      "scenario": "SC06",
+      "role": "N",
+      "mode": "assets",
+      "expected_route": "review_normal",
+      "quote_png_valid": true,
+      "quote_transcript_characters": 595
+    },
+    {
+      "claim_id": "CLM-06-H",
+      "scenario": "SC06",
+      "role": "H",
+      "mode": "fixture_ocr",
+      "expected_route": "review_ocr",
+      "quote_png_valid": true,
+      "quote_transcript_characters": 595
+    },
+    {
+      "claim_id": "CLM-07-P",
+      "scenario": "SC07",
+      "role": "P",
+      "mode": "graph_records",
+      "expected_route": "review_priority",
+      "quote_png_valid": true,
+      "quote_transcript_characters": 574
+    },
+    {
+      "claim_id": "CLM-07-N",
+      "scenario": "SC07",
+      "role": "N",
+      "mode": "graph_records",
+      "expected_route": "review_normal",
+      "quote_png_valid": false,
+      "quote_transcript_characters": 574
+    },
+    {
+      "claim_id": "CLM-07-H",
+      "scenario": "SC07",
+      "role": "H",
+      "mode": "graph_records",
+      "expected_route": "review_normal",
+      "quote_png_valid": true,
+      "quote_transcript_characters": 580
+    },
+    {
+      "claim_id": "CLM-08-P",
+      "scenario": "SC08",
+      "role": "P",
+      "mode": "image_demo_not_codec_benchmark",
+      "expected_route": "review_priority",
+      "quote_png_valid": true,
+      "quote_transcript_characters": 574
+    },
+    {
+      "claim_id": "CLM-08-N",
+      "scenario": "SC08",
+      "role": "N",
+      "mode": "image_demo_not_codec_benchmark",
+      "expected_route": "review_normal",
+      "quote_png_valid": true,
+      "quote_transcript_characters": 574
+    },
+    {
+      "claim_id": "CLM-08-H",
+      "scenario": "SC08",
+      "role": "H",
+      "mode": "image_demo_not_codec_benchmark",
+      "expected_route": "request_evidence",
+      "quote_png_valid": true,
+      "quote_transcript_characters": 574
+    }
+  ],
+  "data_classification": {
+    "synthetic": true,
+    "contains_real_claim_ground_truth": false,
+    "domain_accuracy_claim_allowed": false,
+    "allowed_uses": [
+      "engineering_demo",
+      "workflow_uat",
+      "synthetic_ocr_comparison",
+      "graph_rule_tests"
+    ]
+  },
+  "issues": [
+    {
+      "claim_id": "CLM-03-P",
+      "code": "invalid_quote_png"
+    },
+    {
+      "claim_id": "CLM-04-P",
+      "code": "duplicate_document_path",
+      "count": 1
+    },
+    {
+      "claim_id": "CLM-04-N",
+      "code": "duplicate_document_path",
+      "count": 1
+    },
+    {
+      "claim_id": "CLM-05-P",
+      "code": "duplicate_document_path",
+      "count": 1
+    },
+    {
+      "claim_id": "CLM-05-N",
+      "code": "duplicate_document_path",
+      "count": 1
+    },
+    {
+      "claim_id": "CLM-05-H",
+      "code": "duplicate_document_path",
+      "count": 1
+    },
+    {
+      "claim_id": "CLM-06-P",
+      "code": "duplicate_document_path",
+      "count": 1
+    },
+    {
+      "claim_id": "CLM-06-N",
+      "code": "duplicate_document_path",
+      "count": 1
+    },
+    {
+      "claim_id": "CLM-06-H",
+      "code": "duplicate_document_path",
+      "count": 1
+    },
+    {
+      "claim_id": "CLM-07-P",
+      "code": "duplicate_document_path",
+      "count": 1
+    },
+    {
+      "claim_id": "CLM-07-P",
+      "code": "point_in_time_oracle_uses_future_references",
+      "reference_claim_ids": [
+        "CLM-07-P-REF-1",
+        "CLM-07-P-REF-2"
+      ]
+    },
+    {
+      "claim_id": "CLM-07-N",
+      "code": "duplicate_document_path",
+      "count": 1
+    },
+    {
+      "claim_id": "CLM-07-N",
+      "code": "invalid_quote_png"
+    },
+    {
+      "claim_id": "CLM-07-N",
+      "code": "point_in_time_oracle_uses_future_references",
+      "reference_claim_ids": [
+        "CLM-07-N-REF-1",
+        "CLM-07-N-REF-2"
+      ]
+    },
+    {
+      "claim_id": "CLM-07-H",
+      "code": "duplicate_document_path",
+      "count": 1
+    },
+    {
+      "claim_id": "CLM-07-H",
+      "code": "point_in_time_oracle_uses_future_references",
+      "reference_claim_ids": [
+        "CLM-07-H-REF-1",
+        "CLM-07-H-REF-2"
+      ]
+    },
+    {
+      "claim_id": "CLM-08-P",
+      "code": "duplicate_document_path",
+      "count": 1
+    },
+    {
+      "claim_id": "CLM-08-N",
+      "code": "duplicate_document_path",
+      "count": 1
+    },
+    {
+      "claim_id": "CLM-08-H",
+      "code": "duplicate_document_path",
+      "count": 1
+    }
+  ],
+  "normalized_output": {
+    "case_count": 27,
+    "integrity_file_count": 222,
+    "quote_images_rendered_from_pdf": 27,
+    "duplicate_document_paths_removed": 14,
+    "invalid_source_quote_png_replacements": 2,
+    "point_in_time_uat_cases_requiring_timestamp_rebase": 3,
+    "domain_accuracy_claim_allowed": false
+  }
+}
