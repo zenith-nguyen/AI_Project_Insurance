@@ -245,6 +245,28 @@ def test_missing_tabular_features_blocks_score_without_crashing_other_modules(tm
     assert result.analysis_status == "blocked"
     assert result.research_risk_score is None
     assert result.module_status["tabular_risk"]["status"] == "blocked_missing_input"
+    assert result.module_status["tabular_risk"]["required_field_count"] > 0
+    assert result.module_status["tabular_risk"]["provided_field_count"] == 0
+    assert result.module_status["tabular_risk"]["missing_field_count"] > 0
+    assert set(result.module_status["tabular_risk"]["missing_business_groups"]).issuperset({"policy", "incident"})
+
+
+def test_stored_analysis_from_older_ui_gets_tabular_explanation_metadata(tmp_path):
+    live = service(tmp_path)
+    live.intake("CLM-OLD-UI-001", ClaimIntakeRequest(tabular_features={}))
+    live.analyze("CLM-OLD-UI-001", AnalyzeRequest())
+    analysis_file = tmp_path / "claims/CLM-OLD-UI-001/analysis.json"
+    payload = json.loads(analysis_file.read_text(encoding="utf-8"))
+    payload["module_status"]["tabular_risk"] = {
+        "status": "blocked_missing_input", "reason": "legacy technical error",
+    }
+    analysis_file.write_text(json.dumps(payload), encoding="utf-8")
+
+    restored = service(tmp_path).get_analysis("CLM-OLD-UI-001")
+
+    assert restored is not None
+    assert restored.module_status["tabular_risk"]["missing_field_count"] > 0
+    assert restored.module_status["tabular_risk"]["missing_business_groups"]
 
 
 def test_cross_claim_exact_image_reuse_is_detected_automatically(tmp_path):
@@ -332,6 +354,8 @@ def test_relationship_graph_matches_prior_claims_by_hashed_entities(tmp_path):
     assert result.graph_features["shared_entity_count"] == 2
     assert result.graph_features["two_hop_claim_count"] == 1
     assert any(signal.category == "relationship" for signal in result.signals)
+    assert result.graph_features["query_entity_display"]["contact_phone"] == "••••0111"
+    assert "0909000111" not in json.dumps(result.graph_features, ensure_ascii=False)
 
 
 def test_admin_queue_reads_persisted_analysis_and_latest_review(tmp_path):

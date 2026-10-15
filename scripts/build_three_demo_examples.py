@@ -76,7 +76,9 @@ def instructions(case: dict) -> str:
 6. Bấm **Phân tích hồ sơ** đúng một lần. Theo dõi trạng thái: chờ lượt → dữ liệu bảng → ảnh/chứng từ → quan hệ → tổng hợp.
 7. Trong lúc job chạy, có thể mở Dashboard ở tab khác; job vẫn tiếp tục. Trên CPU, case có chứng từ có thể mất 2–4 phút ở lượt đầu.
 8. Khi Workbench mở, xem các tab **Tổng quan**, **Ảnh & chứng từ**, **Quan hệ**, **Nhật ký**.
-9. Chọn một quyết định, ghi lý do ít nhất 3 từ và bấm **Lưu quyết định** để kiểm tra Nhật ký.
+9. Nếu có cờ, kiểm tra biểu tượng **⚑** trên đúng tab và đúng ảnh/chứng từ/quan hệ gây ra cờ.
+10. Mở **Chi tiết điểm xếp hạng và lý do chưa chấm**. Nếu không có điểm, UI phải nói rõ thiếu bao nhiêu trường, nhóm dữ liệu nào, phần nào vẫn chạy và việc cần làm.
+11. Chọn một quyết định, ghi lý do ít nhất 3 từ và bấm **Lưu quyết định** để kiểm tra Nhật ký.
 
 ## Mục tiêu
 
@@ -148,6 +150,8 @@ Kết quả đúng: UI hiện mã phiên/hạn giờ; Workbench ghi Guided captu
 6. Khi đang chạy, UI phải hiện giai đoạn và số giây. Có thể mở Dashboard; trạng thái **Đang phân tích** phải xuất hiện.
 7. Trong Workbench, lưu một quyết định rồi mở tab **Nhật ký**. Tab phải nói rõ ai, làm gì, lúc nào và vì sao.
 8. Tab **Quan hệ** phải diễn giải hồ sơ nào liên quan, loại thông tin trùng, ý nghĩa và việc nên làm; số NetworkX nằm trong phần kỹ thuật.
+9. Mã máy như `claim_document` không được xuất hiện ở phần nghiệp vụ. UI phải ghi rõ **Chứng từ bồi thường (biên bản, báo giá hoặc hóa đơn)**.
+10. Cờ cần rà soát phải có biểu tượng **⚑** màu đỏ ở tab và ngay phần bằng chứng/quan hệ liên quan. Tín hiệu chỉ mang tính thông tin không được tính thành cờ.
 
 ## Thời gian
 

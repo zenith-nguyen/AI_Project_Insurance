@@ -37,6 +37,8 @@ UI phải đọc ba trường đầu tiên trước:
 - `research_risk_score`: có thể `null` nếu thiếu feature bảng;
 - `module_status`: lý do module hoàn thành, thiếu input, thiếu artifact hoặc lỗi.
 
+Riêng `module_status.tabular_risk`, dùng `required_field_count`, `provided_field_count`, `missing_field_count` và `missing_business_groups` để giải thích trạng thái chưa chấm. `missing_fields` là chi tiết kỹ thuật, không đưa thẳng cho người nộp hồ sơ. Các mã `claim-intake`, `vehicle_image`, `claim_document` trong `missing_evidence` phải được UI đổi thành tên nghiệp vụ. Chỉ tín hiệu có severity `review` hoặc `high` được đếm là cờ; `info` không phải cờ cần xử lý.
+
 ## Guided capture
 
 ```javascript

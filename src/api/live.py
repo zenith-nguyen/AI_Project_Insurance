@@ -97,19 +97,50 @@ class TabularRiskAdapter:
             raise FileNotFoundError(self.artifact)
         self.bundle = joblib.load(self.artifact)
 
-    def predict(self, values: dict) -> dict:
+    @staticmethod
+    def _business_group(feature: str) -> str:
+        if feature.startswith("policy_") or feature in {"umbrella_limit", "months_as_customer"}:
+            return "policy"
+        if feature.startswith("insured_") or feature in {"age", "capital_gains", "capital_loss"}:
+            return "customer"
+        if feature.startswith("incident_") or feature in {
+            "collision_type", "authorities_contacted", "number_of_vehicles_involved",
+            "property_damage", "bodily_injuries", "witnesses", "police_report_available",
+        }:
+            return "incident"
+        if feature in {"total_claim_amount", "injury_claim", "property_claim", "vehicle_claim"}:
+            return "claim_cost"
+        if feature.startswith("auto_"):
+            return "vehicle"
+        return "other"
+
+    def prepare(self, values: dict) -> tuple[pd.DataFrame, dict]:
         frame = pd.DataFrame([values])
         # tabular_v1 predates the bias-aware candidate and expects insured_hobbies.
         x = features(frame, exclude_biased_features=False)
-        expected = self.bundle["feature_columns"]
+        expected = list(self.bundle["feature_columns"])
         missing = sorted(set(expected) - set(x.columns))
+        groups = sorted({self._business_group(feature) for feature in missing})
+        summary = {
+            "required_field_count": len(expected),
+            "provided_field_count": len(expected) - len(missing),
+            "missing_field_count": len(missing),
+            "missing_fields": missing,
+            "missing_business_groups": groups,
+        }
+        return x, summary
+
+    def predict(self, values: dict) -> dict:
+        x, input_summary = self.prepare(values)
+        expected = list(self.bundle["feature_columns"])
+        missing = input_summary["missing_fields"]
         if missing:
             raise ValueError(f"Golden claim is missing model features: {missing}")
         raw = np.clip(self.bundle["model"].predict_proba(x[expected])[:, 1], 1e-6, 1 - 1e-6)
         score = float(self.bundle["calibrator"].predict_proba(np.log(raw / (1 - raw)).reshape(-1, 1))[0, 1])
         thresholds = self.bundle["thresholds"]
         queue = "high" if score >= thresholds["t2"] else ("review" if score >= thresholds["t1"] else "normal")
-        return {"score": score, "priority": queue}
+        return {"score": score, "priority": queue, "input_summary": input_summary}
 
 
 class JsonlAuditStore:
@@ -267,12 +298,23 @@ class LiveClaimService:
         if progress:
             progress("tabular", None)
         risk = None
+        tabular_values = claim.get("tabular_features", {})
         try:
-            risk = self.risk.predict(claim.get("tabular_features", {}))
-            module_status["tabular_risk"] = {"status": "completed", "reason": None}
+            _, tabular_input_summary = self.risk.prepare(tabular_values)
+        except (KeyError, TypeError, ValueError):
+            tabular_input_summary = {
+                "required_field_count": 0, "provided_field_count": 0,
+                "missing_field_count": 0, "missing_fields": [],
+                "missing_business_groups": ["other"],
+            }
+        try:
+            risk = self.risk.predict(tabular_values)
+            module_status["tabular_risk"] = {
+                "status": "completed", "reason": None, **risk["input_summary"],
+            }
         except (KeyError, TypeError, ValueError) as error:
             module_status["tabular_risk"] = {
-                "status": "blocked_missing_input", "reason": str(error),
+                "status": "blocked_missing_input", "reason": str(error), **tabular_input_summary,
             }
         signals: list[Signal] = []
         evidence = [Evidence(evidence_id="claim-intake", kind="claim", label="Golden claim intake")]
@@ -412,6 +454,11 @@ class LiveClaimService:
                 for node in graph.neighbors(entity)
                 if node != claim_id and graph.nodes[node].get("entity_type") == "claim"
             })
+            relationship_values = self.repository._relationship_values(claim)
+            graph_values["query_entity_display"] = {
+                kind: (f"••••{value[-4:]}" if kind == "contact_phone" else value.upper() if kind == "vehicle_plate" else value)
+                for kind, value in relationship_values.items()
+            }
             graph_values["data_status"] = "provided"
             module_status["relationships"] = {"status": "completed", "reason": None}
             evidence.append(Evidence(evidence_id="relationship-graph", kind="relationship", label="Point-in-time relationship graph"))
@@ -531,11 +578,26 @@ class LiveClaimService:
     def get_analysis(self, claim_id: str) -> ClaimAnalysis | None:
         cached = self.analyses.get(claim_id)
         if cached is not None:
-            return cached
+            return self._enrich_analysis_metadata(claim_id, cached)
         persisted = self.runtime_store.load_analysis(claim_id)
         if persisted is not None:
+            persisted = self._enrich_analysis_metadata(claim_id, persisted)
             self.analyses[claim_id] = persisted
         return persisted
+
+    def _enrich_analysis_metadata(self, claim_id: str, analysis: ClaimAnalysis) -> ClaimAnalysis:
+        """Backfill explanatory metadata for analyses stored by earlier UI versions."""
+        current = dict(analysis.module_status.get("tabular_risk", {}))
+        if "missing_field_count" in current:
+            return analysis
+        try:
+            payload = self.repository.load(claim_id)
+            _, summary = self.risk.prepare(payload["claim"].get("tabular_features", {}))
+        except (KeyError, TypeError, ValueError):
+            return analysis
+        current.update(summary)
+        module_status = {**analysis.module_status, "tabular_risk": current}
+        return analysis.model_copy(update={"module_status": module_status})
 
     def review(self, claim_id: str, request: ReviewRequest) -> ReviewRecord:
         analysis = self.get_analysis(claim_id)

@@ -1,4 +1,4 @@
-import {ClaimReviewClient, ClaimApiError} from "/api-client.js?v=20261015f";
+import {ClaimReviewClient, ClaimApiError} from "/api-client.js?v=20261015g";
 
 const api = new ClaimReviewClient();
 const $ = (id) => document.getElementById(id);
@@ -9,11 +9,26 @@ const priorityNames = {normal:"Thông thường",review:"Cần rà soát",high:"
 const analysisNames = {complete:"Đủ module",partial:"Phân tích một phần",blocked:"Chưa chấm được"};
 const damageNames = {crack:"Nứt",dent:"Móp",scratch:"Trầy xước","glass shatter":"Kính vỡ","lamp broken":"Đèn vỡ","tire flat":"Lốp xẹp"};
 const documentTypeNames = {questionnaire:"Biểu mẫu / bảng hỏi",form:"Biểu mẫu",invoice:"Hóa đơn",letter:"Thư",memo:"Biên bản / ghi nhớ",email:"Email",handwritten:"Tài liệu viết tay"};
+const evidenceTypeNames = {
+  "claim-intake":"Thông tin khai báo ban đầu",
+  vehicle_image:"Ảnh hiện trạng và hư hỏng của xe",
+  claim_document:"Chứng từ bồi thường (biên bản, báo giá hoặc hóa đơn)",
+  rear_wide_angle_photo:"Ảnh toàn cảnh phía sau xe",
+};
+const featureGroupNames = {
+  policy:"thông tin hợp đồng bảo hiểm", customer:"thông tin người được bảo hiểm",
+  incident:"thông tin sự cố", claim_cost:"chi phí/yêu cầu bồi thường",
+  vehicle:"thông tin phương tiện", other:"dữ liệu nghiệp vụ khác",
+};
 const damageColors = {crack:"#9c4f96",dent:"#167f74",scratch:"#d45555","glass shatter":"#4f6ccf","lamp broken":"#c78619","tire flat":"#7259a8"};
 const formatNumber = (value) => value == null ? "—" : new Intl.NumberFormat("vi-VN").format(value);
 const formatBytes = (value) => value == null ? "—" : value < 1024*1024 ? `${(value/1024).toFixed(1)} KB` : `${(value/1024/1024).toFixed(2)} MB`;
 let claimId = "";
 let analysis = null;
+
+const evidenceTypeName = (value) => evidenceTypeNames[value] || value.replaceAll("_"," ");
+const signalForEvidence = (a,evidenceId) => (a.signals||[]).filter(signal=>signal.severity!=="info"&&(signal.evidence_ids||[]).includes(evidenceId));
+const severityLabel = (severity) => severity==="high"?"CỜ MỨC CAO":severity==="review"?"CẦN RÀ SOÁT":"THÔNG TIN";
 
 function setError(message) { const box=$("errorBox"); box.textContent=message; box.hidden=!message; }
 function openTab(name) {
@@ -99,8 +114,36 @@ function moduleDetail(key,value) {
   if(key==="document_pipeline" && value.status==="unavailable") return "Chưa có checkpoint chứng từ trên máy demo.";
   if(key==="guided_capture" && value.status==="skipped_optional") return "Chưa dùng bước chụp ảnh hướng dẫn.";
   if(value.status==="skipped_missing_input") return "Chưa có bằng chứng đầu vào cho module này.";
-  if(value.status==="blocked_missing_input") return "Thiếu trường dữ liệu cần để chấm điểm.";
+  if(value.status==="blocked_missing_input") {
+    const count=value.missing_field_count;
+    const groups=(value.missing_business_groups||[]).map(group=>featureGroupNames[group]||group);
+    return `${count?`Thiếu ${count} trường`:`Thiếu dữ liệu`} để xếp hạng${groups.length?`: ${groups.join(", ")}`:""}.`;
+  }
   return status;
+}
+
+function renderScoreDetails(a) {
+  const status=a.module_status?.tabular_risk||{}, missing=status.missing_field_count||0;
+  const required=status.required_field_count||0, provided=status.provided_field_count||0;
+  const groups=(status.missing_business_groups||[]).map(group=>featureGroupNames[group]||group);
+  const fields=status.missing_fields||[];
+  if(a.research_risk_score==null){
+    $("scoreStatus").textContent="Không đủ dữ liệu để xếp hạng";
+    $("scoreStatus").className="score-state blocked";
+    $("scoreReason").textContent=missing
+      ? `Model cần ${required} trường đã được khóa từ lúc huấn luyện, nhưng hồ sơ mới có ${provided}; còn thiếu ${missing} trường${groups.length?` thuộc ${groups.join(", ")}`:""}. Bỏ trống điểm an toàn hơn việc tự điền hoặc đoán dữ liệu.`
+      : "Dữ liệu bảng không đúng schema mà model đã được huấn luyện; hệ thống chủ động không tạo điểm.";
+    $("scoreStillWorks").textContent="Ảnh xe, nguồn gốc ảnh, chứng từ, luật đối chiếu và quan hệ vẫn chạy độc lập khi có đầu vào. Hồ sơ vẫn có thể được đưa lên ưu tiên nếu các phần này phát sinh cờ.";
+    $("scoreNext").textContent="Không cần người dùng nhập JSON. Hệ thống nghiệp vụ hoặc backend phải bổ sung các trường còn thiếu; hiện tại hãy xử lý theo cờ và bằng chứng gốc.";
+    $("scoreTechnical").textContent=fields.length?fields.join(", "):status.reason||"API chưa trả danh sách trường thiếu.";
+  } else {
+    $("scoreStatus").textContent="Đã xếp hạng hàng chờ";
+    $("scoreStatus").className="score-state ready";
+    $("scoreReason").textContent=`Model đã nhận đủ ${required||provided||"các"} trường trong schema tabular_v1 và tạo điểm ${(a.research_risk_score*100).toFixed(1)}/100.`;
+    $("scoreStillWorks").textContent="Điểm này chạy song song với ảnh, chứng từ, đối chiếu và quan hệ. Một cờ mức cao vẫn có thể đẩy hồ sơ lên trước dù điểm XGBoost thấp.";
+    $("scoreNext").textContent="Dùng điểm để sắp thứ tự xem hồ sơ. Không đọc nó như xác suất gian lận và không dùng riêng điểm này để từ chối bồi thường.";
+    $("scoreTechnical").textContent=`Phiên bản tabular_v1 · ${provided||required||"đủ"}/${required||provided||"đủ"} trường model · output là điểm xếp hạng nghiên cứu.`;
+  }
 }
 
 function renderSignals(a) {
@@ -108,6 +151,7 @@ function renderSignals(a) {
   if (!a.signals.length) { const empty=document.createElement("div");empty.className="empty";empty.textContent="Chưa có tín hiệu được ghi nhận. Hãy vẫn xem ảnh và chứng từ gốc.";list.append(empty);return; }
   a.signals.forEach(signal=>{
     const card=document.createElement("article");card.className=`signal ${signal.severity}`;
+    const flag=document.createElement("div");flag.className=`signal-flag ${signal.severity}`;flag.textContent=`${signal.severity==="info"?"●":"⚑"} ${severityLabel(signal.severity)}`;
     const category=document.createElement("div");category.className="category";category.textContent=categoryNames[signal.category]||signal.category;
     const title=document.createElement("h3");title.textContent=signal.title;
     const observed=document.createElement("div");observed.className="signal-block";const observedLabel=document.createElement("b");observedLabel.textContent="Phát hiện";const observedText=document.createElement("p");observedText.textContent=signalExplanation(signal);observed.append(observedLabel,observedText);
@@ -116,7 +160,7 @@ function renderSignals(a) {
     const technical=document.createElement("details");technical.className="signal-technical";const summary=document.createElement("summary");summary.textContent="Chi tiết kỹ thuật";const techText=document.createElement("p");const confidence=signal.confidence==null?"không công bố":`${(signal.confidence*100).toFixed(1)}%`;techText.textContent=`Model: ${signal.model_name||"rule/system"} · Version: ${signal.model_version||"—"} · Confidence: ${confidence}`;technical.append(summary,techText);
     const button=document.createElement("button");button.type="button";button.textContent="Xem phần liên quan →";
     const tab=signal.category==="relationship"?"relations":["document","consistency","damage","authenticity"].includes(signal.category)?"evidence":"overview";
-    button.addEventListener("click",()=>openTab(tab));card.append(category,title,observed,impact,action,technical,button);list.append(card);
+    button.addEventListener("click",()=>openTab(tab));card.append(flag,category,title,observed,impact,action,technical,button);list.append(card);
   });
 }
 
@@ -200,21 +244,36 @@ function damageSummary(a,detections,imageCount) {
   return {title:"Chưa có kết quả phân tích hư hỏng",detail:status.reason||"Module chưa hoàn tất.",action:"Kiểm tra trạng thái module và ảnh đầu vào."};
 }
 
+function appendFlagBanner(parent,signals,label) {
+  if(!signals.length)return;
+  const high=signals.filter(signal=>signal.severity==="high").length;
+  const banner=document.createElement("div");banner.className=`flag-banner ${high?"high":"review"}`;
+  const icon=document.createElement("span");icon.textContent="⚑";
+  const copy=document.createElement("div");
+  const title=document.createElement("b");title.textContent=`${high?"Cờ mức cao":"Cần rà soát"} tại ${label}`;
+  const detail=document.createElement("p");detail.textContent=signals.map(signal=>signal.title).join(" · ");
+  copy.append(title,detail);banner.append(icon,copy);parent.append(banner);
+}
+
 function renderEvidence(a) {
   const images=a.evidence.filter(e=>e.kind==="image" && e.source_uri?.startsWith("runtime://"));
   const documents=a.evidence.filter(e=>e.kind==="document" && e.source_uri?.startsWith("runtime://"));
   const detections=a.extracted_fields?.damage_detections||[];
   const docResults=a.extracted_fields?.document_results||[];
   const authenticity=a.extracted_fields?.media_authenticity||[];
-  const vehicle=$("vehiclePreview");vehicle.replaceChildren();
+  const vehicle=$("vehiclePreview");vehicle.replaceChildren();vehicle.classList.remove("flagged-high","flagged-review");
+  let imageFlags=[];
   if (images.length) {
     const img=document.createElement("img");img.alt="Ảnh xe đã nộp cho hồ sơ";img.src=api.evidenceContentUrl(a.claim_id,images[0].evidence_id);
     vehicle.append(img);addOverlay(vehicle,img,detections.filter(d=>d.evidence_id===images[0].evidence_id),"damage");
     const imageReport=authenticity.find(row=>row.evidence_id===images[0].evidence_id);
+    imageFlags=signalForEvidence(a,images[0].evidence_id);
+    vehicle.classList.add(imageFlags.some(signal=>signal.severity==="high")?"flagged-high":imageFlags.length?"flagged-review":"flagged-none");
     const info=imageReport?.image_info||{};
     $("vehicleMeta").textContent=`${images.length} ảnh · ${images[0].label} · ${info.width||"?"}×${info.height||"?"} px · ${formatBytes(images[0].size_bytes)}`;
   } else {vehicle.textContent="Hồ sơ này chưa có ảnh xe.";$("vehicleMeta").textContent="Không suy ra xe không hư hỏng khi thiếu ảnh.";}
   const damageList=$("damageResults");damageList.replaceChildren();
+  appendFlagBanner(damageList,imageFlags,"ảnh xe này");
   const damage=damageSummary(a,detections,images.length);
   addResult(damageList,damage.title,damage.detail);
   if(images.length){
@@ -235,9 +294,12 @@ function renderEvidence(a) {
     damageList.append(checklist);
   }
   addResult(damageList,"Hành động với nguồn gốc ảnh",auth.action);
-  const preview=$("documentPreview");preview.replaceChildren();
+  const preview=$("documentPreview");preview.replaceChildren();preview.classList.remove("flagged-high","flagged-review");
+  let documentFlags=[];
   if (documents.length) {
     const evidence=documents[0];const url=api.evidenceContentUrl(a.claim_id,evidence.evidence_id);
+    documentFlags=signalForEvidence(a,evidence.evidence_id);
+    preview.classList.add(documentFlags.some(signal=>signal.severity==="high")?"flagged-high":documentFlags.length?"flagged-review":"flagged-none");
     if (evidence.label.toLowerCase().endsWith(".pdf")) {const frame=document.createElement("iframe");frame.src=url;frame.title="Chứng từ gốc";preview.append(frame);}
     else {
       const img=document.createElement("img");img.src=url;img.alt="Chứng từ gốc đã nộp";preview.append(img);
@@ -248,6 +310,7 @@ function renderEvidence(a) {
     $("documentMeta").textContent=`${documents.length} tệp · ${evidence.label} · ${formatBytes(evidence.size_bytes)} · SHA-256 ${evidence.sha256?evidence.sha256.slice(0,12)+"…":"chưa có"}`;
   } else {preview.textContent="Hồ sơ này chưa có chứng từ nhị phân.";$("documentMeta").textContent="Có thể vẫn có trường demo chuẩn bị sẵn.";}
   const fields=$("documentResults");fields.replaceChildren();
+  appendFlagBanner(fields,documentFlags,"chứng từ này");
   if (docResults.length) {
     docResults.forEach(result=>{
       const tokens=result.tokens||[], extracted=result.fields||[];
@@ -296,26 +359,44 @@ function refreshCorrectionContext() {
 }
 
 function renderGraph(a) {
-  const graph=a.graph_features||{}, box=$("graphMetrics"),brief=$("relationshipBrief"),relatedBox=$("relatedClaims");box.replaceChildren();brief.replaceChildren();relatedBox.replaceChildren();
+  const graph=a.graph_features||{}, box=$("graphMetrics"),brief=$("relationshipBrief"),relatedBox=$("relatedClaims"),alert=$("relationshipAlert"),typesBox=$("relationshipTypes"),checklist=$("relationshipChecklist"),actions=$("relationshipActions");
+  [box,brief,relatedBox,alert,typesBox,checklist,actions].forEach(node=>node.replaceChildren());
+  const relationSignals=(a.signals||[]).filter(signal=>signal.category==="relationship");
   if(graph.data_status==="not_provided") {
+    alert.className="relationship-alert missing";alert.innerHTML="<span>!</span><div><b>Chưa thể đối chiếu với hồ sơ trước</b><p>Hồ sơ chưa có thông tin định danh dùng cho bước quan hệ.</p></div>";
     $("graphState").textContent="Chưa nhận được số điện thoại, biển số hoặc xưởng để đối chiếu. Đây là thiếu dữ liệu, không có nghĩa hồ sơ không liên quan.";
-    addResult(brief,"Ý nghĩa nghiệp vụ","Hệ thống vẫn phân tích ảnh, chứng từ và điểm xếp hạng nếu các đầu vào đó có sẵn.");
-    addResult(brief,"Việc nên làm","Chỉ bổ sung thông tin quan hệ khi đã có trong hồ sơ nghiệp vụ; không tự suy đoán hoặc nhập dữ liệu chưa xác minh.");
+    addResult(brief,"Phần vẫn chạy","Ảnh, chứng từ và điểm xếp hạng vẫn được phân tích nếu có dữ liệu. Chỉ riêng bước tìm hồ sơ liên quan chưa thực hiện được.");
+    addResult(brief,"Cần bổ sung gì","Biển số xe, số điện thoại liên hệ hoặc mã xưởng sửa chữa đã được xác minh trong hồ sơ nghiệp vụ.");
+    addResult(brief,"Không được hiểu sai","Không có dữ liệu quan hệ không đồng nghĩa hồ sơ độc lập hoặc không có rủi ro.");
     return;
   }
   $("graphState").textContent="Hệ thống chỉ dùng liên kết đã tồn tại trước thời điểm chấm để tránh nhìn trước dữ liệu tương lai.";
   [["shared_entity_count","Thực thể dùng chung"],["two_hop_claim_count","Hồ sơ trong 2 bước liên kết"],["connected_component_size","Quy mô cụm liên kết"],["graph_degree","Số liên kết trực tiếp"]].forEach(([key,label])=>{
     const tile=document.createElement("div");tile.className="graph-metric";const number=document.createElement("strong");number.textContent=formatNumber(graph[key]);const name=document.createElement("span");name.textContent=label;tile.append(number,name);box.append(tile);
   });
-  const related=graph.related_claim_ids||[], types=graph.shared_entity_types||[], labels=types.map(type=>({contact_phone:"số điện thoại",repair_shop:"xưởng sửa chữa",vehicle_plate:"biển số xe"}[type]||type));
+  const related=graph.related_claim_ids||[], types=graph.shared_entity_types||[], entityDisplay=graph.query_entity_display||{};
+  const labels=types.map(type=>{const name=({contact_phone:"Số điện thoại liên hệ",repair_shop:"Xưởng sửa chữa",vehicle_plate:"Biển số xe"}[type]||type);return entityDisplay[type]?`${name} (${entityDisplay[type]})`:name});
   if(related.length){
-    addResult(brief,"Hệ thống đã thấy",`${related.length} hồ sơ trước đây có thông tin dùng chung: ${labels.join(", ")||"thực thể liên quan"}.`);
-    addResult(brief,"Vì sao cần quan tâm","Việc một người, xe hoặc xưởng xuất hiện ở nhiều claim có thể hợp lệ, nhưng cũng có thể là dấu hiệu tái sử dụng thông tin cần kiểm tra.");
-    addResult(brief,"Việc nên làm","Mở từng hồ sơ liên quan, đối chiếu thời gian sự cố, chủ xe, ảnh và chứng từ; ghi lý do nếu xác nhận đây là quan hệ hợp lệ.");
-    related.forEach(id=>{const link=document.createElement("a");link.className="related-link";link.href=`/?view=workbench&claim_id=${encodeURIComponent(id)}&tab=relations`;link.textContent=`Mở hồ sơ ${id}`;relatedBox.append(link)});
+    const high=relationSignals.some(signal=>signal.severity==="high");
+    alert.className=`relationship-alert ${high?"high":"review"}`;alert.innerHTML=`<span>⚑</span><div><b>${related.length} hồ sơ trước cần đối chiếu</b><p>Trùng ${labels.join(", ")||"thông tin liên hệ"}. Đây là đầu mối điều tra, chưa phải kết luận gian lận.</p></div>`;
+    labels.forEach(label=>{const chip=document.createElement("span");chip.textContent=`✓ Trùng ${label}`;typesBox.append(chip)});
+    addResult(brief,"Đã tìm thấy gì",`${related.length} hồ sơ cũ nằm trong cùng mạng liên kết và dùng chung ${labels.length} loại thông tin.`);
+    addResult(brief,"Giá trị nghiệp vụ","Giúp người duyệt mở đúng hồ sơ cần so sánh thay vì dò thủ công toàn bộ kho claim.");
+    addResult(brief,"Giới hạn","Hệ thống chỉ biết loại thông tin trùng; giá trị được băm trong graph để giảm lộ dữ liệu. Quan hệ hợp lệ vẫn có thể xảy ra.");
+    related.forEach(id=>{
+      const card=document.createElement("article");card.className="related-claim-card";
+      const copy=document.createElement("div");const title=document.createElement("b");title.textContent=id;const detail=document.createElement("small");detail.textContent=`Dùng chung: ${labels.join(", ")||"thông tin liên kết"}`;copy.append(title,detail);
+      const link=document.createElement("a");link.href=`/?view=workbench&claim_id=${encodeURIComponent(id)}&tab=relations`;link.textContent="Mở và đối chiếu →";card.append(copy,link);relatedBox.append(card);
+    });
+    const heading=document.createElement("h3");heading.textContent="4 câu hỏi cần trả lời trước khi quyết định";checklist.append(heading);
+    ["Đây có đúng là cùng chủ xe, người liên hệ hoặc xưởng hợp lệ không?","Ngày sự cố giữa các hồ sơ có chồng lấn hoặc mâu thuẫn không?","Ảnh hay chứng từ có bị tái sử dụng giữa các hồ sơ không?","Nếu quan hệ hợp lệ, đã ghi rõ căn cứ vào nhật ký chưa?"].forEach((text,index)=>{const row=document.createElement("div");row.innerHTML=`<span>${index+1}</span><p>${text}</p>`;checklist.append(row)});
+    const actionTitle=document.createElement("b");actionTitle.textContent="Chọn hướng xử lý sau khi đối chiếu:";actions.append(actionTitle);
+    [["continue_processing","Quan hệ hợp lệ","Đã đối chiếu hồ sơ liên quan và xác nhận quan hệ dùng chung là hợp lệ."],["request_evidence","Cần thêm bằng chứng","Cần bổ sung bằng chứng để xác minh quan hệ dùng chung giữa các hồ sơ."],["special_review","Chuyển rà soát sâu","Quan hệ dùng chung có điểm chưa hợp lý, cần rà soát chuyên sâu."]].forEach(([decision,label,reason])=>{const button=document.createElement("button");button.type="button";button.textContent=label;button.addEventListener("click",()=>{const radio=document.querySelector(`input[name=decision][value=${decision}]`);if(radio)radio.checked=true;$("reviewReason").value=reason;$("reviewReason").focus();});actions.append(button)});
   } else {
+    alert.className="relationship-alert clear";alert.innerHTML="<span>✓</span><div><b>Chưa thấy hồ sơ cũ dùng chung thông tin</b><p>Kết quả chỉ áp dụng cho kho dữ liệu hiện đang có.</p></div>";
     addResult(brief,"Kết quả đối chiếu","Chưa thấy hồ sơ trước đó dùng chung biển số, số điện thoại hoặc xưởng đã nhập.");
-    addResult(brief,"Giới hạn","Kết quả này chỉ phản ánh dữ liệu đã nạp vào hệ thống; hồ sơ ngoài kho hiện tại chưa được đối chiếu.");
+    addResult(brief,"Ý nghĩa nghiệp vụ","Bước tra cứu quan hệ đã chạy và chưa tạo cờ. Các cờ ảnh, chứng từ hoặc XGBoost vẫn được xem độc lập.");
+    addResult(brief,"Giới hạn","Hồ sơ ngoài kho hiện tại chưa được đối chiếu; kết quả này không chứng minh hồ sơ không có liên quan ở nơi khác.");
   }
 }
 
@@ -343,9 +424,13 @@ function render(a,health) {
   $("modeBadge").textContent=health.mode==="live"?"API live · research v1":"API fixture · prototype";
   $("sideMode").textContent=`${health.mode.toUpperCase()} · ${health.product_version}`;
   $("demoBanner").hidden=!claimId.startsWith("CLM-DEMO-SYN");
-  $("priorityValue").textContent=a.research_risk_score==null?"Chưa chấm":`${(a.research_risk_score*100).toFixed(1)}/100`;
-  $("analysisValue").textContent=a.research_risk_score==null?"Thiếu feature bảng; hướng xử lý vẫn có thể dựa trên cờ ảnh/chứng từ":"Điểm xếp hàng nghiên cứu, không phải xác suất gian lận";
+  const riskStatus=a.module_status?.tabular_risk||{};
+  $("priorityValue").textContent=a.research_risk_score==null?"Không đủ dữ liệu":`${(a.research_risk_score*100).toFixed(1)}/100`;
+  $("analysisValue").textContent=a.research_risk_score==null
+    ? `${riskStatus.missing_field_count?`Thiếu ${riskStatus.missing_field_count} trường nghiệp vụ. `:""}Ảnh, chứng từ và quan hệ vẫn được kiểm tra.`
+    : "Dùng xếp thứ tự xem hồ sơ; không phải xác suất gian lận";
   $("scoreValue").textContent=a.research_risk_score==null?"Chưa chấm":`${(a.research_risk_score*100).toFixed(1)} / 100`;
+  $("riskStat").classList.toggle("missing",a.research_risk_score==null);
   let required=a.required_evidence_count||0,present=a.present_required_count||0;
   if(!required){
     const presentKinds=new Set((a.evidence||[]).map(item=>item.kind).filter(kind=>["claim","image","document"].includes(kind))).size;
@@ -353,12 +438,21 @@ function render(a,health) {
     present=presentKinds;
   }
   $("evidenceValue").textContent=required?`${present}/${required} loại`:`${Math.round(a.evidence_completeness*100)}%`;
-  $("missingValue").textContent=a.missing_evidence.length?`Thiếu: ${a.missing_evidence.join(", ")}`:"Đủ loại đầu vào; chưa khẳng định nội dung đúng hoặc chất lượng tốt";
+  const missingLabels=(a.missing_evidence||[]).map(evidenceTypeName);
+  $("missingValue").textContent=missingLabels.length?`Cần bổ sung: ${missingLabels.join("; ")}`:"Đã nhận đủ nhóm hồ sơ yêu cầu; vẫn cần kiểm tra nội dung";
+  $("evidenceStat").classList.toggle("warning",missingLabels.length>0);
   const highCount=a.signals.filter(signal=>signal.severity==="high").length,reviewCount=a.signals.filter(signal=>signal.severity==="review").length;
-  $("signalValue").textContent=`${formatNumber(a.signals.length)} cờ`;
-  $("signalBreakdown").textContent=`${highCount} mức cao · ${reviewCount} cần rà soát`;
+  const flagCount=highCount+reviewCount;
+  $("signalValue").textContent=flagCount?`⚑ ${formatNumber(flagCount)} cờ`:"✓ 0 cờ";
+  $("signalBreakdown").textContent=flagCount?`${highCount} mức cao · ${reviewCount} cần rà soát · mở thẻ có cờ để xem căn cứ`:"Chưa phát hiện điểm cần rà soát trong phần đã chạy; không phải bảo đảm hồ sơ an toàn";
+  $("signalStat").classList.toggle("alert",highCount>0);
+  $("signalStat").classList.toggle("warning",highCount===0&&reviewCount>0);
+  $("signalStat").classList.toggle("clear",flagCount===0);
+  const evidenceFlagCount=a.signals.filter(signal=>signal.severity!=="info"&&["document","consistency","damage","authenticity"].includes(signal.category)).length;
+  const relationFlagCount=a.signals.filter(signal=>signal.severity!=="info"&&signal.category==="relationship").length;
+  [["overviewTabCount",flagCount],["evidenceTabCount",evidenceFlagCount],["relationTabCount",relationFlagCount]].forEach(([id,count])=>{const badge=$(id);badge.hidden=!count;badge.textContent=count?`⚑ ${count}`:"";badge.classList.toggle("high",id==="overviewTabCount"&&highCount>0)});
   $("heroSubtitle").textContent=a.analysis_status==="partial"?"Hệ thống đã phân tích phần có thể và chỉ rõ phần chưa kiểm tra; thiếu module không được hiểu là hồ sơ bình thường.":"Mở từng tín hiệu để xem bằng chứng, ý nghĩa và hành động trước khi quyết định.";
-  renderBusiness(a);renderModules(a);renderSignals(a);renderEvidence(a);renderGraph(a);renderEvents();
+  renderBusiness(a);renderModules(a);renderScoreDetails(a);renderSignals(a);renderEvidence(a);renderGraph(a);renderEvents();
   const requestedTab=new URLSearchParams(location.search).get("tab") || location.hash.slice(1);
   if(["overview","evidence","relations","audit"].includes(requestedTab)) {
     openTab(requestedTab);

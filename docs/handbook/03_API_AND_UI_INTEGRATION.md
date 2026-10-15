@@ -19,6 +19,20 @@ const events = await api.getEvents(claimId);
 
 Ba trường UI phải đọc trước là `analysis_status`, `research_risk_score` và `module_status`. UI phải hiển thị `warnings`, không đổi risk score thành xác suất gian lận.
 
+Khi `module_status.tabular_risk.status=blocked_missing_input`, backend trả thêm dữ liệu giải thích ổn định để UI không phải tách chuỗi lỗi:
+
+```json
+{
+  "required_field_count": 29,
+  "provided_field_count": 0,
+  "missing_field_count": 29,
+  "missing_business_groups": ["policy", "customer", "incident", "claim_cost", "vehicle"],
+  "missing_fields": ["policy_state", "incident_type"]
+}
+```
+
+`missing_business_groups` dùng cho giao diện nghiệp vụ; `missing_fields` chỉ đặt trong phần kỹ thuật. `missing_evidence` dùng mã contract, nhưng UI phải ánh xạ sang tên tiếng Việt trước khi hiển thị. `graph_features.query_entity_display` chứa giá trị đối chiếu đã giới hạn lộ lọt: số điện thoại chỉ hiện bốn số cuối.
+
 Endpoint nội dung bằng chứng:
 
 ```text

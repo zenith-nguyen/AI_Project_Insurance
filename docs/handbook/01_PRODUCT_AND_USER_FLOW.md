@@ -43,5 +43,7 @@ Ba chỉ số đầu trang có nghĩa riêng:
 - **Loại đầu vào đã nhận**: ví dụ `3/3 loại` nghĩa là đã nhận dữ liệu khai báo, ảnh và chứng từ. Nó không đo độ đúng hoặc chất lượng của nội dung.
 - **Cờ cần kiểm tra**: tổng số phát hiện mà người duyệt phải mở xem; giao diện tách số cờ mức cao và số cờ cần rà soát.
 
-`Ưu tiên cao` phải luôn đi cùng lý do cụ thể như ảnh bị dùng lại, thông tin không khớp hoặc điểm xếp hạng cao. Khi thiếu feature bảng, giao diện hiển thị `Chưa chấm` và vẫn cho phép xử lý các cờ ảnh/chứng từ đã có.
+`Ưu tiên cao` phải luôn đi cùng lý do cụ thể như ảnh bị dùng lại, thông tin không khớp hoặc điểm xếp hạng cao. Khi thiếu feature bảng, giao diện hiển thị **Không đủ dữ liệu**, số trường đã có/còn thiếu, nhóm nghiệp vụ bị thiếu, phần vẫn hoạt động và hành động tiếp theo. Người nộp hồ sơ không nhập JSON; backend hoặc hệ thống nghiệp vụ chịu trách nhiệm ánh xạ các trường bảng.
+
+UI không hiển thị mã máy như `claim_document` cho người duyệt. Ba nhóm hồ sơ dùng tên nghiệp vụ: **Thông tin khai báo ban đầu**, **Ảnh hiện trạng và hư hỏng của xe**, **Chứng từ bồi thường (biên bản, báo giá hoặc hóa đơn)**. Chỉ tín hiệu `review/high` được tính là cờ; tín hiệu `info` chỉ xác nhận một module đã đọc được dữ liệu. Mỗi cờ có biểu tượng `⚑` ở tab và ngay ảnh, chứng từ hoặc quan hệ gây ra cờ.
 
