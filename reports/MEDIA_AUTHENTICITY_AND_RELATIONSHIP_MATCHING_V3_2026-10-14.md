@@ -45,3 +45,5 @@ Các contract test bao phủ:
 - claim thiếu chứng từ vẫn giữ risk score nếu feature bảng đầy đủ.
 
 Bộ demo thao tác tay nằm tại `D:\My Dowload\00_TEST_CLAIM_AI_RELATION_2026-10-14` và bản ZIP cùng tên. Chạy case theo thứ tự 01 đến 06 để quan hệ chỉ sử dụng dữ liệu đã xuất hiện trước đó.
+
+Bộ demo nghiệp vụ mở rộng nằm tại `D:\My Dowload\00_TEST_CLAIM_REVIEW_BUSINESS_V2_2026-10-15` và bản ZIP cùng tên. Bản này có 9 case, bổ sung hồ sơ đầy đủ, thiếu chứng từ, chỉ có chứng từ và thiếu feature bảng; mỗi case ghi riêng kết quả kỹ thuật, giá trị nghiệp vụ, hành động và tiêu chí PASS. Chạy theo thứ tự để kiểm tra reuse/graph point-in-time.

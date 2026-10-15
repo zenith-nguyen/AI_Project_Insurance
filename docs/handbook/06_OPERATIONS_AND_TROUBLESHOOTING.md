@@ -26,3 +26,11 @@ Trong live mode, dữ liệu claim nằm dưới `runtime/claims/{claim_id}/`; m
 
 Dashboard này là giao diện vận hành research local, chưa phải admin production. Trước khi triển khai nội bộ cần đăng nhập, role reviewer/admin, database transaction, phân trang, backup, retention và audit bất biến.
 
+## Khi dashboard báo `api.listClaims is not a function`
+
+Đây là lỗi cache giao diện: trình duyệt đã giữ `api-client.js` cũ trong khi tải `dashboard.js` mới. Bản hiện tại đã gắn version cho cả hai file và HTTP response UI dùng `Cache-Control: no-store`. Sau khi cập nhật code, tải lại đúng một lần bằng `Ctrl+F5`; không cần xóa dữ liệu claim hoặc chạy lại model.
+
+## Bộ test demo nghiệp vụ
+
+Script `scripts/build_business_demo_pack.py` tạo bộ test có thứ tự, hướng dẫn nhập, kết quả kỹ thuật, giá trị nghiệp vụ, hành động và tiêu chí PASS. Bộ ngày 15/10/2026 trên máy demo nằm tại `D:\My Dowload\00_TEST_CLAIM_REVIEW_BUSINESS_V2_2026-10-15` và ZIP cùng tên. Chỉ mở `http://127.0.0.1:8000/`, sau đó dùng menu trái để đi giữa Dashboard, Nạp hồ sơ và Workbench.
+
