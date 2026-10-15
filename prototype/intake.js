@@ -1,7 +1,8 @@
 const byId=id=>document.getElementById(id), message=byId("message");
 let activeClaim=null,captureSession=null,demoEnabled=false,regularEvidenceUploaded=false;
 const sampleFeatures={months_as_customer:166,age:37,policy_number:900001,policy_bind_date:"2008-06-19",policy_state:"IL",policy_csl:"100/300",policy_deductable:2000,policy_annual_premium:1337.28,umbrella_limit:8000000,insured_zip:700001,insured_sex:"MALE",insured_education_level:"JD",insured_occupation:"craft-repair",insured_hobbies:"reading",insured_relationship:"husband",capital_gains:27500,capital_loss:0,incident_date:"2015-02-28",incident_type:"Multi-vehicle Collision",collision_type:"Side Collision",incident_severity:"Major Damage",authorities_contacted:"Police",incident_state:"WV",incident_city:"Riverwood",incident_location:"Synthetic location 1",incident_hour_of_the_day:10,number_of_vehicles_involved:3,property_damage:"NO",bodily_injuries:2,witnesses:2,police_report_available:null,total_claim_amount:67140,injury_claim:7460,property_claim:7460,vehicle_claim:52220,auto_make:"Ford",auto_model:"F150",auto_year:2006};
-const stageNames={queued:"Đang chờ lượt",preparing:"Kiểm tra dữ liệu/cache",tabular:"Chấm điểm dữ liệu bảng",evidence:"Phân tích ảnh và chứng từ",relationships:"Đối chiếu quan hệ",finalizing:"Tổng hợp kết quả"};
+const stageNames={queued:"Đang chờ lượt",preparing:"Kiểm tra dữ liệu/cache",tabular:"Chấm điểm dữ liệu bảng",evidence:"Chuẩn bị bằng chứng",image_authenticity:"Kiểm tra nguồn gốc ảnh",damage:"YOLO khoanh vùng hư hỏng",document_loading:"Chuẩn bị model chứng từ",document_classifier:"DiT nhận dạng chứng từ",document_ocr:"PaddleOCR đọc chữ",document_kie:"LayoutLMv3 trích xuất trường",relationships:"Đối chiếu quan hệ",finalizing:"Tổng hợp kết quả",completed:"Kết quả đã sẵn sàng"};
+const stageDetails={queued:"Job đang chờ tài nguyên suy luận.",preparing:"Hệ thống kiểm tra kết quả có thể dùng lại trước khi chạy model.",tabular:"XGBoost đang tính điểm xếp hạng hàng đợi.",evidence:"Đang chuẩn bị ảnh và chứng từ cho các module tương ứng.",image_authenticity:"Đang kiểm tra metadata, provenance và ảnh đã xuất hiện ở hồ sơ khác.",damage:"YOLOv8s-seg đang tìm và khoanh vùng hư hỏng trên ảnh xe.",document_loading:"Lần đầu có thể chậm vì cần nạp DiT, PaddleOCR và LayoutLMv3 vào bộ nhớ.",document_classifier:"DiT đang xác định loại chứng từ.",document_ocr:"PaddleOCR đang nhận dạng từng vùng chữ; đây thường là bước lâu nhất trên CPU.",document_kie:"LayoutLMv3 đang trích ngày, tổng tiền và các trường cần đối chiếu.",relationships:"NetworkX đang so khớp đầu mối với các hồ sơ có trước.",finalizing:"Đang ghép kết quả kỹ thuật thành hướng xử lý nghiệp vụ."};
 
 function makeClaimId(){const now=new Date(),p=n=>String(n).padStart(2,"0");return `CLM-${now.getFullYear()}${p(now.getMonth()+1)}${p(now.getDate())}-${p(now.getHours())}${p(now.getMinutes())}${p(now.getSeconds())}-${Math.floor(Math.random()*900+100)}`}
 function setStep(id,state,text){const node=byId(id);node.className=`progress-step ${state}`;node.querySelector("span").textContent=text}
@@ -9,6 +10,7 @@ function newClaim(){activeClaim=null;captureSession=null;regularEvidenceUploaded
 function setMessage(text,error=false){message.textContent=text;message.classList.toggle("error",error)}
 function listFiles(input,target){byId(target).textContent=[...input.files].map(file=>`${file.name} · ${(file.size/1024).toFixed(1)} KB`).join("\n")||"Chưa chọn tệp."}
 function formatElapsed(seconds){const total=Math.max(0,Math.floor(seconds||0));return `${String(Math.floor(total/60)).padStart(2,"0")}:${String(total%60).padStart(2,"0")}`}
+function updateJobPanel(claimId,job){const panel=byId("jobHelp"),link=byId("openResult"),elapsed=Number(job.elapsed_seconds||0);panel.hidden=false;byId("jobStageTitle").textContent=`${stageNames[job.stage]||job.message} · ${formatElapsed(elapsed)}`;let detail=stageDetails[job.stage]||job.message;if(elapsed>=180&&["queued","running"].includes(job.status))detail+=" Job đã chạy hơn 3 phút; vẫn có thể mở Hàng đợi để theo dõi mà không làm dừng tiến trình.";byId("jobStageDetail").textContent=detail;link.href=`/?view=workbench&claim_id=${encodeURIComponent(claimId)}`;link.hidden=!job.result_available;byId("result").textContent=JSON.stringify(job,null,2)}
 
 byId("images").onchange=()=>listFiles(byId("images"),"imageList");
 byId("documents").onchange=()=>listFiles(byId("documents"),"documentList");
@@ -28,16 +30,21 @@ async function ensureClaimCreated(){
 async function uploadFiles(claimId,kind,files){for(const file of files){const body=new FormData();body.append("kind",kind);body.append("file",file);const response=await fetch(`/claims/${claimId}/evidence`,{method:"POST",body});if(!response.ok)throw new Error(`${file.name}: ${await response.text()}`)}}
 
 async function pollJob(claimId,job){
-  let current=job;
+  let current=job,pollFailures=0;
   while(["queued","running"].includes(current.status)){
+    updateJobPanel(claimId,current);
     setStep("stepAnalyze","active",`${stageNames[current.stage]||current.message} · ${formatElapsed(current.elapsed_seconds)}`);
-    setMessage(`${current.message} Bạn có thể mở Dashboard ở tab khác; tiến trình vẫn tiếp tục trên máy chủ.`);
+    setMessage(`${current.message} Lần đầu chạy đầy đủ trên CPU thường mất 1–3 phút; mở Hàng đợi không làm dừng job.`);
     await new Promise(resolve=>setTimeout(resolve,1000));
-    const response=await fetch(`/claims/${claimId}/analysis-jobs/${current.job_id}`);
-    current=await response.json();
-    if(!response.ok)throw new Error(current.detail||JSON.stringify(current));
+    try{
+      const response=await fetch(`/claims/${claimId}/analysis-jobs/${current.job_id}`);
+      current=await response.json();
+      if(!response.ok)throw new Error(current.detail||JSON.stringify(current));
+      pollFailures=0;
+    }catch(error){pollFailures+=1;if(pollFailures>=5)throw new Error(`Mất kết nối khi theo dõi job: ${error.message}. Job có thể vẫn chạy; hãy mở Hàng đợi để kiểm tra.`);setMessage(`Kết nối theo dõi bị gián đoạn (${pollFailures}/5). Đang thử lại; job trên máy chủ vẫn tiếp tục.`)}
   }
   if(current.status==="failed")throw new Error(current.error||"Phân tích gặp lỗi.");
+  updateJobPanel(claimId,current);
   return current;
 }
 
@@ -54,8 +61,8 @@ byId("analyze").onclick=async()=>{const button=byId("analyze");try{
   const analysisResponse=await fetch(`/claims/${claimId}/analysis`);const payload=await analysisResponse.json();if(!analysisResponse.ok)throw new Error(payload.detail||JSON.stringify(payload));
   byId("result").textContent=JSON.stringify({job:finished,analysis:payload},null,2);
   setStep("stepAnalyze","done",`${payload.analysis_status==="complete"?"Hoàn tất":"Hoàn tất một phần"} · ${formatElapsed(finished.elapsed_seconds)}${finished.cache_hit?" · dùng cache":""}`);
-  setStep("stepOpen","active","Đang mở workbench…");setMessage("Phân tích hoàn tất. Đang mở phần diễn giải, quan hệ và nhật ký…");
-  setTimeout(()=>location.href=`/?view=workbench&claim_id=${encodeURIComponent(claimId)}`,450);
+  setStep("stepOpen","done","Kết quả sẵn sàng");setMessage(`Phân tích hoàn tất sau ${formatElapsed(finished.elapsed_seconds)}. Bạn có thể bấm Mở kết quả hoặc chờ hệ thống tự chuyển trang.`);
+  setTimeout(()=>location.href=`/?view=workbench&claim_id=${encodeURIComponent(claimId)}`,1800);
 }catch(error){button.disabled=false;button.textContent="Phân tích hồ sơ";setMessage(error.message,true);const active=[...document.querySelectorAll(".progress-step.active")].pop();if(active){active.classList.remove("active");active.classList.add("error");active.querySelector("span").textContent="Cần xử lý"}}};
 
 byId("capture").onclick=async()=>{try{

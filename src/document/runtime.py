@@ -4,6 +4,7 @@ from __future__ import annotations
 import hashlib
 import tempfile
 from pathlib import Path
+from typing import Callable
 
 from .classifier import DiTClassifier
 from .kie import LayoutLMv3KIE
@@ -68,8 +69,14 @@ class DocumentRuntimeAdapter:
         page.render(scale=2).to_pil().convert("RGB").save(output, format="PNG")
         return output
 
-    def process(self, path: str | Path, claim_id: str, document_id: str) -> DocumentResult:
+    def process(
+        self,
+        path: str | Path,
+        claim_id: str,
+        document_id: str,
+        progress: Callable[[str], None] | None = None,
+    ) -> DocumentResult:
         source = Path(path)
         with tempfile.TemporaryDirectory(prefix="insurance-document-") as directory:
             image = self._first_page(source, Path(directory) / "page-1.png")
-            return self._get_pipeline().process(image, claim_id, document_id)
+            return self._get_pipeline().process(image, claim_id, document_id, progress=progress)

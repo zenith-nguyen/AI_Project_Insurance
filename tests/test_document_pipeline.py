@@ -66,10 +66,12 @@ def test_pipeline_returns_stable_contract():
         def predict(self, image):
             return [OCRToken("Total: 100 VND", 0.8)]
 
+    stages = []
     result = DocumentPipeline(Classifier(), OCR(), RuleBasedKIE()).process(
-        Path("invoice.png"), "CLM-1", "DOC-1"
+        Path("invoice.png"), "CLM-1", "DOC-1", progress=stages.append
     )
     assert result.document_type == "invoice"
     assert result.fields[0].field_name == "total_amount"
     assert result.model_versions["classifier"] == "mock-classifier@v1"
     assert result.trace_id
+    assert stages == ["document_classifier", "document_ocr", "document_kie"]

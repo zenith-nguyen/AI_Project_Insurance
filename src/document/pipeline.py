@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Callable
 from uuid import uuid4
 
 from .schema import DocumentResult
@@ -13,9 +14,21 @@ class DocumentPipeline:
         self.ocr = ocr
         self.kie = kie
 
-    def process(self, image: Path, claim_id: str, document_id: str) -> DocumentResult:
+    def process(
+        self,
+        image: Path,
+        claim_id: str,
+        document_id: str,
+        progress: Callable[[str], None] | None = None,
+    ) -> DocumentResult:
+        if progress:
+            progress("document_classifier")
         classification = self.classifier.predict([image])[0]
+        if progress:
+            progress("document_ocr")
         tokens = self.ocr.predict(image)
+        if progress:
+            progress("document_kie")
         fields = self.kie.extract(tokens, image=image)
         warnings = []
         if not tokens:

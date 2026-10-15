@@ -330,10 +330,15 @@ class LiveClaimService:
         document_failures = 0
         capture_steps: dict[str, set[int]] = {}
 
+        uploaded_evidence = payload.get("uploaded_evidence", [])
+        image_total = sum(item["kind"] == "image" for item in uploaded_evidence)
+        uploaded_document_total = sum(item["kind"] == "document" for item in uploaded_evidence)
+        image_index = 0
+        document_index = 0
         if progress:
             progress("evidence", None)
 
-        for item in payload.get("uploaded_evidence", []):
+        for item in uploaded_evidence:
             evidence.append(Evidence(
                 evidence_id=item["evidence_id"], kind=item["kind"], label=item["original_filename"],
                 source_uri=item["stored_uri"], observed_at=item["observed_at"],
@@ -346,7 +351,13 @@ class LiveClaimService:
                 capture_steps.setdefault(item["capture_session_id"], set()).add(int(item["challenge_step"]))
             if item["kind"] == "image":
                 image_count += 1
+                image_index += 1
                 try:
+                    if progress:
+                        progress(
+                            "image_authenticity",
+                            f"Ảnh {image_index}/{image_total}: đang kiểm tra nguồn gốc và khả năng dùng lại.",
+                        )
                     report = self.authenticity(claim_id, item["evidence_id"])
                     authenticity_reports.append(report.model_dump())
                     flagged = [finding for finding in report.findings if finding.outcome == "detected" and finding.severity in {"review", "high"}]
@@ -368,6 +379,11 @@ class LiveClaimService:
                     })
                 if self.damage is not None:
                     try:
+                        if progress:
+                            progress(
+                                "damage",
+                                f"Ảnh {image_index}/{image_total}: YOLO đang khoanh vùng hư hỏng.",
+                            )
                         image_path = self.runtime_store.evidence_path(claim_id, item["evidence_id"])
                         detections = self.damage.predict(image_path)
                         for detection in detections:
@@ -387,9 +403,20 @@ class LiveClaimService:
                         damage_failures += 1
                         runtime_warnings.append(f"Damage inference failed for {item['evidence_id']}: {type(error).__name__}.")
             elif item["kind"] == "document" and self.document_runtime is not None:
+                document_index += 1
                 try:
+                    if progress:
+                        progress(
+                            "document_loading",
+                            f"Chứng từ {document_index}/{uploaded_document_total}: đang chuẩn bị DiT, PaddleOCR và LayoutLMv3.",
+                        )
                     document_path = self.runtime_store.evidence_path(claim_id, item["evidence_id"])
-                    result = self.document_runtime.process(document_path, claim_id, item["evidence_id"])
+                    result = self.document_runtime.process(
+                        document_path,
+                        claim_id,
+                        item["evidence_id"],
+                        progress=(lambda stage: progress(stage, None)) if progress else None,
+                    )
                     document_results.append(result.to_dict())
                     extracted.update({field.field_name: field.normalized_value for field in result.fields})
                     checks = [

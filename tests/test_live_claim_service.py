@@ -117,7 +117,7 @@ def test_runtime_claim_can_be_intaken_uploaded_and_analyzed(tmp_path):
 
     live.damage = Damage()
     class Documents:
-        def process(self, path, claim_id, document_id):
+        def process(self, path, claim_id, document_id, progress=None):
             return DocumentResult(
                 claim_id, document_id, "invoice", 0.92,
                 tokens=[OCRToken("Total 61680", 0.9)],
