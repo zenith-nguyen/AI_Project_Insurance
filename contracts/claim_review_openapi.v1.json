@@ -84,6 +84,27 @@
         }
       }
     },
+    "/system/improvement-status": {
+      "get": {
+        "summary": "Improvement Status",
+        "description": "Expose the evidence-backed roadmap used by management and the UI.",
+        "operationId": "improvement_status_system_improvement_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Improvement Status System Improvement Status Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/claims": {
       "get": {
         "summary": "List Claims",

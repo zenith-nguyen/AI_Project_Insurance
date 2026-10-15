@@ -1,6 +1,6 @@
 schema_version: "1.0"
 product_version: "research-v1"
-generated_at: "2026-10-14"
+generated_at: "2026-10-15"
 modules:
   tabular_risk:
     implementation: xgboost
@@ -59,10 +59,10 @@ modules:
     status: final_test_complete
   consistency:
     implementation: python_rules
-    version: consistency_v1
+    version: consistency_v2
     task: cross_source_consistency
     artifact_uri: src/integration/consistency.py
-    artifact_hash: dbd001520abb0e25104561069ece05ed244041c20184f4e18693f472e6bf0ac7
+    artifact_hash: 73d6314daeda8131aabd95a18c823fb9644d77ae1adceb0e76aca4d51545523d
     evidence: reports/CLAIM_CONSISTENCY_NETWORKX_DEMO_V1.md
     primary_metric: engineering_demo
     metric_value: 1.0
@@ -70,10 +70,10 @@ modules:
     status: demo_only
   relationships:
     implementation: networkx
-    version: point_in_time_v1
+    version: point_in_time_v2
     task: claim_relationship_features
     artifact_uri: src/graph/claim_graph.py
-    artifact_hash: d711067713584d5f15aae12750da65bd6033f37c36d28b9fd6a9579b0dcec2f7
+    artifact_hash: 8a710effe4c24367a0bd77854bdd46d53c72e60798da4c1db5014061f25bc6cb
     evidence: reports/CLAIM_CONSISTENCY_NETWORKX_DEMO_V1.md
     primary_metric: engineering_demo
     metric_value: 1.0

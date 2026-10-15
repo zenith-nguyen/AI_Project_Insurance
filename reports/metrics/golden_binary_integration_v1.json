@@ -1,0 +1,112 @@
+{
+  "schema_version": "1.0",
+  "created_at": "2026-10-15T03:20:21.586384+00:00",
+  "run_id": "20261015T031736Z-088d2660",
+  "claim_id": "CLM-GOLD-BINARY-20261015T031736Z-088d2660",
+  "data_scope": "synthetic_binary_integration_only",
+  "accuracy_claim_allowed": false,
+  "readiness": {
+    "mode": "live",
+    "fully_live": true,
+    "modules": {
+      "tabular_risk": {
+        "active": true,
+        "version": "tabular_v1"
+      },
+      "consistency": {
+        "active": true,
+        "version": "consistency_v2"
+      },
+      "relationships": {
+        "active": true,
+        "version": "point_in_time_v2"
+      },
+      "media_authenticity": {
+        "active": true,
+        "version": "media_authenticity_v3",
+        "exiftool": false,
+        "c2patool": false,
+        "synthid": false,
+        "pixel_forensics": false
+      },
+      "damage_segmentation": {
+        "active": true,
+        "reason": null
+      },
+      "document_pipeline": {
+        "active": true,
+        "reason": null
+      }
+    }
+  },
+  "latency_seconds": {
+    "analysis": 144.74997769999754,
+    "total": 145.52714220000053
+  },
+  "analysis": {
+    "status": "complete",
+    "priority": "review",
+    "trace_id": "6d7e4347cba04c2aa7c253d2ea6001d4",
+    "module_status": {
+      "tabular_risk": {
+        "status": "completed",
+        "reason": null
+      },
+      "relationships": {
+        "status": "completed",
+        "reason": null
+      },
+      "document_pipeline": {
+        "status": "completed",
+        "reason": null
+      },
+      "damage_segmentation": {
+        "status": "completed",
+        "reason": null
+      },
+      "media_authenticity": {
+        "status": "completed",
+        "reason": null
+      },
+      "consistency": {
+        "status": "completed",
+        "reason": null
+      },
+      "guided_capture": {
+        "status": "skipped_optional",
+        "reason": "Guided capture was not requested."
+      }
+    },
+    "model_versions": {
+      "tabular_risk": "tabular_v1",
+      "consistency": "consistency_v2",
+      "relationships": "point_in_time_v2",
+      "media_authenticity": "media_authenticity_v3",
+      "damage_segmentation": "cardd_candidate_v1",
+      "document_pipeline": "dit-paddleocr-layoutlmv3-live-v1"
+    },
+    "signal_count": 4,
+    "damage_region_count": 4,
+    "document_result_count": 1
+  },
+  "gate": {
+    "module_pass": {
+      "consistency": true,
+      "damage_segmentation": true,
+      "document_pipeline": true,
+      "media_authenticity": true,
+      "relationships": true,
+      "tabular_risk": true
+    },
+    "binary_image_reached_analysis": true,
+    "binary_document_reached_analysis": true,
+    "analysis_traceable": true,
+    "audit_replay_pass": true,
+    "passed": true
+  },
+  "limitations": [
+    "Synthetic evidence validates integration, not domain accuracy.",
+    "Research handoff still requires 20–50 signed golden claims.",
+    "Vietnamese insurance-domain validation and business UAT remain open."
+  ]
+}

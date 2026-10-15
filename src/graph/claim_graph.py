@@ -3,6 +3,22 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import Any, Iterable
+import re
+import unicodedata
+
+
+def normalize_entity(entity_type: str, value: Any) -> str:
+    """Normalize formatting variants without doing fuzzy identity guessing."""
+    raw = unicodedata.normalize("NFKD", str(value).strip())
+    ascii_value = "".join(char for char in raw if not unicodedata.combining(char)).upper().replace("Đ", "D")
+    if entity_type in {"contact_phone", "phone", "telephone"}:
+        digits = re.sub(r"\D", "", ascii_value)
+        if digits.startswith("0084"):
+            digits = digits[2:]
+        if digits.startswith("84") and len(digits) in {11, 12}:
+            digits = "0" + digits[2:]
+        return digits
+    return re.sub(r"[^A-Z0-9]", "", ascii_value)
 
 
 def _time(value: str | datetime) -> datetime:

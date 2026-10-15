@@ -1,4 +1,4 @@
-import {ClaimReviewClient} from "/api-client.js?v=20261015d";
+import {ClaimReviewClient} from "/api-client.js?v=20261015e";
 
 const api=new ClaimReviewClient();
 const $=id=>document.getElementById(id);
@@ -6,6 +6,7 @@ const priorityNames={high:"Ưu tiên cao",review:"Cần rà soát",normal:"Thôn
 const decisionNames={continue_processing:"Tiếp tục xử lý",request_evidence:"Yêu cầu bổ sung",special_review:"Rà soát chuyên sâu"};
 const modelNames={tabular_risk:"XGBoost · xếp hạng hồ sơ",damage_segmentation:"YOLOv8s-seg · hư hỏng",document_classifier:"DiT · loại chứng từ",document_ocr:"PaddleOCR · đọc chữ",ocr:"PaddleOCR · đọc chữ",document_kie:"LayoutLMv3 · trích trường",consistency_rules:"Rules · đối chiếu",consistency:"Rules · đối chiếu",relationships:"NetworkX · quan hệ",media_authenticity:"Media authenticity · nguồn gốc ảnh"};
 const modelStatus={research_validated:"Đã đánh giá nghiên cứu",final_test_complete:"Đã hoàn tất final test",baseline_needs_improvement:"Baseline cần cải thiện",demo_only:"Demo kỹ thuật",engineering_v1_needs_domain_validation:"Cần validation đúng miền"};
+const improvementStatusNames={complete_engineering:"Đã xong phần kỹ thuật",in_progress:"Đang triển khai/đánh giá",waiting_for_domain_data:"Chờ dữ liệu đúng miền"};
 const modelBusiness={
   tabular_risk:{value:"Đưa hồ sơ có tín hiệu mạnh lên trước để sử dụng thời gian của giám định viên hiệu quả hơn.",limit:"Recall@10% test mới 22,4%; điểm không phải xác suất gian lận.",next:"Bổ sung feature S1–S5 đúng thời điểm, dữ liệu nhãn đáng tin hơn và đánh giá Net Value."},
   damage_segmentation:{value:"Khoanh vùng hư hỏng để người duyệt nhìn nhanh vị trí cần đối chiếu với mô tả và báo giá.",limit:"mAP trung bình; sáu lớp CarDD không bao phủ mọi hư hỏng và chưa phải dữ liệu Việt Nam.",next:"Lập error gallery, bổ sung ảnh đúng miền cho crack/dent/scratch và đánh giá theo loại xe, góc chụp."},
@@ -52,9 +53,36 @@ function renderProof(proof){
   const target=$("modelProof");target.replaceChildren();
   Object.entries(proof.models).forEach(([key,model])=>{const card=document.createElement("article");const title=document.createElement("h3");title.textContent=modelNames[key]||key;const status=document.createElement("span");status.className="model-status";status.textContent=modelStatus[model.status]||model.status;const origin=document.createElement("p");origin.className="model-origin";origin.textContent=model.training_origin;const business=modelBusiness[key]||{value:"Module hỗ trợ tổng hợp bằng chứng cho người duyệt.",limit:"Cần đọc báo cáo đánh giá trước khi dùng.",next:"Bổ sung validation đúng miền nghiệp vụ."};const businessList=document.createElement("div");businessList.className="model-business";[["Giúp được gì?",business.value],["Giới hạn hiện tại",business.limit],["Kế hoạch nâng cấp",business.next]].forEach(([label,value])=>{const row=document.createElement("div");const b=document.createElement("b");b.textContent=label;const p=document.createElement("p");p.textContent=value;row.append(b,p);businessList.append(row)});const details=document.createElement("details");details.className="model-technical";const summary=document.createElement("summary");summary.textContent="Version, metric và checkpoint";const facts=document.createElement("dl");[["Version",model.version],["Trạng thái",modelStatus[model.status]||model.status],["Metric",`${model.metric}: ${model.metric_value}`],["Tập đánh giá",model.evaluation_split],["SHA-256",model.artifact_hash]].forEach(([name,value])=>{const dt=document.createElement("dt");dt.textContent=name;const dd=document.createElement("dd");dd.textContent=value;facts.append(dt,dd)});details.append(summary,facts);card.append(title,status,origin,businessList,details);target.append(card)});
 }
+function renderImprovement(payload){
+  $("improvementDate").textContent=`Cập nhật ${payload.updated_at}`;
+  $("improvementMessage").textContent=payload.message;
+  $("improvementDone").textContent=payload.counts.complete_engineering||0;
+  $("improvementProgress").textContent=payload.counts.in_progress||0;
+  $("improvementWaiting").textContent=payload.counts.waiting_for_domain_data||0;
+  const target=$("improvementRoadmap");target.replaceChildren();
+  payload.milestones.forEach(item=>{
+    const card=document.createElement("article");card.className=`improvement-item ${item.status}`;
+    const head=document.createElement("div");head.className="improvement-head";
+    const step=document.createElement("span");step.textContent=String(item.order).padStart(2,"0");
+    const title=document.createElement("h3");title.textContent=item.title;
+    const status=document.createElement("b");status.textContent=improvementStatusNames[item.status]||item.status;
+    head.append(step,title,status);
+    const rows=document.createElement("div");rows.className="improvement-details";
+    [
+      ["Bằng chứng hiện tại",item.technical_evidence],
+      ["Metric hiện có",item.current_metric],
+      ["Giúp nghiệp vụ gì?",item.business_value],
+      ["KPI nghiệp vụ",item.business_kpi],
+      ["Điều kiện được xem là đạt",item.gate],
+      ["Việc tiếp theo",item.next_action],
+      ["Đang thiếu",item.blocked_by],
+    ].forEach(([label,value])=>{const row=document.createElement("div");const name=document.createElement("b");name.textContent=label;const text=document.createElement("p");text.textContent=value;row.append(name,text);rows.append(row)});
+    card.append(head,rows);target.append(card);
+  });
+}
 async function load(){
   setError("");$("reload").disabled=true;
-  try{const [health,rows,proof]=await Promise.all([api.health(),api.listClaims(),api.modelEvidence()]);claims=rows;$("modeBadge").textContent=`${health.mode.toUpperCase()} · ${health.product_version}`;$("sideMode").textContent=`${health.mode.toUpperCase()} · ${health.product_version}`;stat();renderQueue();renderProof(proof)}catch(error){setError(`Không tải được dashboard: ${error.message}`)}finally{$("reload").disabled=false}
+  try{const [health,rows,proof,improvement]=await Promise.all([api.health(),api.listClaims(),api.modelEvidence(),api.improvementStatus()]);claims=rows;$("modeBadge").textContent=`${health.mode.toUpperCase()} · ${health.product_version}`;$("sideMode").textContent=`${health.mode.toUpperCase()} · ${health.product_version}`;stat();renderQueue();renderImprovement(improvement);renderProof(proof)}catch(error){setError(`Không tải được dashboard: ${error.message}`)}finally{$("reload").disabled=false}
 }
 [$("search"),$("statusFilter"),$("priorityFilter"),$("decisionFilter")].forEach(element=>element.addEventListener("input",renderQueue));
 $("reload").addEventListener("click",load);

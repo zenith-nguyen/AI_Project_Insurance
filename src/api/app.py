@@ -25,6 +25,7 @@ elif MODE == "live":
         ROOT,
         REGISTRY,
         os.getenv("INSURANCE_AUDIT_LOG", str(ROOT / "runtime/audit/reviews.jsonl")),
+        os.getenv("INSURANCE_RUNTIME_CLAIM_ROOT"),
     )
 else:
     raise RuntimeError("INSURANCE_API_MODE must be 'fixture' or 'live'.")
@@ -133,6 +134,27 @@ def model_evidence() -> dict:
             }
             for name, model in REGISTRY.modules.items()
         },
+    }
+
+
+@app.get("/system/improvement-status")
+def improvement_status() -> dict:
+    """Expose the evidence-backed roadmap used by management and the UI."""
+    import yaml
+
+    path = ROOT / "configs/model_improvement_status.v1.yaml"
+    payload = yaml.safe_load(path.read_text(encoding="utf-8"))
+    milestones = sorted(payload["milestones"].values(), key=lambda item: item["order"])
+    counts: dict[str, int] = {}
+    for item in milestones:
+        counts[item["status"]] = counts.get(item["status"], 0) + 1
+    return {
+        "schema_version": payload["schema_version"],
+        "updated_at": payload["updated_at"],
+        "release_target": payload["release_target"],
+        "message": payload["summary"]["message"],
+        "counts": counts,
+        "milestones": milestones,
     }
 
 

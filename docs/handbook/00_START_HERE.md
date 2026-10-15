@@ -13,7 +13,9 @@
 7. `07_RELEASE_SECURITY_AND_UAT.md` — điều kiện pilot/phát hành.
 8. `08_DEFINITION_OF_DONE.md` — tiêu chí kết thúc dự án và các mức release.
 
-Trạng thái hiện tại là **research prototype có luồng end-to-end một phần**. XGBoost, rules, NetworkX, upload, authenticity, review và correction đã nối vào API. YOLO và document pipeline có adapter nhưng máy triển khai phải có checkpoint/dependency đúng hash.
+Trạng thái hiện tại là **Technical PoC có một golden binary run end-to-end PASS**. XGBoost, rules v2, NetworkX v2, upload, authenticity, YOLO, DiT → PaddleOCR → LayoutLMv3, review và correction đã chạy chung một `claim_id` trên máy tích hợp. Research handoff vẫn chờ bộ 20–50 golden claims đúng miền và các sign-off thủ công; pilot vẫn chờ validation Việt Nam, security/load test và UAT.
+
+Xem trạng thái mới nhất ở `reports/PROGRESS_STATUS_LATEST_2026-10-15.md`. Dashboard đọc cùng nguồn machine-readable `configs/model_improvement_status.v1.yaml`, nên tiến độ kỹ thuật, giá trị nghiệp vụ, gate và blocker được trình bày thống nhất.
 
 Không đưa raw data, token, PII hoặc checkpoint lớn vào Git. Mọi kết quả phải được hiểu cùng `analysis_status`, `module_status`, `warnings`, model version và evidence reference.
 

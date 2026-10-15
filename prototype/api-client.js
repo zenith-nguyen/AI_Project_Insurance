@@ -27,6 +27,7 @@ export class ClaimReviewClient {
   readiness() { return this.request("/readiness"); }
   version() { return this.request("/version"); }
   modelEvidence() { return this.request("/system/model-evidence"); }
+  improvementStatus() { return this.request("/system/improvement-status"); }
   listClaims() { return this.request("/claims"); }
 
   createClaim(claimId, payload) {

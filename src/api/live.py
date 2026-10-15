@@ -4,7 +4,6 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-import re
 from datetime import datetime, timezone
 from pathlib import Path
 from threading import Lock
@@ -16,7 +15,7 @@ from src.data.common import sha256
 from src.document.schema import ExtractedField
 from src.document.runtime import DocumentRuntimeAdapter
 from src.features.preprocessing import features
-from src.graph.claim_graph import build_graph, claim_features
+from src.graph.claim_graph import build_graph, claim_features, normalize_entity
 from src.integration.consistency import check_amount, check_document_date, check_plate
 from src.image.inference import YOLODamageAdapter
 from src.media_authenticity import CalibratedImageForensics, MediaAuthenticityAnalyzer
@@ -58,7 +57,7 @@ class ClaimRepository:
         values = {key: value for key, value in claim.get("relationship_entities", {}).items() if value}
         if claim.get("plate_number"):
             values.setdefault("vehicle_plate", claim["plate_number"])
-        return {key: re.sub(r"[^A-Z0-9]", "", str(value).upper()) for key, value in values.items() if value}
+        return {key: normalize_entity(key, value) for key, value in values.items() if value}
 
     def _runtime_relationship_graph(self, claim_id: str, claim: dict) -> dict:
         target_values = self._relationship_values(claim)
@@ -216,9 +215,9 @@ class LiveClaimService:
 
     def readiness(self) -> dict:
         modules = {
-            "tabular_risk": {"active": True, "version": "tabular_v1"},
-            "consistency": {"active": True, "version": "consistency_v1"},
-            "relationships": {"active": True, "version": "point_in_time_v1"},
+            "tabular_risk": {"active": True, "version": self.registry.modules["tabular_risk"].version},
+            "consistency": {"active": True, "version": self.registry.modules["consistency"].version},
+            "relationships": {"active": True, "version": self.registry.modules["relationships"].version},
             "media_authenticity": {
                 "active": True, "version": MediaAuthenticityAnalyzer.version,
                 "exiftool": bool(self.media_authenticity.exiftool),
@@ -352,7 +351,7 @@ class LiveClaimService:
                                 title="Thông tin chứng từ cần đối chiếu",
                                 explanation=f"Kiểm tra {check.check_name}: {check.reason_code}.",
                                 severity="review", evidence_ids=[item["evidence_id"]],
-                                model_name="python_rules", model_version="consistency_v1",
+                                model_name="python_rules", model_version=self.registry.modules["consistency"].version,
                             ))
                 except Exception as error:
                     document_failures += 1
@@ -374,7 +373,7 @@ class LiveClaimService:
                     signals.append(Signal(
                         signal_id=f"{document_id}-{check.reason_code}", category="consistency",
                         title="Thông tin chứng từ cần đối chiếu", explanation=f"Kiểm tra {check.check_name}: {check.reason_code}.",
-                        severity="review", evidence_ids=[evidence_id], model_name="python_rules", model_version="consistency_v1",
+                        severity="review", evidence_ids=[evidence_id], model_name="python_rules", model_version=self.registry.modules["consistency"].version,
                     ))
 
         graph_available = graph_payload.get("data_status", "provided") == "provided"
@@ -405,7 +404,7 @@ class LiveClaimService:
             signals.append(Signal(
                 signal_id="shared-entity", category="relationship", title="Có thực thể dùng chung",
                 explanation=f"Hồ sơ có {graph_values['shared_entity_count']} thực thể liên kết với hồ sơ khác trước thời điểm chấm.",
-                severity="review", evidence_ids=["relationship-graph"], model_name="networkx", model_version="point_in_time_v1",
+                severity="review", evidence_ids=["relationship-graph"], model_name="networkx", model_version=self.registry.modules["relationships"].version,
             ))
         if risk is not None and risk["priority"] != "normal":
             signals.append(Signal(
@@ -482,8 +481,10 @@ class LiveClaimService:
             evidence=evidence, signals=signals,
             extracted_fields=extracted, graph_features=graph_values,
             model_versions={
-                "tabular_risk": "tabular_v1", "consistency": "consistency_v1",
-                "relationships": "point_in_time_v1", "media_authenticity": MediaAuthenticityAnalyzer.version,
+                "tabular_risk": self.registry.modules["tabular_risk"].version,
+                "consistency": self.registry.modules["consistency"].version,
+                "relationships": self.registry.modules["relationships"].version,
+                "media_authenticity": MediaAuthenticityAnalyzer.version,
                 **({"damage_segmentation": self.damage.model_version} if self.damage is not None else {}),
                 **({"document_pipeline": "dit-paddleocr-layoutlmv3-live-v1"} if self.document_runtime is not None else {}),
             },

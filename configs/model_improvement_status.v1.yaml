@@ -1,0 +1,145 @@
+schema_version: "1.0"
+updated_at: "2026-10-15"
+release_target: research_handoff
+summary:
+  message: >-
+    Hệ thống đã chạy được lát cắt local end-to-end và các adapter model thật.
+    Chất lượng production chưa được xác nhận vì còn thiếu bộ dữ liệu bảo hiểm
+    Việt Nam có nhãn và sign-off nghiệp vụ.
+  completed_engineering: 2
+  in_progress: 4
+  waiting_for_domain_data: 3
+milestones:
+  golden_claims:
+    order: 1
+    title: Golden claims end-to-end
+    status: in_progress
+    technical_evidence: >-
+      Có 5 golden claims xác định; golden nhị phân tổng hợp đã PASS 6/6 module,
+      audit replay và traceability. Sign-off nghiên cứu chưa đạt vì bộ 20–50 claim
+      đúng miền cùng expected action chưa được nghiệp vụ duyệt.
+    current_metric: "Binary gate 6/6 PASS; 4 damage regions; 1 document result; CPU analysis 144.7s"
+    business_value: >-
+      Chứng minh một hồ sơ đi xuyên suốt từ nạp dữ liệu, phân tích, xem bằng chứng,
+      sửa trường đến lưu quyết định mà không mất liên kết.
+    business_kpi: "Tỷ lệ chạy đủ module; thời gian xử lý; correction rate; audit replay"
+    gate: "20–50 claim, không lỗi im lặng, expected action được nghiệp vụ ký duyệt"
+    next_action: "Thu thập và ẩn danh bộ claim đa phương thức; chạy strict golden gate"
+    blocked_by: "Thiếu 20–50 claim đúng miền và business sign-off"
+  paddleocr:
+    order: 2
+    title: PaddleOCR trên chứng từ Việt Nam
+    status: waiting_for_domain_data
+    technical_evidence: "Baseline SROIE: CER 40,97%; document adapter đã nối live"
+    current_metric: "CER 0.4097; WER 0.5592"
+    business_value: >-
+      Tự điền ngày, tổng tiền và biển số để giảm nhập tay; confidence thấp vẫn
+      chuyển người duyệt xác nhận.
+    business_kpi: "Field accuracy trọng yếu; correction rate; thời gian đọc/chứng từ"
+    gate: "Validation tiếng Việt tách biệt; business field accuracy và latency đạt ngưỡng đã khóa"
+    next_action: "Gắn nhãn chứng từ Việt Nam; benchmark orientation, deskew, crop, contrast và OCR tiếng Việt"
+    blocked_by: "Chưa có validation set chứng từ bảo hiểm Việt Nam có ground truth"
+  xgboost:
+    order: 3
+    title: XGBoost xếp hạng hồ sơ
+    status: in_progress
+    technical_evidence: >-
+      Model v1 đã khóa test; feature-policy đã so sánh trên train_fs/val_fs mà
+      không đọc lại frozen test.
+    current_metric: "Frozen test AP 0.559; Recall@10% 22.4%; val_fs best research AP 0.670"
+    business_value: >-
+      Xếp claim cần xem trước trong cùng năng lực xử lý; điểm không phải xác suất
+      gian lận và không tự từ chối bồi thường.
+    business_kpi: "Recall@K; precision trong queue; false hold; Net Value"
+    gate: "Feature đúng thời điểm, nhãn đáng tin, external test mới và Net Value không giảm"
+    next_action: "Liên kết S1–S5 theo claim_id trên train_fs/val_fs rồi khóa candidate trước external test"
+    blocked_by: "Chưa có feature S1–S5 claim-linked và chi phí nghiệp vụ để tính Net Value"
+  yolo:
+    order: 4
+    title: YOLOv8s-seg hư hỏng đúng miền
+    status: waiting_for_domain_data
+    technical_evidence: "Fine-tune CarDD; checkpoint hash-locked; adapter và overlay chạy live"
+    current_metric: "Final mask mAP50–95 0.5140"
+    business_value: >-
+      Khoanh vùng vị trí cần giám định và đối chiếu với mô tả/báo giá, giúp người
+      duyệt tập trung vào vùng ảnh liên quan.
+    business_kpi: "Useful-region rate; false regions/image; thời gian xem ảnh"
+    gate: "Validation ảnh bảo hiểm Việt Nam theo loại xe, góc chụp và lớp hư hỏng"
+    next_action: "Gắn nhãn ảnh đúng miền; error gallery crack/dent/scratch; fine-tune candidate mới"
+    blocked_by: "Chưa có ảnh hư hỏng bảo hiểm Việt Nam được gắn mask và cấp phép"
+  vietnam_documents:
+    order: 5
+    title: DiT và LayoutLMv3 trên chứng từ bảo hiểm Việt Nam
+    status: waiting_for_domain_data
+    technical_evidence: >-
+      DiT independent macro-F1 0.9283 trên RVL-CDIP; LayoutLMv3 final field F1
+      0.8659 trên SROIE; pipeline live đã nối.
+    current_metric: "DiT macro-F1 0.9283; LayoutLMv3 field F1 0.8659"
+    business_value: >-
+      Phân loại đúng chứng từ và trích trường quan trọng để tự đối chiếu hồ sơ,
+      đồng thời đưa trường confidence thấp cho người duyệt sửa.
+    business_kpi: "Routing accuracy; date/amount/plate/shop field accuracy; correction rate"
+    gate: "Taxonomy và validation riêng cho biên bản, báo giá, hóa đơn, đăng ký xe Việt Nam"
+    next_action: "Chốt field schema nghiệp vụ và gắn nhãn validation mới; không tối ưu trên final test cũ"
+    blocked_by: "Chưa có taxonomy và bộ chứng từ Việt Nam có nhãn"
+  consistency_graph:
+    order: 6
+    title: Consistency rules và NetworkX
+    status: in_progress
+    technical_evidence: >-
+      Rule v2 và point-in-time graph v2 chạy local, có timestamp gate, entity hashing,
+      chuẩn hóa biển số/điện thoại/xưởng và fallback khi field sai định dạng;
+      validation hiện mới là synthetic engineering demo.
+    current_metric: "Engineering contract tests PASS; chưa có precision nghiệp vụ"
+    business_value: >-
+      Nêu rõ thông tin không khớp và mở rộng điều tra sang claim dùng chung biển số,
+      điện thoại hoặc xưởng trước thời điểm chấm.
+    business_kpi: "Alert precision; số liên kết hữu ích; false investigation rate"
+    gate: "Rule owner phê duyệt tolerance; entity-resolution benchmark; mọi edge có available_at"
+    next_action: "Tạo tập case đã xác minh, đo alert precision và xin rule-owner sign-off"
+    blocked_by: "Chưa có case lịch sử đã xác minh và rule sign-off"
+  authenticity_benchmark:
+    order: 7
+    title: Benchmark nguồn gốc và chỉnh sửa ảnh
+    status: in_progress
+    technical_evidence: >-
+      Metadata, C2PA hook, exact/near reuse, editing trace và guided capture chạy local;
+      manifest/evaluation scaffold đã có.
+    current_metric: "Engineering contract tests PASS; chưa có domain precision/recall"
+    business_value: >-
+      Tìm bằng chứng tái sử dụng hoặc dấu chỉnh sửa để yêu cầu ảnh tốt hơn mà không
+      cáo buộc nhầm khách hàng là gian lận.
+    business_kpi: "Coverage; precision/recall theo nhóm; false accusation rate"
+    gate: "Benchmark camera/edit/social/screenshot/AI/reuse đúng miền, tách source-group"
+    next_action: "Thu thập benchmark có provenance và khóa validation/test theo source image"
+    blocked_by: "Chưa có benchmark ảnh bảo hiểm đa nguồn được cấp phép"
+  pixel_detector_gate:
+    order: 8
+    title: Pixel forensic detector có calibration gate
+    status: complete_engineering
+    technical_evidence: >-
+      Runtime chỉ nạp pixel model khi có đủ checkpoint và calibration manifest;
+      mặc định tắt và trả inconclusive khi không đủ căn cứ.
+    current_metric: "Gate implemented; detector not promoted"
+    business_value: >-
+      Tránh biến heuristic yếu thành kết luận ảnh AI; người duyệt nhận lý do và
+      hành động thu thập bằng chứng thay thế.
+    business_kpi: "False accusation rate và calibration error dưới ngưỡng được duyệt"
+    gate: "Checkpoint hash, threshold chọn trên validation và frozen test đạt ngưỡng"
+    next_action: "Huấn luyện/đánh giá sau khi milestone benchmark đủ dữ liệu"
+    blocked_by: "Không có; safeguard đã hoạt động, model vẫn chờ benchmark"
+  business_ui:
+    order: 9
+    title: UI diễn giải technical value thành hành động nghiệp vụ
+    status: complete_engineering
+    technical_evidence: >-
+      Dashboard, workbench, audit history và model proof dùng chung một ứng dụng;
+      API client ổn định và cache bị vô hiệu hóa.
+    current_metric: "Automated UI/API contract tests PASS"
+    business_value: >-
+      Người dùng thấy hệ thống phát hiện gì, vì sao cần quan tâm, việc nên làm tiếp,
+      phần nào chưa kiểm tra và quyết định nào đã lưu.
+    business_kpi: "Task completion; thời gian xử lý; tỷ lệ hiểu đúng; UAT pass rate"
+    gate: "UAT với giám định viên và bàn giao UI/backend được ký duyệt"
+    next_action: "Chạy UAT theo golden cases, sửa wording và đo thời gian hoàn tất tác vụ"
+    blocked_by: "Chưa có UAT và sign-off người dùng nghiệp vụ"

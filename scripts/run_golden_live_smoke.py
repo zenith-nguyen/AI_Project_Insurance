@@ -3,7 +3,8 @@
 This exercises the same FastAPI route used by the UI. Missing optional model
 artifacts are reported by each module; they do not hide the working core slice.
 Use ``--require-all`` on a multimodal integration machine to fail unless every
-registered model is ready and completes for every golden claim.
+registered model is ready and completes from binary input for every golden
+claim. Precomputed document fields never satisfy this strict gate.
 """
 from __future__ import annotations
 
@@ -61,13 +62,28 @@ def main() -> None:
             report["claims"].append(item)
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print(json.dumps(report, ensure_ascii=False, indent=2))
-
     claims = report["claims"]
     core_ok = bool(claims) and all(item["http_status"] == 200 for item in claims)
     readiness = report["readiness"]
-    all_ok = core_ok and bool(readiness.get("multimodal_live_ready"))
+    strict_modules = {
+        "tabular_risk", "consistency", "relationships", "media_authenticity",
+        "damage_segmentation", "document_pipeline",
+    }
+    strict_claims_ok = bool(claims) and all(
+        all(item.get("module_status", {}).get(name, {}).get("status") == "completed" for name in strict_modules)
+        for item in claims
+    )
+    all_ok = core_ok and bool(readiness.get("fully_live")) and strict_claims_ok
+    report["gate"] = {
+        "core_http_ok": core_ok,
+        "runtime_models_ready": bool(readiness.get("fully_live")),
+        "strict_binary_modules_completed": strict_claims_ok,
+        "strict_required_modules": sorted(strict_modules),
+        "passed": all_ok if args.require_all else core_ok,
+        "note": "completed_precomputed is intentionally rejected by the strict multimodal gate.",
+    }
+    args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    print(json.dumps(report, ensure_ascii=False, indent=2))
     if not core_ok or (args.require_all and not all_ok):
         raise SystemExit(1)
 

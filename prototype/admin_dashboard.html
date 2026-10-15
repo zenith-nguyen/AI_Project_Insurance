@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Claim Review · Dashboard quản lý</title>
-  <link rel="stylesheet" href="/workbench.css?v=20261015d">
+  <link rel="stylesheet" href="/workbench.css?v=20261015e">
 </head>
 <body>
 <div class="shell">
@@ -39,6 +39,18 @@
         <div id="queueEmpty" class="empty" hidden>Không có hồ sơ phù hợp bộ lọc.</div>
       </section>
 
+      <section class="card improvement-card">
+        <div class="section-heading"><div><div class="eyebrow">TỪ MODEL ĐẾN GIÁ TRỊ NGHIỆP VỤ</div><h2>Tiến độ nâng cấp có bằng chứng</h2></div><span id="improvementDate" class="business-badge">—</span></div>
+        <p id="improvementMessage" class="improvement-message">Đang tải trạng thái roadmap…</p>
+        <div class="improvement-stats">
+          <div><strong id="improvementDone">—</strong><span>Đã xong phần kỹ thuật</span></div>
+          <div><strong id="improvementProgress">—</strong><span>Đang triển khai/đánh giá</span></div>
+          <div><strong id="improvementWaiting">—</strong><span>Chờ dữ liệu đúng miền</span></div>
+        </div>
+        <div class="queue-help"><b>Cách đọc:</b> “Đã xong phần kỹ thuật” nghĩa pipeline và safeguard đã có test. Nó chưa đồng nghĩa model sẵn sàng production. Mỗi mốc bên dưới nêu riêng bằng chứng hiện tại, lợi ích nghiệp vụ, điều kiện đạt và dữ liệu còn thiếu.</div>
+        <div id="improvementRoadmap" class="improvement-roadmap"></div>
+      </section>
+
       <section class="card proof-card">
         <div class="section-heading"><div><div class="eyebrow">CHỨNG MINH HỆ THỐNG</div><h2>Model local, checkpoint và nơi lưu dữ liệu</h2></div><span id="externalApiBadge" class="business-badge">—</span></div>
         <div class="proof-summary"><div><span>Suy luận</span><strong id="processingLocation">—</strong></div><div><span>Dữ liệu claim gửi LLM ngoài</span><strong id="externalData">—</strong></div><div><span>Kho claim</span><strong id="claimStorage">—</strong></div><div><span>Audit log</span><strong id="auditStorage">—</strong></div></div>
@@ -49,6 +61,6 @@
     </div>
   </main>
 </div>
-<script type="module" src="/dashboard.js?v=20261015d"></script>
+<script type="module" src="/dashboard.js?v=20261015e"></script>
 </body>
 </html>

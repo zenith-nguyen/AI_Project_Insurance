@@ -38,8 +38,8 @@ def test_golden_claim_runs_real_tabular_rules_and_graph(tmp_path):
     assert {signal.category for signal in result.signals}.issuperset({"consistency", "relationship"})
     assert result.model_versions == {
         "tabular_risk": "tabular_v1",
-        "consistency": "consistency_v1",
-        "relationships": "point_in_time_v1",
+        "consistency": "consistency_v2",
+        "relationships": "point_in_time_v2",
         "media_authenticity": "media_authenticity_v3",
     }
     assert any("YOLO was not invoked" in warning for warning in result.warnings)

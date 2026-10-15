@@ -52,6 +52,7 @@ required_endpoints:
   - /readiness
   - /version
   - /system/model-evidence
+  - /system/improvement-status
   - /claims
   - /claims/{claim_id}/intake
   - /claims/{claim_id}/capture-sessions

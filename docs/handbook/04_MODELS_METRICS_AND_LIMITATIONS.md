@@ -7,8 +7,8 @@
 | DiT | Phân loại chứng từ | macro-F1 0,9283 | Research validated |
 | PaddleOCR | Đọc chữ/vị trí | CER 0,4097; WER 0,5592 | Cần cải thiện |
 | LayoutLMv3 | Trích xuất date/total | final-test field micro-F1 0,8659 | Final test complete |
-| Rules | Đối chiếu claim/chứng từ | Engineering demo | Demo only |
-| NetworkX | Quan hệ point-in-time | Engineering demo | Demo only |
+| Rules v2 | Đối chiếu claim/chứng từ; fallback khi field sai/thiếu/low-confidence | Engineering tests + binary golden run | Chờ rule-owner sign-off |
+| NetworkX v2 | Quan hệ point-in-time; chuẩn hóa phone/plate/shop | Engineering tests + binary golden run | Chờ case đã xác minh |
 | Media authenticity | Provenance/reuse/forensics | Contract tests | Cần benchmark miền thật |
 
 KPI Recall@10% tuyệt đối 60% không khả thi trên dataset có prevalence 24,7% vì hàng chờ 10% chỉ chứa tối đa khoảng 40,5% tổng positive. Mục tiêu phù hợp là uplift so với baseline, precision trong queue, calibration và Net Value với chi phí thật.
@@ -26,5 +26,5 @@ Không tối ưu tiếp theo final test đã khóa. Cải thiện bằng validat
 
 Không có model LLM bên ngoài trong luồng phân tích claim. “Chạy local” có thể kiểm chứng qua model registry, hash artifact, `/readiness`, `/system/model-evidence` và log test. Việc không tìm thấy C2PA/SynthID/metadata không chứng minh ảnh thật; detector AI phổ quát chưa có đủ bằng chứng để dùng làm kết luận nghiệp vụ.
 
-Kế hoạch nâng cấp có technical gate và business KPI cho từng module nằm tại `reports/MODEL_IMPROVEMENT_ROADMAP_2026-10-15.md`.
+Kế hoạch nâng cấp có technical gate và business KPI cho từng module nằm tại `reports/MODEL_IMPROVEMENT_ROADMAP_2026-10-15.md`; trạng thái có bằng chứng mới nhất nằm tại `reports/MODEL_IMPROVEMENT_STATUS_2026-10-15.md`.
 

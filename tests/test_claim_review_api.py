@@ -31,11 +31,12 @@ def test_browser_api_client_is_served_by_the_backend():
     assert "addOverlay" in script.text
     dashboard = client.get("/dashboard")
     assert dashboard.status_code == 200
-    assert 'src="/dashboard.js?v=20261015d"' in dashboard.text
+    assert 'src="/dashboard.js?v=20261015e"' in dashboard.text
     dashboard_script = client.get("/dashboard.js")
-    assert 'from "/api-client.js?v=20261015d"' in dashboard_script.text
+    assert 'from "/api-client.js?v=20261015e"' in dashboard_script.text
     assert "OPERATIONS" in dashboard.text
     assert 'id="claimRows"' in dashboard.text
+    assert 'id="improvementRoadmap"' in dashboard.text
 
 
 def test_dashboard_queue_and_model_proof_are_available():
@@ -60,6 +61,14 @@ def test_dashboard_queue_and_model_proof_are_available():
     assert payload["external_llm_api_used"] is False
     assert payload["claim_data_sent_to_external_llm"] is False
     assert payload["models"]["tabular_risk"]["artifact_hash"]
+
+    improvement = client.get("/system/improvement-status")
+    assert improvement.status_code == 200
+    roadmap = improvement.json()
+    assert roadmap["release_target"] == "research_handoff"
+    assert len(roadmap["milestones"]) >= 8
+    assert sum(roadmap["counts"].values()) == len(roadmap["milestones"])
+    assert any(item["business_kpi"] for item in roadmap["milestones"])
 
 
 def test_fixture_claim_lifecycle_and_human_review_contract():
