@@ -1,4 +1,4 @@
-import {ClaimReviewClient, ClaimApiError} from "/api-client.js";
+import {ClaimReviewClient, ClaimApiError} from "/api-client.js?v=20261015d";
 
 const api = new ClaimReviewClient();
 const $ = (id) => document.getElementById(id);
