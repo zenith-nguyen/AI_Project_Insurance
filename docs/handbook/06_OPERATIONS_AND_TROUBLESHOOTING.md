@@ -32,5 +32,5 @@ Dashboard này là giao diện vận hành research local, chưa phải admin pr
 
 ## Bộ test demo nghiệp vụ
 
-Script `scripts/build_business_demo_pack.py` tạo bộ test có thứ tự, hướng dẫn nhập, kết quả kỹ thuật, giá trị nghiệp vụ, hành động và tiêu chí PASS. Bộ ngày 15/10/2026 trên máy demo nằm tại `D:\My Dowload\00_TEST_CLAIM_REVIEW_BUSINESS_V2_2026-10-15` và ZIP cùng tên. Chỉ mở `http://127.0.0.1:8000/`, sau đó dùng menu trái để đi giữa Dashboard, Nạp hồ sơ và Workbench.
+Script `scripts/build_business_demo_pack.py` tạo bộ test có thứ tự, hướng dẫn nhập, kết quả kỹ thuật, giá trị nghiệp vụ, hành động và tiêu chí PASS. Bộ đã khóa ngày 15/10/2026 trên máy demo nằm tại `D:\My Dowload\00_TEST_CLAIM_REVIEW_BUSINESS_FINAL_2026-10-15` và ZIP cùng tên. Chỉ mở `http://127.0.0.1:8000/`, sau đó dùng menu trái để đi giữa Dashboard, Nạp hồ sơ và Workbench.
 
