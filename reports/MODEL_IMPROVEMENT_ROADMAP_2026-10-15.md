@@ -2,6 +2,8 @@
 
 Ngày cập nhật: 2026-10-15.
 
+Kế hoạch thực thi theo mốc, KPI và Definition of Done: [NEXT_UPGRADE_EXECUTION_PLAN_2026-10-15.md](NEXT_UPGRADE_EXECUTION_PLAN_2026-10-15.md).
+
 ## Nguyên tắc
 
 Mỗi nâng cấp phải đồng thời trả lời hai câu hỏi:

@@ -61,6 +61,9 @@ def test_background_analysis_job_reports_status_and_result():
         time.sleep(0.02)
     assert job["status"] == "completed"
     assert job["result_available"] is True
+    assert isinstance(job["stage_durations_seconds"], dict)
+    assert "preparing" in job["stage_durations_seconds"]
+    assert job["current_stage_elapsed_seconds"] == 0
     assert client.get(f"/claims/{claim_id}/analysis").status_code == 200
     assert any(row["job_id"] == job["job_id"] for row in client.get("/analysis-jobs").json())
 

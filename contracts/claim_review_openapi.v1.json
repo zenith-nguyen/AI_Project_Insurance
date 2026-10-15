@@ -774,6 +774,19 @@
             "title": "Elapsed Seconds",
             "default": 0
           },
+          "current_stage_elapsed_seconds": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Current Stage Elapsed Seconds",
+            "default": 0
+          },
+          "stage_durations_seconds": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "type": "object",
+            "title": "Stage Durations Seconds"
+          },
           "result_available": {
             "type": "boolean",
             "title": "Result Available",

@@ -55,7 +55,9 @@ class AnalysisJobManager:
                 "job_id": job_id, "claim_id": claim_id, "status": "queued", "stage": "queued",
                 "message": STAGE_MESSAGES["queued"], "created_at": self._now(), "started_at": None,
                 "finished_at": None, "elapsed_seconds": 0.0, "result_available": False,
+                "current_stage_elapsed_seconds": 0.0, "stage_durations_seconds": {},
                 "cache_hit": cache_hit, "error": None, "_started_mono": None,
+                "_created_mono": monotonic(), "_stage_started_mono": None,
             }
             self._jobs[job_id] = job
             self._executor.submit(self._run, job_id, request)
@@ -64,30 +66,53 @@ class AnalysisJobManager:
     def _progress(self, job_id: str, stage: str, message: str | None = None) -> None:
         with self._lock:
             job = self._jobs[job_id]
+            now = monotonic()
+            self._close_stage(job, now)
             job["stage"] = stage
             job["message"] = message or STAGE_MESSAGES.get(stage, stage)
+            job["_stage_started_mono"] = now
+            job["current_stage_elapsed_seconds"] = 0.0
             if job["_started_mono"] is not None:
-                job["elapsed_seconds"] = round(monotonic() - job["_started_mono"], 1)
+                job["elapsed_seconds"] = round(now - job["_started_mono"], 1)
+
+    @staticmethod
+    def _close_stage(job: dict, now: float) -> None:
+        stage_started = job.get("_stage_started_mono")
+        stage = job.get("stage")
+        if stage_started is None or stage in {"completed", "failed"}:
+            return
+        elapsed = max(0.0, now - stage_started)
+        durations = job["stage_durations_seconds"]
+        durations[stage] = round(float(durations.get(stage, 0.0)) + elapsed, 1)
+        job["current_stage_elapsed_seconds"] = 0.0
+        job["_stage_started_mono"] = None
 
     def _run(self, job_id: str, request: AnalyzeRequest) -> None:
         with self._lock:
             job = self._jobs[job_id]
+            now = monotonic()
             job.update(status="running", stage="preparing", message=STAGE_MESSAGES["preparing"], started_at=self._now())
-            job["_started_mono"] = monotonic()
+            job["stage_durations_seconds"]["queued"] = round(now - job["_created_mono"], 1)
+            job["_started_mono"] = now
+            job["_stage_started_mono"] = now
             claim_id = job["claim_id"]
         try:
             self.service.analyze(claim_id, request, progress=lambda stage, message=None: self._progress(job_id, stage, message))
             with self._lock:
                 job = self._jobs[job_id]
+                now = monotonic()
+                self._close_stage(job, now)
                 job.update(status="completed", stage="completed", message=STAGE_MESSAGES["completed"],
                            finished_at=self._now(), result_available=True)
-                job["elapsed_seconds"] = round(monotonic() - job["_started_mono"], 1)
+                job["elapsed_seconds"] = round(now - job["_started_mono"], 1)
         except Exception as error:  # job endpoint reports this safely; server keeps running
             with self._lock:
                 job = self._jobs[job_id]
+                now = monotonic()
+                self._close_stage(job, now)
                 job.update(status="failed", stage="failed", message=STAGE_MESSAGES["failed"],
                            finished_at=self._now(), error=f"{type(error).__name__}: {error}")
-                job["elapsed_seconds"] = round(monotonic() - job["_started_mono"], 1)
+                job["elapsed_seconds"] = round(now - job["_started_mono"], 1)
 
     def get(self, job_id: str) -> AnalysisJobRecord | None:
         with self._lock:
@@ -95,7 +120,10 @@ class AnalysisJobManager:
             if job is None:
                 return None
             if job["status"] in {"queued", "running"} and job["_started_mono"] is not None:
-                job["elapsed_seconds"] = round(monotonic() - job["_started_mono"], 1)
+                now = monotonic()
+                job["elapsed_seconds"] = round(now - job["_started_mono"], 1)
+                if job["_stage_started_mono"] is not None:
+                    job["current_stage_elapsed_seconds"] = round(now - job["_stage_started_mono"], 1)
             return self._record(job)
 
     def list(self) -> list[AnalysisJobRecord]:

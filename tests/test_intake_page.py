@@ -18,5 +18,7 @@ def test_intake_page_exposes_claim_and_evidence_workflow():
     assert "/claims/${claimId}/evidence" in script.text
     assert "/claims/${claimId}/analysis-jobs" in script.text
     assert "PaddleOCR đang nhận dạng từng vùng chữ" in script.text
+    assert "stage_durations_seconds" in script.text
+    assert "Công đoạn lâu nhất" in script.text
     assert 'id="openResult"' in response.text
     assert "Tạo yêu cầu chụp 3 góc" in response.text

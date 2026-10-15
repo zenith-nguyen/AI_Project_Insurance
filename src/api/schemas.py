@@ -25,6 +25,8 @@ class AnalysisJobRecord(BaseModel):
     started_at: str | None = None
     finished_at: str | None = None
     elapsed_seconds: float = Field(default=0, ge=0)
+    current_stage_elapsed_seconds: float = Field(default=0, ge=0)
+    stage_durations_seconds: dict[str, float] = Field(default_factory=dict)
     result_available: bool = False
     cache_hit: bool = False
     error: str | None = None
