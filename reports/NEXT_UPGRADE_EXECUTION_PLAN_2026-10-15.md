@@ -79,6 +79,8 @@ Chỉ thực hiện sau khi có benchmark Mốc A.
 
 ## Mốc D — Chất lượng chứng từ Việt Nam
 
+Trạng thái 2026-10-16: **đã hoàn thành protocol, manifest validation, metric runner và candidate runner có resume**. Chưa có 50–100 trang được adjudicate nên chưa có metric độ chính xác đúng miền và chưa được chọn cấu hình OCR mới.
+
 ### Dữ liệu cần có
 
 Tối thiểu 50–100 trang đã được phép sử dụng, bao phủ biên bản hiện trường, báo giá, hóa đơn, đăng ký xe; có ground truth cho loại tài liệu, ngày, tổng tiền, biển số và xưởng.
@@ -153,9 +155,10 @@ Chỉ bắt đầu sau `research_handoff` và khi có:
 | 2 | Benchmark ba case demo v2 | Có | Báo cáo cold/warm/cache |
 | 3 | Golden rehearsal + UAT | Có | Biên bản PASS/FAIL và góp ý |
 | 4 | Cache/model warm-up theo bottleneck | Có sau benchmark | Candidate tối ưu latency |
-| 5 | OCR/YOLO/domain validation | Cần dữ liệu được phép dùng | Báo cáo metric đúng miền |
-| 6 | XGBoost S1–S5 + Net Value | Cần feature và cost matrix | Candidate xếp hạng mới |
-| 7 | Security/load/UAT pilot | Sau research handoff | Pilot readiness report |
+| 5 | OCR benchmark infrastructure | Đã hoàn thành | Protocol, validation gate, runner có resume |
+| 6 | OCR/YOLO/domain validation | Cần dữ liệu được phép dùng | Báo cáo metric đúng miền |
+| 7 | XGBoost S1–S5 + Net Value | Cần feature và cost matrix | Candidate xếp hạng mới |
+| 8 | Security/load/UAT pilot | Sau research handoff | Pilot readiness report |
 
 ## Trạng thái “done” cần nói khi báo cáo
 
