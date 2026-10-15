@@ -73,7 +73,10 @@ def instructions(case: dict) -> str:
 4. Mở **Thông tin để tìm hồ sơ có liên quan**, nhập điện thoại `{phone}` và xưởng `{shop}`.
 5. Chọn file:
 {uploads}
-6. Bấm **Phân tích hồ sơ** đúng một lần và chờ Workbench tự mở.
+6. Bấm **Phân tích hồ sơ** đúng một lần. Theo dõi trạng thái: chờ lượt → dữ liệu bảng → ảnh/chứng từ → quan hệ → tổng hợp.
+7. Trong lúc job chạy, có thể mở Dashboard ở tab khác; job vẫn tiếp tục. Trên CPU, case có chứng từ có thể mất 2–4 phút ở lượt đầu.
+8. Khi Workbench mở, xem các tab **Tổng quan**, **Ảnh & chứng từ**, **Quan hệ**, **Nhật ký**.
+9. Chọn một quyết định, ghi lý do ít nhất 3 từ và bấm **Lưu quyết định** để kiểm tra Nhật ký.
 
 ## Mục tiêu
 
@@ -87,17 +90,17 @@ def instructions(case: dict) -> str:
 """
 
 
-def build(output: Path) -> Path:
-    if output.exists():
+def build(output: Path, *, refresh: bool = False) -> Path:
+    if output.exists() and not refresh:
         raise FileExistsError(f"Không ghi đè thư mục đã có: {output}")
     missing = [str(source) for case in CASES for source, _, _ in case["files"] if not source.is_file()]
     if missing:
         raise FileNotFoundError("Thiếu fixture nguồn:\n" + "\n".join(missing))
-    output.mkdir(parents=True)
+    output.mkdir(parents=True, exist_ok=refresh)
     matrix = []
     for index, case in enumerate(CASES, start=1):
         folder = output / case["folder"]
-        folder.mkdir()
+        folder.mkdir(exist_ok=refresh)
         for source, target, _ in case["files"]:
             destination = folder / target
             if target == "01_ANH_CO_MARKER_AI.png":
@@ -116,6 +119,25 @@ def build(output: Path) -> Path:
         write_text(folder / "02_KET_QUA_MONG_DOI.txt", case["expected"])
         matrix.append({"STT": index, "Thư mục": case["folder"], "Mục tiêu": case["purpose"], "Kết quả mong đợi": case["expected"]})
 
+    capture_folder = output / "99_TUY_CHON_TEST_PHIEN_CHUP_3_GOC"
+    capture_folder.mkdir(exist_ok=refresh)
+    with Image.open(SOURCE_IMAGE) as image:
+        base = image.convert("RGB")
+        variants = [base, base.transpose(Image.Transpose.FLIP_LEFT_RIGHT), base.crop((40, 20, base.width - 20, base.height - 40)).resize(base.size)]
+        for index, variant in enumerate(variants, start=1):
+            variant.save(capture_folder / f"GOC_{index}.jpg", quality=88)
+    write_text(capture_folder / "00_CACH_TEST.md", """# TEST ẢNH CHỤP MỚI CÓ KIỂM SOÁT
+
+Đây là bước tùy chọn để kiểm tra UX, không phải bộ ảnh camera thật.
+
+1. Ở trang Nạp hồ sơ, nhập thông tin hoặc bật hồ sơ mẫu.
+2. Mở **Ảnh chụp mới có kiểm soát** và bấm **Tạo yêu cầu chụp 3 góc**. Hệ thống tự lưu claim trước.
+3. Chọn lần lượt `GOC_1.jpg`, `GOC_2.jpg`, `GOC_3.jpg`, rồi bấm **Lưu 3 ảnh vào hồ sơ**.
+4. Thêm chứng từ nếu muốn và bấm **Phân tích hồ sơ**.
+
+Kết quả đúng: UI hiện mã phiên/hạn giờ; Workbench ghi Guided capture đã chạy. Cơ chế này tăng khả năng truy vết ảnh mới, nhưng không tự chứng minh hiện trường thật.
+""")
+
     write_text(output / "00_BAT_DAU_TU_DAY.md", """# BỘ 3 HỒ SƠ TEST — CHẠY THEO THỨ TỰ
 
 1. Bảo đảm API đang chạy tại `http://127.0.0.1:8000/`.
@@ -123,6 +145,17 @@ def build(output: Path) -> Path:
 3. Trong từng thư mục, mở `00_HUONG_DAN_TEST.md` và nhập đúng thông tin.
 4. Luôn bật **Dùng hồ sơ mẫu** để XGBoost nhận đủ feature demo.
 5. Sau mỗi case, quay lại Dashboard để xem thứ tự ưu tiên và lịch sử.
+6. Khi đang chạy, UI phải hiện giai đoạn và số giây. Có thể mở Dashboard; trạng thái **Đang phân tích** phải xuất hiện.
+7. Trong Workbench, lưu một quyết định rồi mở tab **Nhật ký**. Tab phải nói rõ ai, làm gì, lúc nào và vì sao.
+8. Tab **Quan hệ** phải diễn giải hồ sơ nào liên quan, loại thông tin trùng, ý nghĩa và việc nên làm; số NetworkX nằm trong phần kỹ thuật.
+
+## Thời gian
+
+- Lượt đầu có YOLO + OCR + LayoutLMv3 trên CPU có thể mất khoảng 2–4 phút.
+- Mở lại cùng hồ sơ khi bằng chứng/checkpoint không đổi sẽ dùng kết quả đã lưu và nhanh hơn nhiều.
+- Thêm tệp mới làm cache hết hiệu lực để tránh trả kết quả cũ.
+
+Thư mục `99_TUY_CHON_TEST_PHIEN_CHUP_3_GOC` dùng để thử yêu cầu chụp có thời hạn. Đây là bước tùy chọn.
 
 Ba case lần lượt kiểm tra: luồng đầy đủ; ảnh tái sử dụng + graph; ảnh có metadata khai báo AI/chỉnh sửa.
 """)
@@ -137,7 +170,7 @@ Ba case lần lượt kiểm tra: luồng đầy đủ; ảnh tái sử dụng +
     exact_a = sha256(output / "01_HO_SO_DAY_DU/01_ANH_XE.png")
     exact_b = sha256(output / "02_ANH_TRUNG_VA_QUAN_HE/01_ANH_XE_TAI_SU_DUNG.png")
     manifest = {
-        "schema_version": "1.0", "case_count": len(CASES), "run_order": [case["folder"] for case in CASES],
+        "schema_version": "1.1", "case_count": len(CASES), "run_order": [case["folder"] for case in CASES],
         "exact_reuse_pair_verified": exact_a == exact_b, "files": inventory,
     }
     (output / "99_MANIFEST_SHA256.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -150,5 +183,6 @@ Ba case lần lượt kiểm tra: luồng đầy đủ; ảnh tái sử dụng +
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("output", type=Path)
+    parser.add_argument("--refresh", action="store_true", help="Cập nhật các file do script quản lý trong thư mục đã có.")
     args = parser.parse_args()
-    print(build(args.output.resolve()))
+    print(build(args.output.resolve(), refresh=args.refresh))

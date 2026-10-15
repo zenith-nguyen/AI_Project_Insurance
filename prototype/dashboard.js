@@ -1,8 +1,8 @@
-import {ClaimReviewClient} from "/api-client.js?v=20261015e";
+import {ClaimReviewClient} from "/api-client.js?v=20261015f";
 
 const api=new ClaimReviewClient();
 const $=id=>document.getElementById(id);
-const priorityNames={high:"Ưu tiên cao",review:"Cần rà soát",normal:"Thông thường",unscored:"Chưa phân tích"};
+const priorityNames={high:"Ưu tiên cao",review:"Cần rà soát",normal:"Thông thường",unscored:"Chưa phân tích",analyzing:"Đang phân tích"};
 const decisionNames={continue_processing:"Tiếp tục xử lý",request_evidence:"Yêu cầu bổ sung",special_review:"Rà soát chuyên sâu"};
 const modelNames={tabular_risk:"XGBoost · xếp hạng hồ sơ",damage_segmentation:"YOLOv8s-seg · hư hỏng",document_classifier:"DiT · loại chứng từ",document_ocr:"PaddleOCR · đọc chữ",ocr:"PaddleOCR · đọc chữ",document_kie:"LayoutLMv3 · trích trường",consistency_rules:"Rules · đối chiếu",consistency:"Rules · đối chiếu",relationships:"NetworkX · quan hệ",media_authenticity:"Media authenticity · nguồn gốc ảnh"};
 const modelStatus={research_validated:"Đã đánh giá nghiên cứu",final_test_complete:"Đã hoàn tất final test",baseline_needs_improvement:"Baseline cần cải thiện",demo_only:"Demo kỹ thuật",engineering_v1_needs_domain_validation:"Cần validation đúng miền"};
@@ -22,10 +22,11 @@ let claims=[];
 const formatDate=value=>value?new Date(value).toLocaleString("vi-VN"):"—";
 function setError(message){$("errorBox").textContent=message;$("errorBox").hidden=!message;}
 function stat(){
-  $("totalClaims").textContent=claims.filter(row=>row.analysis_status!=="not_analyzed").length;
+  $("totalClaims").textContent=claims.filter(row=>!["not_analyzed","analyzing"].includes(row.analysis_status)).length;
   $("highClaims").textContent=claims.filter(row=>row.priority==="high").length;
   $("unscoredClaims").textContent=claims.filter(row=>row.analysis_status==="not_analyzed").length;
   $("reviewedClaims").textContent=claims.filter(row=>row.latest_decision).length;
+  $("runningClaims").textContent=claims.filter(row=>row.analysis_status==="analyzing").length;
 }
 function badge(text,type="normal"){const span=document.createElement("span");span.className=`queue-badge ${type}`;span.textContent=text;return span;}
 function renderQueue(){
@@ -37,7 +38,7 @@ function renderQueue(){
     const tr=document.createElement("tr");
     const identity=document.createElement("td");const id=document.createElement("a");id.className="claim-link";id.href=`/?view=workbench&claim_id=${encodeURIComponent(row.claim_id)}`;id.textContent=row.claim_id;const time=document.createElement("small");time.textContent=`${row.plate_number||"Chưa có biển số"} · ${formatDate(row.created_at)}`;identity.append(id,time);
     const reason=document.createElement("td");reason.append(badge(priorityNames[row.priority]||row.priority,row.priority));const reasonText=document.createElement("small");reasonText.textContent=row.priority_reason;reason.append(reasonText);
-    const score=document.createElement("td");score.textContent=row.risk_score_available?`${(row.research_risk_score*100).toFixed(1)}/100`:"Chưa chấm";const scoreNote=document.createElement("small");scoreNote.textContent=row.risk_score_available?"Điểm xếp hạng, không phải xác suất fraud":"Thiếu feature bảng";score.append(scoreNote);
+    const score=document.createElement("td");score.textContent=row.analysis_status==="analyzing"?"Đang chạy…":row.risk_score_available?`${(row.research_risk_score*100).toFixed(1)}/100`:"Chưa chấm";const scoreNote=document.createElement("small");scoreNote.textContent=row.analysis_status==="analyzing"?(row.job_message||"Model đang xử lý nền"):row.risk_score_available?"Điểm xếp hạng, không phải xác suất fraud":"Thiếu feature bảng";score.append(scoreNote);
     const evidence=document.createElement("td");evidence.textContent=`${row.present_required_count}/${row.required_evidence_count} loại`;const fileNote=document.createElement("small");fileNote.textContent=`${row.uploaded_file_count} file đã tải${row.missing_evidence.length?` · thiếu ${row.missing_evidence.length} loại`:""}`;evidence.append(fileNote);
     const signals=document.createElement("td");signals.textContent=`${row.signal_count} cờ`;const signalNote=document.createElement("small");signalNote.textContent=`${row.high_signal_count} high · ${row.review_signal_count} review`;signals.append(signalNote);
     const decisionCell=document.createElement("td");decisionCell.textContent=row.latest_decision?(decisionNames[row.latest_decision]||row.latest_decision):"Chưa có";const eventNote=document.createElement("small");eventNote.textContent=row.latest_decision?`${row.latest_reviewer} · ${formatDate(row.latest_event_at)}`:`${row.event_count} bản ghi audit`;decisionCell.append(eventNote);
@@ -82,7 +83,7 @@ function renderImprovement(payload){
 }
 async function load(){
   setError("");$("reload").disabled=true;
-  try{const [health,rows,proof,improvement]=await Promise.all([api.health(),api.listClaims(),api.modelEvidence(),api.improvementStatus()]);claims=rows;$("modeBadge").textContent=`${health.mode.toUpperCase()} · ${health.product_version}`;$("sideMode").textContent=`${health.mode.toUpperCase()} · ${health.product_version}`;stat();renderQueue();renderImprovement(improvement);renderProof(proof)}catch(error){setError(`Không tải được dashboard: ${error.message}`)}finally{$("reload").disabled=false}
+  try{const [health,rows,proof,improvement,jobs]=await Promise.all([api.health(),api.listClaims(),api.modelEvidence(),api.improvementStatus(),api.listAnalysisJobs()]);const active=new Map(jobs.filter(job=>["queued","running"].includes(job.status)).map(job=>[job.claim_id,job]));claims=rows.map(row=>{const job=active.get(row.claim_id);return job?{...row,analysis_status:"analyzing",priority:"analyzing",priority_reason:`${job.message} · ${Math.floor(job.elapsed_seconds||0)} giây`,job_message:job.message}:row});$("modeBadge").textContent=`${health.mode.toUpperCase()} · ${health.product_version}`;$("sideMode").textContent=`${health.mode.toUpperCase()} · ${health.product_version}`;stat();renderQueue();renderImprovement(improvement);renderProof(proof)}catch(error){setError(`Không tải được dashboard: ${error.message}`)}finally{$("reload").disabled=false}
 }
 [$("search"),$("statusFilter"),$("priorityFilter"),$("decisionFilter")].forEach(element=>element.addEventListener("input",renderQueue));
 $("reload").addEventListener("click",load);

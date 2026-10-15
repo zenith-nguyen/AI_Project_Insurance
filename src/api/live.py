@@ -7,6 +7,7 @@ import os
 from datetime import datetime, timezone
 from pathlib import Path
 from threading import Lock
+from collections.abc import Callable
 from uuid import uuid4
 
 import numpy as np
@@ -243,13 +244,28 @@ class LiveClaimService:
     def _fields(document: dict) -> list[ExtractedField]:
         return [ExtractedField(**field) for field in document.get("fields", [])]
 
-    def analyze(self, claim_id: str, request: AnalyzeRequest) -> ClaimAnalysis:
+    def analyze(
+        self, claim_id: str, request: AnalyzeRequest,
+        progress: Callable[[str, str | None], None] | None = None,
+    ) -> ClaimAnalysis:
+        if progress:
+            progress("preparing", None)
+        if not request.force_recompute and not any([
+            request.claim_amount is not None, request.incident_date, request.plate_number, request.evidence_ids,
+        ]):
+            cached = self.get_analysis(claim_id)
+            if cached is not None:
+                if progress:
+                    progress("finalizing", "Đang dùng lại kết quả vì hồ sơ và bằng chứng không đổi.")
+                return cached
         payload = self.repository.load(claim_id)
         claim, documents, graph_payload = payload["claim"], payload["documents"], payload["graph"]
         claim_amount = request.claim_amount if request.claim_amount is not None else claim["claim_amount"]
         incident_date = request.incident_date or claim["incident_date"]
         plate_number = request.plate_number or claim["plate_number"]
         module_status: dict[str, dict[str, object]] = {}
+        if progress:
+            progress("tabular", None)
         risk = None
         try:
             risk = self.risk.predict(claim.get("tabular_features", {}))
@@ -271,6 +287,9 @@ class LiveClaimService:
         damage_failures = 0
         document_failures = 0
         capture_steps: dict[str, set[int]] = {}
+
+        if progress:
+            progress("evidence", None)
 
         for item in payload.get("uploaded_evidence", []):
             evidence.append(Evidence(
@@ -376,6 +395,8 @@ class LiveClaimService:
                         severity="review", evidence_ids=[evidence_id], model_name="python_rules", model_version=self.registry.modules["consistency"].version,
                     ))
 
+        if progress:
+            progress("relationships", None)
         graph_available = graph_payload.get("data_status", "provided") == "provided"
         if graph_available:
             graph = build_graph(graph_payload["nodes"], graph_payload["edges"], graph_payload["scored_at"])
@@ -472,6 +493,8 @@ class LiveClaimService:
             for item in module_status.values()
         ) else "complete")
         priority = "high" if any(signal.severity == "high" for signal in signals) else ("review" if signals else "normal")
+        if progress:
+            progress("finalizing", None)
         analysis = ClaimAnalysis(
             claim_id=claim_id, trace_id=uuid4().hex, created_at=datetime.now(timezone.utc).isoformat(), mode="live",
             analysis_status=analysis_status, priority=priority,

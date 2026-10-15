@@ -12,6 +12,8 @@ def test_openapi_has_claim_lifecycle_endpoints():
         "/claims/{claim_id}/capture-sessions",
         "/claims/{claim_id}/evidence/{evidence_id}/authenticity",
         "/claims/{claim_id}/analyze",
+        "/claims/{claim_id}/analysis-jobs",
+        "/claims/{claim_id}/analysis-jobs/{job_id}",
         "/claims/{claim_id}/analysis",
         "/claims/{claim_id}/review",
     }

@@ -12,6 +12,22 @@ class AnalyzeRequest(BaseModel):
     incident_date: str | None = None
     plate_number: str | None = None
     evidence_ids: list[str] = Field(default_factory=list)
+    force_recompute: bool = False
+
+
+class AnalysisJobRecord(BaseModel):
+    job_id: str
+    claim_id: str
+    status: Literal["queued", "running", "completed", "failed"]
+    stage: str
+    message: str
+    created_at: str
+    started_at: str | None = None
+    finished_at: str | None = None
+    elapsed_seconds: float = Field(default=0, ge=0)
+    result_available: bool = False
+    cache_hit: bool = False
+    error: str | None = None
 
 
 class ClaimIntakeRequest(BaseModel):

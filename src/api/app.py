@@ -9,7 +9,8 @@ from fastapi.responses import FileResponse
 
 from src.registry import load_registry
 
-from .schemas import AnalyzeRequest, CaptureSessionRecord, ClaimAnalysis, ClaimIntakeRecord, ClaimIntakeRequest, CorrectionRecord, CorrectionRequest, EvidenceUploadRecord, HealthResponse, MediaAuthenticityReport, ReviewRecord, ReviewRequest
+from .jobs import AnalysisJobManager
+from .schemas import AnalysisJobRecord, AnalyzeRequest, CaptureSessionRecord, ClaimAnalysis, ClaimIntakeRecord, ClaimIntakeRequest, CorrectionRecord, CorrectionRequest, EvidenceUploadRecord, HealthResponse, MediaAuthenticityReport, ReviewRecord, ReviewRequest
 from .service import FixtureClaimService
 
 
@@ -29,6 +30,7 @@ elif MODE == "live":
     )
 else:
     raise RuntimeError("INSURANCE_API_MODE must be 'fixture' or 'live'.")
+JOBS = AnalysisJobManager(SERVICE)
 
 app = FastAPI(
     title="Insurance Claim Review API",
@@ -83,6 +85,11 @@ def dashboard_js() -> FileResponse:
 @app.get("/api-client.js", include_in_schema=False)
 def api_client() -> FileResponse:
     return _ui_file("api-client.js", "text/javascript")
+
+
+@app.get("/intake.js", include_in_schema=False)
+def intake_js() -> FileResponse:
+    return _ui_file("intake.js", "text/javascript")
 
 
 @app.get("/health", response_model=HealthResponse)
@@ -237,6 +244,26 @@ def analyze(claim_id: str, request: AnalyzeRequest) -> ClaimAnalysis:
         raise HTTPException(status_code=404, detail="Claim is not available in the configured claim store.") from error
     except ValueError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
+
+
+@app.post("/claims/{claim_id}/analysis-jobs", response_model=AnalysisJobRecord, status_code=202)
+def start_analysis_job(claim_id: str, request: AnalyzeRequest) -> AnalysisJobRecord:
+    """Start heavyweight local inference without holding the browser request open."""
+    return JOBS.start(claim_id, request)
+
+
+@app.get("/claims/{claim_id}/analysis-jobs/{job_id}", response_model=AnalysisJobRecord)
+def analysis_job(claim_id: str, job_id: str) -> AnalysisJobRecord:
+    record = JOBS.get(job_id)
+    if record is None or record.claim_id != claim_id:
+        raise HTTPException(status_code=404, detail="Analysis job is not available for this claim.")
+    return record
+
+
+@app.get("/analysis-jobs", response_model=list[AnalysisJobRecord])
+def analysis_jobs() -> list[AnalysisJobRecord]:
+    """Recent in-process jobs for the operations dashboard."""
+    return JOBS.list()
 
 
 @app.get("/claims/{claim_id}/analysis", response_model=ClaimAnalysis)

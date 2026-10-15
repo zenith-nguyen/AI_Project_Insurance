@@ -19,9 +19,17 @@ const api = new ClaimReviewClient();
 await api.createClaim("CLM-001", claimPayload);
 await api.uploadEvidence("CLM-001", {kind: "image", file: imageFile});
 await api.uploadEvidence("CLM-001", {kind: "document", file: pdfFile});
-const analysis = await api.analyzeClaim("CLM-001");
+let job = await api.startAnalysisJob("CLM-001");
+while (["queued", "running"].includes(job.status)) {
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  job = await api.getAnalysisJob("CLM-001", job.job_id);
+}
+if (job.status === "failed") throw new Error(job.error);
+const analysis = await api.getAnalysis("CLM-001");
 await api.saveReview("CLM-001", reviewPayload);
 ```
+
+Phân tích dùng job nền vì YOLO, OCR và LayoutLMv3 có thể mất vài phút trên CPU. UI hiển thị `job.stage`, `job.message` và `job.elapsed_seconds`; người dùng có thể mở Dashboard trong lúc job vẫn chạy. Nếu hồ sơ, bằng chứng và checkpoint không đổi, backend dùng lại kết quả đã lưu. Thêm tệp mới tự làm cache hết hiệu lực.
 
 UI phải đọc ba trường đầu tiên trước:
 
@@ -43,7 +51,7 @@ for (const instruction of session.instructions) {
 }
 ```
 
-Phiên hết hạn sau 10 phút. `guided_unverified` có nghĩa server nhận đủ ảnh theo phiên/bước; chưa phải device attestation hoặc bằng chứng camera có chữ ký.
+Phiên hết hạn sau 10 phút. Dùng khi ảnh cũ, ảnh trùng hoặc nguồn gốc chưa rõ: server phát ba yêu cầu góc chụp, gắn từng ảnh với session, step, thời gian và hash. `guided_unverified` có nghĩa server nhận đủ ảnh theo phiên/bước; chưa phải device attestation, bằng chứng camera có chữ ký hoặc kết luận hiện trường thật.
 
 ## Endpoint theo vai trò
 
@@ -56,7 +64,10 @@ Phiên hết hạn sau 10 phút. `guided_unverified` có nghĩa server nhận đ
 | `POST /claims/{id}/capture-sessions` | Tùy chọn | Có | Tạo phiên chụp hướng dẫn |
 | `POST /claims/{id}/evidence` | Có | Có | Tải ảnh hoặc chứng từ |
 | `GET /claims/{id}/evidence/{evidence_id}/content` | Có | Có | Hiển thị file đã đăng ký để overlay mask/box |
-| `POST /claims/{id}/analyze` | Có | Có | Chạy orchestration tự động |
+| `POST /claims/{id}/analysis-jobs` | Có | Có | Khởi động phân tích nền; không giữ request trình duyệt |
+| `GET /claims/{id}/analysis-jobs/{job_id}` | Có | Có | Đọc trạng thái/giai đoạn/thời gian job |
+| `GET /analysis-jobs` | Dashboard | Có | Liệt kê job gần đây và hồ sơ đang chạy |
+| `POST /claims/{id}/analyze` | Không ưu tiên | Có | Endpoint đồng bộ tương thích cũ/debug |
 | `GET /claims/{id}/analysis` | Có | Có | Đọc lại kết quả trong tiến trình hiện tại |
 | `POST /claims/{id}/review` | Có | Có | Lưu quyết định và lý do |
 | `POST /claims/{id}/corrections` | Có | Có | Lưu sửa OCR/KIE có audit trail |

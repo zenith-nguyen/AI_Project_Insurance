@@ -173,6 +173,10 @@ def test_runtime_analysis_survives_service_restart_and_new_evidence_invalidates_
     restored = restarted.get_analysis("CLM-PERSIST-001")
     assert restored is not None
     assert restored.trace_id == first.trace_id
+    reused = restarted.analyze("CLM-PERSIST-001", AnalyzeRequest())
+    assert reused.trace_id == first.trace_id
+    recomputed = restarted.analyze("CLM-PERSIST-001", AnalyzeRequest(force_recompute=True))
+    assert recomputed.trace_id != first.trace_id
 
     image = BytesIO()
     Image.new("RGB", (8, 8), (20, 40, 60)).save(image, format="PNG")

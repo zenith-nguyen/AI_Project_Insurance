@@ -1,4 +1,4 @@
-import {ClaimReviewClient, ClaimApiError} from "/api-client.js?v=20261015d";
+import {ClaimReviewClient, ClaimApiError} from "/api-client.js?v=20261015f";
 
 const api = new ClaimReviewClient();
 const $ = (id) => document.getElementById(id);
@@ -296,25 +296,44 @@ function refreshCorrectionContext() {
 }
 
 function renderGraph(a) {
-  const graph=a.graph_features||{}, box=$("graphMetrics");box.replaceChildren();
-  if(graph.data_status==="not_provided") {$("graphState").textContent="Chưa có dữ liệu quan hệ. Điều này không đồng nghĩa không có liên kết đáng chú ý.";return;}
-  $("graphState").textContent="Chỉ tính những liên kết đã có trước thời điểm chấm hồ sơ.";
+  const graph=a.graph_features||{}, box=$("graphMetrics"),brief=$("relationshipBrief"),relatedBox=$("relatedClaims");box.replaceChildren();brief.replaceChildren();relatedBox.replaceChildren();
+  if(graph.data_status==="not_provided") {
+    $("graphState").textContent="Chưa nhận được số điện thoại, biển số hoặc xưởng để đối chiếu. Đây là thiếu dữ liệu, không có nghĩa hồ sơ không liên quan.";
+    addResult(brief,"Ý nghĩa nghiệp vụ","Hệ thống vẫn phân tích ảnh, chứng từ và điểm xếp hạng nếu các đầu vào đó có sẵn.");
+    addResult(brief,"Việc nên làm","Chỉ bổ sung thông tin quan hệ khi đã có trong hồ sơ nghiệp vụ; không tự suy đoán hoặc nhập dữ liệu chưa xác minh.");
+    return;
+  }
+  $("graphState").textContent="Hệ thống chỉ dùng liên kết đã tồn tại trước thời điểm chấm để tránh nhìn trước dữ liệu tương lai.";
   [["shared_entity_count","Thực thể dùng chung"],["two_hop_claim_count","Hồ sơ trong 2 bước liên kết"],["connected_component_size","Quy mô cụm liên kết"],["graph_degree","Số liên kết trực tiếp"]].forEach(([key,label])=>{
     const tile=document.createElement("div");tile.className="graph-metric";const number=document.createElement("strong");number.textContent=formatNumber(graph[key]);const name=document.createElement("span");name.textContent=label;tile.append(number,name);box.append(tile);
   });
-  const related=graph.related_claim_ids||[], types=graph.shared_entity_types||[];
-  if(related.length)addResult(box,"Hồ sơ được hệ thống đối chiếu",related.join(", "));
-  if(types.length)addResult(box,"Loại thông tin trùng",types.map(type=>({contact_phone:"Số điện thoại",repair_shop:"Xưởng sửa chữa",vehicle_plate:"Biển số xe"}[type]||type)).join(", "));
-  if(!related.length)addResult(box,"Kết quả đối chiếu","Chưa thấy hồ sơ trước đó dùng chung biển số, số điện thoại hoặc xưởng sửa chữa đã nhập.");
+  const related=graph.related_claim_ids||[], types=graph.shared_entity_types||[], labels=types.map(type=>({contact_phone:"số điện thoại",repair_shop:"xưởng sửa chữa",vehicle_plate:"biển số xe"}[type]||type));
+  if(related.length){
+    addResult(brief,"Hệ thống đã thấy",`${related.length} hồ sơ trước đây có thông tin dùng chung: ${labels.join(", ")||"thực thể liên quan"}.`);
+    addResult(brief,"Vì sao cần quan tâm","Việc một người, xe hoặc xưởng xuất hiện ở nhiều claim có thể hợp lệ, nhưng cũng có thể là dấu hiệu tái sử dụng thông tin cần kiểm tra.");
+    addResult(brief,"Việc nên làm","Mở từng hồ sơ liên quan, đối chiếu thời gian sự cố, chủ xe, ảnh và chứng từ; ghi lý do nếu xác nhận đây là quan hệ hợp lệ.");
+    related.forEach(id=>{const link=document.createElement("a");link.className="related-link";link.href=`/?view=workbench&claim_id=${encodeURIComponent(id)}&tab=relations`;link.textContent=`Mở hồ sơ ${id}`;relatedBox.append(link)});
+  } else {
+    addResult(brief,"Kết quả đối chiếu","Chưa thấy hồ sơ trước đó dùng chung biển số, số điện thoại hoặc xưởng đã nhập.");
+    addResult(brief,"Giới hạn","Kết quả này chỉ phản ánh dữ liệu đã nạp vào hệ thống; hồ sơ ngoài kho hiện tại chưa được đối chiếu.");
+  }
 }
 
 async function renderEvents() {
   const list=$("eventsList");list.replaceChildren();
+  const intro=$("auditIntro");intro.replaceChildren();
+  if(analysis){
+    addResult(intro,"Lượt phân tích của hệ thống",`${new Date(analysis.created_at).toLocaleString("vi-VN")} · mã truy vết ${analysis.trace_id.slice(0,12)}… · trạng thái ${analysis.analysis_status}.`);
+    addResult(intro,"Nhật ký này dùng để làm gì","Lưu quyết định và chỉnh sửa của con người để quản lý có thể kiểm tra ai đã xử lý, căn cứ nào được dùng và kết quả model nào đang được tham chiếu.");
+  }
   try {
     const events=await api.getEvents(claimId);
-    if (!events.length) {const empty=document.createElement("div");empty.className="empty";empty.textContent="Chưa có quyết định hoặc chỉnh sửa nào được lưu cho hồ sơ này.";list.append(empty);return;}
+    if (!events.length) {const empty=document.createElement("div");empty.className="empty";empty.textContent="Chưa có thao tác của người duyệt. Chọn quyết định ở cột bên phải hoặc sửa một trường chứng từ, rồi bấm Lưu; bản ghi sẽ xuất hiện tại đây.";list.append(empty);return;}
     events.slice().reverse().forEach(row=>{
-      const item=document.createElement("article");item.className="event";const time=document.createElement("time");time.textContent=new Date(row.created_at).toLocaleString("vi-VN");const title=document.createElement("strong");title.textContent=row.event_type==="review"?"Quyết định của người duyệt":"Chỉnh sửa trường chứng từ";const note=document.createElement("p");note.textContent=row.event_type==="review"?`${row.reviewer_id} · ${row.decision} · ${row.reason}`:`${row.reviewer_id} · ${row.field_name}: ${row.original_value} → ${row.corrected_value} · ${row.reason}`;item.append(time,title,note);list.append(item);
+      const item=document.createElement("article");item.className="event";const time=document.createElement("time");time.textContent=new Date(row.created_at).toLocaleString("vi-VN");const title=document.createElement("strong");const note=document.createElement("p");
+      if(row.event_type==="review"){title.textContent=`Quyết định: ${{continue_processing:"Tiếp tục xử lý",request_evidence:"Yêu cầu bổ sung",special_review:"Rà soát chuyên sâu"}[row.decision]||row.decision}`;note.textContent=`Người thực hiện: ${row.reviewer_id} · Lý do: ${row.reason}`}
+      else{title.textContent=`Sửa trường: ${{total_amount:"Tổng tiền",document_date:"Ngày chứng từ",plate_number:"Biển số"}[row.field_name]||row.field_name}`;note.textContent=`${row.reviewer_id} sửa “${row.original_value??"chưa có"}” thành “${row.corrected_value}” · Lý do: ${row.reason}`}
+      const trace=document.createElement("small");trace.textContent=`Mã phân tích: ${String(row.trace_id||"").slice(0,12)}…`;item.append(time,title,note,trace);list.append(item);
     });
   } catch(error) {const empty=document.createElement("div");empty.className="empty";empty.textContent=`Không tải được nhật ký: ${error.message}`;list.append(empty);}
 }
@@ -346,6 +365,17 @@ function render(a,health) {
   }
 }
 
+async function runAnalysisJob(id,{force=false}={}) {
+  let job=await api.startAnalysisJob(id,{force_recompute:force});
+  while(["queued","running"].includes(job.status)){
+    $("refreshButton").textContent=`Đang phân tích · ${Math.floor(job.elapsed_seconds||0)}s`;
+    await new Promise(resolve=>setTimeout(resolve,1000));
+    job=await api.getAnalysisJob(id,job.job_id);
+  }
+  if(job.status==="failed")throw new Error(job.error||"Job phân tích gặp lỗi.");
+  return api.getAnalysis(id);
+}
+
 async function load() {
   setError("");$("refreshButton").disabled=true;
   try {
@@ -356,20 +386,20 @@ async function load() {
     try {result=await api.getAnalysis(id);}
     catch(error) {
       if(!(error instanceof ClaimApiError)||error.status!==404)throw error;
-      result=await api.analyzeClaim(id);
+      result=await runAnalysisJob(id);
     }
     render(result,health);
   } catch(error) {
     const detail=error instanceof ClaimApiError&&error.status===404?"Hồ sơ demo chưa được nạp. Chạy scripts/seed_synthetic_demo.py, rồi tải lại trang.":error.message;
     setError(`Không mở được hồ sơ: ${detail}`);
-  } finally {$("refreshButton").disabled=false;}
+  } finally {$("refreshButton").disabled=false;$("refreshButton").textContent="↻ Phân tích lại";}
 }
 
 $("refreshButton").addEventListener("click",async()=>{
   setError("");$("refreshButton").disabled=true;
-  try {const health=await api.health();const result=await api.analyzeClaim(claimId);render(result,health);}
+  try {const health=await api.health();const result=await runAnalysisJob(claimId,{force:true});render(result,health);}
   catch(error){setError(`Không phân tích lại được hồ sơ: ${error.message}`);}
-  finally{$("refreshButton").disabled=false;}
+  finally{$("refreshButton").disabled=false;$("refreshButton").textContent="↻ Phân tích lại";}
 });
 $("reloadEvents").addEventListener("click",renderEvents);
 $("fieldName").addEventListener("change",refreshCorrectionContext);

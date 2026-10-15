@@ -409,6 +409,127 @@
         }
       }
     },
+    "/claims/{claim_id}/analysis-jobs": {
+      "post": {
+        "summary": "Start Analysis Job",
+        "description": "Start heavyweight local inference without holding the browser request open.",
+        "operationId": "start_analysis_job_claims__claim_id__analysis_jobs_post",
+        "parameters": [
+          {
+            "name": "claim_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Claim Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalyzeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisJobRecord"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/claims/{claim_id}/analysis-jobs/{job_id}": {
+      "get": {
+        "summary": "Analysis Job",
+        "operationId": "analysis_job_claims__claim_id__analysis_jobs__job_id__get",
+        "parameters": [
+          {
+            "name": "claim_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Claim Id"
+            }
+          },
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisJobRecord"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/analysis-jobs": {
+      "get": {
+        "summary": "Analysis Jobs",
+        "description": "Recent in-process jobs for the operations dashboard.",
+        "operationId": "analysis_jobs_analysis_jobs_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AnalysisJobRecord"
+                  },
+                  "type": "array",
+                  "title": "Response Analysis Jobs Analysis Jobs Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/claims/{claim_id}/analysis": {
       "get": {
         "summary": "Analysis",
@@ -593,6 +714,99 @@
   },
   "components": {
     "schemas": {
+      "AnalysisJobRecord": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          },
+          "claim_id": {
+            "type": "string",
+            "title": "Claim Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "completed",
+              "failed"
+            ],
+            "title": "Status"
+          },
+          "stage": {
+            "type": "string",
+            "title": "Stage"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "elapsed_seconds": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Elapsed Seconds",
+            "default": 0
+          },
+          "result_available": {
+            "type": "boolean",
+            "title": "Result Available",
+            "default": false
+          },
+          "cache_hit": {
+            "type": "boolean",
+            "title": "Cache Hit",
+            "default": false
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "claim_id",
+          "status",
+          "stage",
+          "message",
+          "created_at"
+        ],
+        "title": "AnalysisJobRecord"
+      },
       "AnalyzeRequest": {
         "properties": {
           "claim_amount": {
@@ -635,6 +849,11 @@
             },
             "type": "array",
             "title": "Evidence Ids"
+          },
+          "force_recompute": {
+            "type": "boolean",
+            "title": "Force Recompute",
+            "default": false
           }
         },
         "type": "object",

@@ -10,6 +10,10 @@ def test_intake_page_exposes_claim_and_evidence_workflow():
     assert "Phân tích hồ sơ" in response.text
     assert "Dùng hồ sơ mẫu" in response.text
     assert "Feature bảng dạng JSON" not in response.text
-    assert "/claims/${claimId}/intake" in response.text
-    assert "/claims/${claimId}/evidence" in response.text
-    assert "/claims/${claimId}/analyze" in response.text
+    assert 'src="/intake.js?v=20261015f"' in response.text
+    script = TestClient(app).get("/intake.js")
+    assert script.status_code == 200
+    assert "/claims/${claimId}/intake" in script.text
+    assert "/claims/${claimId}/evidence" in script.text
+    assert "/claims/${claimId}/analysis-jobs" in script.text
+    assert "Tạo yêu cầu chụp 3 góc" in response.text

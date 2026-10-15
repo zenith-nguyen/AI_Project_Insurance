@@ -60,6 +60,9 @@ required_endpoints:
   - /claims/{claim_id}/evidence/{evidence_id}/content
   - /claims/{claim_id}/evidence/{evidence_id}/authenticity
   - /claims/{claim_id}/analyze
+  - /claims/{claim_id}/analysis-jobs
+  - /claims/{claim_id}/analysis-jobs/{job_id}
+  - /analysis-jobs
   - /claims/{claim_id}/analysis
   - /claims/{claim_id}/review
   - /claims/{claim_id}/corrections

@@ -6,6 +6,7 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
+from collections.abc import Callable
 
 from .schemas import AnalyzeRequest, CaptureSessionRecord, ClaimAnalysis, ClaimIntakeRecord, ClaimIntakeRequest, CorrectionRecord, CorrectionRequest, EvidenceUploadRecord, MediaAuthenticityReport, ReviewRecord, ReviewRequest
 from .storage import RuntimeClaimStore
@@ -33,6 +34,7 @@ class FixtureClaimService:
         record = self.runtime_store.save_evidence(
             claim_id, kind, filename, content_type, content, capture_session_id, challenge_step,
         )
+        self.analyses.pop(claim_id, None)
         if kind == "image":
             try:
                 report = self.authenticity(claim_id, record.evidence_id)
@@ -61,7 +63,22 @@ class FixtureClaimService:
         self.runtime_store.save_authenticity(claim_id, evidence_id, report.model_dump())
         return report
 
-    def analyze(self, claim_id: str, request: AnalyzeRequest) -> ClaimAnalysis:
+    def analyze(
+        self, claim_id: str, request: AnalyzeRequest,
+        progress: Callable[[str, str | None], None] | None = None,
+    ) -> ClaimAnalysis:
+        if progress:
+            progress("preparing", None)
+        if not request.force_recompute and not any([
+            request.claim_amount is not None, request.incident_date, request.plate_number, request.evidence_ids,
+        ]):
+            cached = self.get_analysis(claim_id)
+            if cached is not None:
+                if progress:
+                    progress("finalizing", "Đang dùng lại kết quả vì hồ sơ và bằng chứng không đổi.")
+                return cached
+        if progress:
+            progress("evidence", None)
         payload = copy.deepcopy(self.template)
         payload.update(
             claim_id=claim_id,
@@ -79,6 +96,8 @@ class FixtureClaimService:
         payload.setdefault("present_required_count", round(float(payload.get("evidence_completeness", 0)) * 3))
         analysis = ClaimAnalysis.model_validate(payload)
         self.analyses[claim_id] = analysis
+        if progress:
+            progress("finalizing", None)
         return analysis
 
     def get_analysis(self, claim_id: str) -> ClaimAnalysis | None:

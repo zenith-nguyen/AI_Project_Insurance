@@ -29,6 +29,7 @@ export class ClaimReviewClient {
   modelEvidence() { return this.request("/system/model-evidence"); }
   improvementStatus() { return this.request("/system/improvement-status"); }
   listClaims() { return this.request("/claims"); }
+  listAnalysisJobs() { return this.request("/analysis-jobs"); }
 
   createClaim(claimId, payload) {
     return this.request(`/claims/${encodeURIComponent(claimId)}/intake`, {
@@ -53,6 +54,16 @@ export class ClaimReviewClient {
     return this.request(`/claims/${encodeURIComponent(claimId)}/analyze`, {
       method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(overrides),
     });
+  }
+
+  startAnalysisJob(claimId, overrides = {}) {
+    return this.request(`/claims/${encodeURIComponent(claimId)}/analysis-jobs`, {
+      method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(overrides),
+    });
+  }
+
+  getAnalysisJob(claimId, jobId) {
+    return this.request(`/claims/${encodeURIComponent(claimId)}/analysis-jobs/${encodeURIComponent(jobId)}`);
   }
 
   getAnalysis(claimId) {
