@@ -38,7 +38,7 @@ def tree_hash(root: Path) -> str:
 class DocumentRuntimeAdapter:
     """Load expensive document models only when the first document is analyzed."""
 
-    pipeline_version = "dit-paddleocr-layoutlmv3-hybrid-v2"
+    pipeline_version = "dit-paddleocr-layoutlmv3-hybrid-v3-readability"
 
     def __init__(self, checkpoint: str | Path, *, expected_tree_hash: str, device: str | None = None) -> None:
         self.checkpoint = Path(checkpoint)

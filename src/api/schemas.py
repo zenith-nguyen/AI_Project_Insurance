@@ -30,6 +30,8 @@ class AnalysisJobRecord(BaseModel):
     result_available: bool = False
     cache_hit: bool = False
     error: str | None = None
+    queue_position: int = Field(default=0, ge=0)
+    worker_capacity: int = Field(default=1, ge=1)
 
 
 class ClaimIntakeRequest(BaseModel):

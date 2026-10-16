@@ -1,0 +1,61 @@
+schema_version: "1.0"
+jurisdiction: VN
+governance:
+  owner_role: insurance_operations_and_compliance
+  reviewed_at: "2026-10-16"
+  next_registry_review_due: "2026-11-15"
+  review_interval_days: 30
+  update_mode: human_approved_versioned_change
+  legal_disclaimer: "Registry hỗ trợ kiểm tra phiên bản chứng từ; không tự đưa ra kết luận pháp lý hoặc quyết định bồi thường."
+official_sources:
+  national_legal_database:
+    name: "Cơ sở dữ liệu Quốc gia về văn bản pháp luật"
+    url: "https://vbpl.vn/Pages/vbpq-timkiem.aspx"
+    authority: "Cơ sở dữ liệu quốc gia do Chính phủ thống nhất quản lý"
+    purpose: "Kiểm tra hiệu lực, văn bản thay thế, sửa đổi và lịch sử hiệu lực."
+  government_document_portal:
+    name: "Hệ thống văn bản Chính phủ"
+    url: "https://vanban.chinhphu.vn/"
+    authority: "Cổng Thông tin điện tử Chính phủ"
+    purpose: "Đối chiếu văn bản và tài liệu đính kèm do cơ quan nhà nước công bố."
+document_types:
+  invoice:
+    display_name: "Hóa đơn/chứng từ thanh toán"
+    aliases: [invoice, receipt]
+    required_business_fields: [document_date, document_number, total_amount, issuer_name]
+    valid_from: "2026-10-16"
+    valid_to: null
+    last_verified_at: "2026-10-16"
+    next_review_due: "2026-11-15"
+    official_source_ids: [national_legal_database, government_document_portal]
+    automation_limit: "OCR chỉ gợi ý trường; tính hợp lệ, chữ ký, thuế và quyền chấp nhận phải do nghiệp vụ xác nhận."
+  repair_estimate:
+    display_name: "Báo giá/dự toán sửa chữa"
+    aliases: [repair_estimate, budget]
+    required_business_fields: [document_date, document_number, total_amount, issuer_name, plate_number]
+    valid_from: "2026-10-16"
+    valid_to: null
+    last_verified_at: "2026-10-16"
+    next_review_due: "2026-11-15"
+    official_source_ids: [national_legal_database]
+    automation_limit: "Đối chiếu với ảnh hư hỏng và phạm vi bảo hiểm; không tự chấp nhận chi phí."
+  accident_record:
+    display_name: "Biên bản hiện trường/tai nạn"
+    aliases: [memo, form, accident_report, police_report]
+    required_business_fields: [document_date, document_number, plate_number, location]
+    valid_from: "2026-10-16"
+    valid_to: null
+    last_verified_at: "2026-10-16"
+    next_review_due: "2026-11-15"
+    official_source_ids: [national_legal_database, government_document_portal]
+    automation_limit: "Hệ thống không xác thực thẩm quyền người lập hoặc chữ ký/con dấu chỉ từ ảnh scan."
+  other_document:
+    display_name: "Chứng từ khác/chưa phân loại"
+    aliases: [letter, email, questionnaire, handwritten, other]
+    required_business_fields: []
+    valid_from: "2026-10-16"
+    valid_to: null
+    last_verified_at: "2026-10-16"
+    next_review_due: "2026-11-15"
+    official_source_ids: [national_legal_database]
+    automation_limit: "Bắt buộc người duyệt xác định loại chứng từ và trường cần kiểm tra."

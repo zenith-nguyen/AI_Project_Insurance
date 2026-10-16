@@ -10,7 +10,7 @@ def test_intake_page_exposes_claim_and_evidence_workflow():
     assert "Phân tích hồ sơ" in response.text
     assert "Dùng hồ sơ mẫu" in response.text
     assert "Feature bảng dạng JSON" not in response.text
-    assert 'src="/intake.js?v=20261015g"' in response.text
+    assert 'src="/intake.js?v=20261016b"' in response.text
     assert "Lần đầu chạy đầy đủ trên CPU thường mất khoảng 1–3 phút" in response.text
     script = TestClient(app).get("/intake.js")
     assert script.status_code == 200

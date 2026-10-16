@@ -402,6 +402,10 @@ def test_relationship_graph_uses_scored_at_for_imported_history(tmp_path):
 
     assert result.graph_features["two_hop_claim_count"] == 1
     assert result.graph_features["related_claim_ids"] == ["CLM-HISTORY-001"]
+    detail = result.graph_features["related_claim_details"][0]
+    assert detail["claim_id"] == "CLM-HISTORY-001"
+    assert detail["days_before_current"] == 2
+    assert detail["shared_entity_count"] == 2
 
 
 def test_relationship_graph_scope_prevents_cross_run_contamination(tmp_path):

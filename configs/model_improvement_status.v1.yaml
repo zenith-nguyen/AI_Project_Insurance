@@ -77,14 +77,18 @@ milestones:
     status: waiting_for_domain_data
     technical_evidence: >-
       DiT independent macro-F1 0.9283 trên RVL-CDIP; LayoutLMv3 final field F1
-      0.8659 trên SROIE; pipeline live đã nối.
+      0.8659 trên SROIE; pipeline live đã nối. Readability router v1 đo confidence,
+      tỷ lệ token yếu và lượng chữ đọc được để chuyển trang chữ viết tay/ảnh mờ cho
+      người duyệt; chưa tuyên bố có model nhận dạng chữ viết tay đã validation.
+      Registry chính sách chứng từ Việt Nam có version, ngày rà soát, ngày đến hạn
+      và nguồn pháp luật chính thức; mọi thay đổi vẫn cần người phụ trách phê duyệt.
     current_metric: "DiT macro-F1 0.9283; LayoutLMv3 field F1 0.8659"
     business_value: >-
       Phân loại đúng chứng từ và trích trường quan trọng để tự đối chiếu hồ sơ,
       đồng thời đưa trường confidence thấp cho người duyệt sửa.
     business_kpi: "Routing accuracy; date/amount/plate/shop field accuracy; correction rate"
     gate: "Taxonomy và validation riêng cho biên bản, báo giá, hóa đơn, đăng ký xe Việt Nam"
-    next_action: "Chốt field schema nghiệp vụ và gắn nhãn validation mới; không tối ưu trên final test cũ"
+    next_action: "Chốt field schema nghiệp vụ, gắn nhãn cả chữ in/chữ viết tay và chạy rà soát registry hằng tháng; không tối ưu trên final test cũ"
     blocked_by: "Chưa có taxonomy và bộ chứng từ Việt Nam có nhãn"
   consistency_graph:
     order: 6
@@ -94,6 +98,8 @@ milestones:
       Rule v2 và point-in-time graph v2 chạy local, có timestamp gate, entity hashing,
       chuẩn hóa biển số/điện thoại/xưởng và fallback khi field sai định dạng;
       validation hiện có thêm 3 case graph P/N/H trong bộ demo27 và importer seed history tách biệt.
+      API/UI business-v3 giải thích từng hồ sơ liên quan, loại thực thể trùng đã che,
+      số claim cùng dùng và khoảng cách thời gian trước claim hiện tại.
     current_metric: "SC07-P scoped smoke: 2/2 history matched in 2.7s; 3 scenarios normalized; chưa có precision nghiệp vụ"
     business_value: >-
       Nêu rõ thông tin không khớp và mở rộng điều tra sang claim dùng chung biển số,
@@ -138,12 +144,14 @@ milestones:
     status: complete_engineering
     technical_evidence: >-
       Dashboard, workbench, audit history và model proof dùng chung một ứng dụng;
-      API client ổn định và cache bị vô hiệu hóa.
+      API client ổn định và cache bị vô hiệu hóa. Dashboard hiển thị worker đang chạy,
+      số job xếp hàng, vị trí chờ, tình trạng policy chứng từ và hành động nghiệp vụ;
+      lịch sử job hoàn tất được giới hạn để tránh tăng bộ nhớ vô hạn.
     current_metric: "Automated UI/API contract tests PASS"
     business_value: >-
       Người dùng thấy hệ thống phát hiện gì, vì sao cần quan tâm, việc nên làm tiếp,
       phần nào chưa kiểm tra và quyết định nào đã lưu.
     business_kpi: "Task completion; thời gian xử lý; tỷ lệ hiểu đúng; UAT pass rate"
     gate: "UAT với giám định viên và bàn giao UI/backend được ký duyệt"
-    next_action: "Chạy UAT theo golden cases, sửa wording và đo thời gian hoàn tất tác vụ"
+    next_action: "Chạy UAT theo golden cases, đo thời gian hoàn tất tác vụ và chuyển hàng đợi sang durable queue khi triển khai nhiều máy"
     blocked_by: "Chưa có UAT và sign-off người dùng nghiệp vụ"

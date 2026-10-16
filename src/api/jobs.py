@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
+import os
 from threading import Lock
 from time import monotonic
 from uuid import uuid4
@@ -34,7 +35,9 @@ class AnalysisJobManager:
 
     def __init__(self, service) -> None:
         self.service = service
-        self._executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="claim-analysis")
+        self._max_workers = max(1, int(os.getenv("INSURANCE_ANALYSIS_WORKERS", "1")))
+        self._max_history = max(20, int(os.getenv("INSURANCE_JOB_HISTORY_LIMIT", "200")))
+        self._executor = ThreadPoolExecutor(max_workers=self._max_workers, thread_name_prefix="claim-analysis")
         self._lock = Lock()
         self._jobs: dict[str, dict] = {}
 
@@ -61,8 +64,17 @@ class AnalysisJobManager:
                 "_created_mono": monotonic(), "_stage_started_mono": None,
             }
             self._jobs[job_id] = job
+            self._prune_completed()
             self._executor.submit(self._run, job_id, request)
             return self._record(job)
+
+    def _prune_completed(self) -> None:
+        overflow = len(self._jobs) - self._max_history
+        if overflow <= 0:
+            return
+        removable = [key for key, row in self._jobs.items() if row["status"] in {"completed", "failed"}]
+        for key in removable[:overflow]:
+            self._jobs.pop(key, None)
 
     def _progress(self, job_id: str, stage: str, message: str | None = None) -> None:
         with self._lock:
@@ -131,6 +143,23 @@ class AnalysisJobManager:
         with self._lock:
             return [self._record(job) for job in reversed(list(self._jobs.values()))]
 
-    @staticmethod
-    def _record(job: dict) -> AnalysisJobRecord:
-        return AnalysisJobRecord.model_validate({key: value for key, value in job.items() if not key.startswith("_")})
+    def operations(self) -> dict:
+        with self._lock:
+            rows = list(self._jobs.values())
+            return {
+                "worker_capacity": self._max_workers,
+                "queued": sum(row["status"] == "queued" for row in rows),
+                "running": sum(row["status"] == "running" for row in rows),
+                "completed": sum(row["status"] == "completed" for row in rows),
+                "failed": sum(row["status"] == "failed" for row in rows),
+                "history_limit": self._max_history,
+                "execution_model": "in_process_thread_pool",
+                "scale_guidance": "Giữ 1 worker khi dùng chung model GPU/CPU nặng; pilot nhiều máy cần durable queue và worker process tách biệt.",
+            }
+
+    def _record(self, job: dict) -> AnalysisJobRecord:
+        queued = [row["job_id"] for row in self._jobs.values() if row["status"] == "queued"]
+        position = queued.index(job["job_id"]) + 1 if job["job_id"] in queued else 0
+        payload = {key: value for key, value in job.items() if not key.startswith("_")}
+        payload.update(queue_position=position, worker_capacity=self._max_workers)
+        return AnalysisJobRecord.model_validate(payload)

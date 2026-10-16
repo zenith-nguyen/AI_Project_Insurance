@@ -1,0 +1,39 @@
+{
+  "schema_version": "document_policy_source_check_v1",
+  "checked_at": "2026-10-16T16:38:30.679942+00:00",
+  "jurisdiction": "VN",
+  "registry_schema_version": "1.0",
+  "all_sources_reachable": true,
+  "sources": {
+    "national_legal_database": {
+      "name": "Cơ sở dữ liệu Quốc gia về văn bản pháp luật",
+      "url": "https://vbpl.vn/Pages/vbpq-timkiem.aspx",
+      "authority": "Cơ sở dữ liệu quốc gia do Chính phủ thống nhất quản lý",
+      "purpose": "Kiểm tra hiệu lực, văn bản thay thế, sửa đổi và lịch sử hiệu lực.",
+      "reachable": true,
+      "http_status": 200,
+      "final_url": "https://vbpl.vn/",
+      "etag": "\"qw9a040351kab\"",
+      "last_modified": null,
+      "sample_sha256": "cc3d23b24a4eb7f8a855928d1fa81583f99e4b16e7acf037c0463cf65462ce4e",
+      "sample_bytes": 80001,
+      "error": null
+    },
+    "government_document_portal": {
+      "name": "Hệ thống văn bản Chính phủ",
+      "url": "https://vanban.chinhphu.vn/",
+      "authority": "Cổng Thông tin điện tử Chính phủ",
+      "purpose": "Đối chiếu văn bản và tài liệu đính kèm do cơ quan nhà nước công bố.",
+      "reachable": true,
+      "http_status": 200,
+      "final_url": "https://vanban.chinhphu.vn/",
+      "etag": null,
+      "last_modified": null,
+      "sample_sha256": "514f4c0ad19e1629c78df8ff0efd48cc94311d5255be82abb760a9ee0848c293",
+      "sample_bytes": 268324,
+      "error": null
+    }
+  },
+  "decision": "human_policy_review_required",
+  "meaning": "Reachability or page hash changes are monitoring signals only; they do not update claim rules automatically."
+}

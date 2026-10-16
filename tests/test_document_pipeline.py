@@ -144,5 +144,6 @@ def test_pipeline_returns_stable_contract():
     assert result.fields[0].field_name == "total_amount"
     assert result.model_versions["classifier"] == "mock-classifier@v1"
     assert result.trace_id
+    assert result.quality_assessment["state"] == "mixed_or_uncertain"
     assert stages == ["document_classifier", "document_ocr", "document_kie"]
     assert DocumentResult.from_dict(result.to_dict()) == result

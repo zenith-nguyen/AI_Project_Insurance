@@ -1,4 +1,4 @@
-import {ClaimReviewClient} from "/api-client.js?v=20261015f";
+import {ClaimReviewClient} from "/api-client.js?v=20261016b";
 
 const api=new ClaimReviewClient();
 const $=id=>document.getElementById(id);
@@ -81,9 +81,16 @@ function renderImprovement(payload){
     card.append(head,rows);target.append(card);
   });
 }
+function renderOperations(operations,policies){
+  $("operationsWorkers").textContent=`${operations.worker_capacity} worker`;
+  $("operationsActive").textContent=String(operations.running);
+  $("operationsQueued").textContent=String(operations.queued);
+  const current=policies.counts?.current_reviewed||0,total=(policies.document_types||[]).length;
+  $("policyCurrent").textContent=`${current}/${total} loại`;
+}
 async function load(){
   setError("");$("reload").disabled=true;
-  try{const [health,rows,proof,improvement,jobs]=await Promise.all([api.health(),api.listClaims(),api.modelEvidence(),api.improvementStatus(),api.listAnalysisJobs()]);const active=new Map(jobs.filter(job=>["queued","running"].includes(job.status)).map(job=>[job.claim_id,job]));claims=rows.map(row=>{const job=active.get(row.claim_id);return job?{...row,analysis_status:"analyzing",priority:"analyzing",priority_reason:`${job.message} · ${Math.floor(job.elapsed_seconds||0)} giây`,job_message:job.message}:row});const warmup=proof.runtime?.modules?.document_pipeline?.warmup?.status;const warmupLabel=warmup==="ready"?"model sẵn sàng":["scheduled","warming"].includes(warmup)?"đang nạp model":warmup==="error"?"model chứng từ lỗi":"model tải khi cần";$("modeBadge").textContent=`${health.mode.toUpperCase()} · ${warmupLabel}`;$("sideMode").textContent=`${health.product_version} · ${warmupLabel}`;stat();renderQueue();renderImprovement(improvement);renderProof(proof)}catch(error){setError(`Không tải được dashboard: ${error.message}`)}finally{$("reload").disabled=false}
+  try{const [health,rows,proof,improvement,jobs,operations,policies]=await Promise.all([api.health(),api.listClaims(),api.modelEvidence(),api.improvementStatus(),api.listAnalysisJobs(),api.operations(),api.documentPolicies()]);const active=new Map(jobs.filter(job=>["queued","running"].includes(job.status)).map(job=>[job.claim_id,job]));claims=rows.map(row=>{const job=active.get(row.claim_id);return job?{...row,analysis_status:"analyzing",priority:"analyzing",priority_reason:`${job.message} · ${Math.floor(job.elapsed_seconds||0)} giây${job.queue_position?` · hàng đợi ${job.queue_position}`:""}`,job_message:job.message}:row});const warmup=proof.runtime?.modules?.document_pipeline?.warmup?.status;const warmupLabel=warmup==="ready"?"model sẵn sàng":["scheduled","warming"].includes(warmup)?"đang nạp model":warmup==="error"?"model chứng từ lỗi":"model tải khi cần";$("modeBadge").textContent=`${health.mode.toUpperCase()} · ${warmupLabel}`;$("sideMode").textContent=`${health.product_version} · ${warmupLabel}`;stat();renderQueue();renderOperations(operations,policies);renderImprovement(improvement);renderProof(proof)}catch(error){setError(`Không tải được dashboard: ${error.message}`)}finally{$("reload").disabled=false}
 }
 [$("search"),$("statusFilter"),$("priorityFilter"),$("decisionFilter")].forEach(element=>element.addEventListener("input",renderQueue));
 $("reload").addEventListener("click",load);

@@ -8,6 +8,7 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 
 from src.registry import load_registry
+from src.document.policy import DocumentPolicyRegistry
 
 from .jobs import AnalysisJobManager
 from .schemas import AnalysisJobRecord, AnalyzeRequest, CaptureSessionRecord, ClaimAnalysis, ClaimIntakeRecord, ClaimIntakeRequest, CorrectionRecord, CorrectionRequest, EvidenceUploadRecord, HealthResponse, MediaAuthenticityReport, ReviewRecord, ReviewRequest
@@ -17,6 +18,7 @@ from .service import FixtureClaimService
 ROOT = Path(__file__).resolve().parents[2]
 MODE = os.getenv("INSURANCE_API_MODE", "fixture")
 REGISTRY = load_registry(ROOT / "configs/model_registry.v1.yaml")
+DOCUMENT_POLICIES = DocumentPolicyRegistry.load(ROOT / "configs/vietnam_document_policy.v1.yaml")
 if MODE == "fixture":
     SERVICE = FixtureClaimService(ROOT / "prototype/fixtures/claim_analysis_demo.json", ROOT / "runtime/claims")
 elif MODE == "live":
@@ -165,6 +167,12 @@ def improvement_status() -> dict:
     }
 
 
+@app.get("/system/document-policies")
+def document_policies() -> dict:
+    """Current versioned VN document policy and its official-source review state."""
+    return DOCUMENT_POLICIES.public_summary()
+
+
 @app.get("/claims")
 def list_claims() -> list[dict]:
     return SERVICE.list_claims()
@@ -264,6 +272,12 @@ def analysis_job(claim_id: str, job_id: str) -> AnalysisJobRecord:
 def analysis_jobs() -> list[AnalysisJobRecord]:
     """Recent in-process jobs for the operations dashboard."""
     return JOBS.list()
+
+
+@app.get("/system/operations")
+def system_operations() -> dict:
+    """Queue/capacity telemetry for operations and scale planning."""
+    return JOBS.operations()
 
 
 @app.get("/claims/{claim_id}/analysis", response_model=ClaimAnalysis)

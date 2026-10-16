@@ -40,6 +40,12 @@
         <div id="queueEmpty" class="empty" hidden>Không có hồ sơ phù hợp bộ lọc.</div>
       </section>
 
+      <section class="card queue-card">
+        <div class="section-heading"><div><div class="eyebrow">HIỆU SUẤT · SCALE · QUẢN TRỊ CHỨNG TỪ</div><h2>Hệ thống đang xử lý được bao nhiêu và rule còn hiện hành không?</h2></div><span class="business-badge">LOCAL RESEARCH</span></div>
+        <div class="proof-summary"><div><span>Worker suy luận</span><strong id="operationsWorkers">—</strong></div><div><span>Job đang chạy</span><strong id="operationsActive">—</strong></div><div><span>Job đang chờ</span><strong id="operationsQueued">—</strong></div><div><span>Quy tắc chứng từ trong hạn rà soát</span><strong id="policyCurrent">—</strong></div></div>
+        <div class="proof-explainer"><article><b>Vì sao có hàng đợi?</b><p>OCR, YOLO và LayoutLMv3 dùng nhiều CPU/GPU. Bản local mặc định chạy tuần tự để tránh hết RAM và tranh chấp model.</p></article><article><b>Khi nào cần scale?</b><p>Khi job chờ tăng hoặc thời gian chờ vượt SLA, chuyển sang durable queue và nhiều worker process/máy; không chỉ tăng thread trong API.</p></article><article><b>Chứng từ có tự cập nhật luật không?</b><p>Không. Hệ thống giám sát nguồn chính thức, báo đến hạn; người nghiệp vụ/pháp chế duyệt version mới trước khi rule được phát hành.</p></article></div>
+      </section>
+
       <section class="card improvement-card">
         <div class="section-heading"><div><div class="eyebrow">TỪ MODEL ĐẾN GIÁ TRỊ NGHIỆP VỤ</div><h2>Tiến độ nâng cấp có bằng chứng</h2></div><span id="improvementDate" class="business-badge">—</span></div>
         <p id="improvementMessage" class="improvement-message">Đang tải trạng thái roadmap…</p>
@@ -62,6 +68,6 @@
     </div>
   </main>
 </div>
-<script type="module" src="/dashboard.js?v=20261015f"></script>
+<script type="module" src="/dashboard.js?v=20261016b"></script>
 </body>
 </html>

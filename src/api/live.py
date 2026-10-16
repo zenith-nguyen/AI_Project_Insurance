@@ -536,6 +536,17 @@ class LiveClaimService:
                             claim_id, item["evidence_id"], "document", document_cache_key, result.to_dict(),
                         )
                     document_results.append(result.to_dict())
+                    quality = result.quality_assessment or {}
+                    if quality.get("human_review_required"):
+                        signals.append(Signal(
+                            signal_id=f"{item['evidence_id']}-readability",
+                            category="document",
+                            title=quality.get("label", "Chứng từ có phần khó đọc"),
+                            explanation=" ".join(quality.get("reasons", [])) or "OCR chưa đủ tin cậy để dùng không cần xác nhận.",
+                            severity="review", evidence_ids=[item["evidence_id"]],
+                            confidence=quality.get("mean_ocr_confidence"),
+                            model_name="document-readability-router", model_version="v1",
+                        ))
                     for warning in result.warnings:
                         runtime_warnings.append(f"{item['evidence_id']}: {warning}")
                         if warning.startswith("kie_model_rule_conflict:"):
@@ -563,7 +574,7 @@ class LiveClaimService:
                         explanation=f"Đã đọc {len(result.tokens)} vùng chữ và trích xuất {len(result.fields)} trường.",
                         severity="info", evidence_ids=[item["evidence_id"]],
                         confidence=result.document_type_confidence,
-                        model_name="dit-paddleocr-layoutlmv3", model_version="document_live_v1",
+                        model_name="dit-paddleocr-layoutlmv3", model_version="document_live_v3",
                     ))
                     for check in checks:
                         if check.status == "fail":
@@ -619,6 +630,29 @@ class LiveClaimService:
                 kind: (f"••••{value[-4:]}" if kind == "contact_phone" else value.upper() if kind == "vehicle_plate" else value)
                 for kind, value in relationship_values.items()
             }
+            related_details = []
+            scored_time = datetime.fromisoformat(str(graph_payload["scored_at"]).replace("Z", "+00:00"))
+            for related_id in graph_values["related_claim_ids"]:
+                shared_entities = sorted(set(graph.neighbors(claim_id)) & set(graph.neighbors(related_id)))
+                available_at = graph.nodes[related_id].get("available_at")
+                available_time = datetime.fromisoformat(str(available_at).replace("Z", "+00:00"))
+                shared_rows = []
+                for entity in shared_entities:
+                    entity_type = str(graph.nodes[entity].get("entity_type", "unknown"))
+                    shared_rows.append({
+                        "entity_type": entity_type,
+                        "masked_value": graph_values["query_entity_display"].get(entity_type, "Đã mã hóa"),
+                        "claim_occurrence_count": int(graph.degree(entity)),
+                    })
+                related_details.append({
+                    "claim_id": related_id,
+                    "available_at": available_at,
+                    "days_before_current": max(0, (scored_time - available_time).days),
+                    "shared_entities": shared_rows,
+                    "shared_entity_count": len(shared_rows),
+                })
+            graph_values["related_claim_details"] = related_details
+            graph_values["relationship_explanation_version"] = "business-v3"
             graph_values["data_status"] = "provided"
             module_status["relationships"] = {"status": "completed", "reason": None}
             evidence.append(Evidence(evidence_id="relationship-graph", kind="relationship", label="Point-in-time relationship graph"))
@@ -677,6 +711,10 @@ class LiveClaimService:
             ),
             "evidence_cache_hits": document_cache_hits,
             "evidence_processed": uploaded_document_total,
+            "readability_review_count": sum(
+                bool(row.get("quality_assessment", {}).get("human_review_required")) for row in document_results
+            ),
+            "handwriting_model_active": False,
         }
         module_status["damage_segmentation"] = {
             "status": ("error" if damage_failures else "completed" if self.damage is not None else "unavailable") if image_count else "skipped_missing_input",

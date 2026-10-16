@@ -61,6 +61,7 @@ class DocumentResult:
     model_versions: dict[str, str] = field(default_factory=dict)
     trace_id: str | None = None
     warnings: list[str] = field(default_factory=list)
+    quality_assessment: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if not self.claim_id.strip() or not self.document_id.strip():
@@ -96,4 +97,5 @@ class DocumentResult:
             model_versions=dict(payload.get("model_versions", {})),
             trace_id=payload.get("trace_id"),
             warnings=list(payload.get("warnings", [])),
+            quality_assessment=dict(payload.get("quality_assessment", {})),
         )

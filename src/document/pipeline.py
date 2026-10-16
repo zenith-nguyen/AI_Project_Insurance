@@ -6,6 +6,7 @@ from typing import Callable
 from uuid import uuid4
 
 from .schema import DocumentResult
+from .quality import assess_document_readability
 
 
 class DocumentPipeline:
@@ -27,6 +28,7 @@ class DocumentPipeline:
         if progress:
             progress("document_ocr")
         tokens = self.ocr.predict(image)
+        quality = assess_document_readability(tokens)
         if progress:
             progress("document_kie")
         fields = self.kie.extract(tokens, image=image)
@@ -36,6 +38,8 @@ class DocumentPipeline:
             warnings.append("ocr_no_text")
         if classification.confidence < 0.5:
             warnings.append("low_document_type_confidence")
+        if quality["human_review_required"]:
+            warnings.append(quality["state"])
         return DocumentResult(
             claim_id=claim_id,
             document_id=document_id,
@@ -50,4 +54,5 @@ class DocumentPipeline:
             },
             trace_id=str(uuid4()),
             warnings=warnings,
+            quality_assessment=quality,
         )

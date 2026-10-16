@@ -1,4 +1,4 @@
-import {ClaimReviewClient, ClaimApiError} from "/api-client.js?v=20261016a";
+import {ClaimReviewClient, ClaimApiError} from "/api-client.js?v=20261016b";
 
 const api = new ClaimReviewClient();
 const $ = (id) => document.getElementById(id);
@@ -25,6 +25,13 @@ const formatNumber = (value) => value == null ? "—" : new Intl.NumberFormat("v
 const formatBytes = (value) => value == null ? "—" : value < 1024*1024 ? `${(value/1024).toFixed(1)} KB` : `${(value/1024/1024).toFixed(2)} MB`;
 let claimId = "";
 let analysis = null;
+let documentPolicies = null;
+
+function documentPolicyFor(type) {
+  if(!documentPolicies)return null;
+  const policyId=documentPolicies.aliases?.[type]||"other_document";
+  return (documentPolicies.document_types||[]).find(row=>row.policy_id===policyId)||null;
+}
 
 const evidenceTypeName = (value) => evidenceTypeNames[value] || value.replaceAll("_"," ");
 const signalForEvidence = (a,evidenceId) => (a.signals||[]).filter(signal=>signal.severity!=="info"&&(signal.evidence_ids||[]).includes(evidenceId));
@@ -347,6 +354,19 @@ function renderEvidence(a) {
       const mean=readable.length?readable.reduce((sum,token)=>sum+(token.confidence||0),0)/readable.length:null;
       const documentType=documentTypeNames[result.document_type]||result.document_type||"Chưa xác định";
       addResult(fields,"Loại chứng từ model nhận dạng",`${documentType}${result.document_type?` (${result.document_type})`:""}${result.document_type_confidence==null?"":` · độ tin cậy ${Math.round(result.document_type_confidence*100)}%`}`);
+      const quality=result.quality_assessment||{};
+      if(quality.state){
+        const reasons=(quality.reasons||[]).join(" ");
+        addResult(fields,quality.human_review_required?"⚑ Khả năng đọc cần người xác nhận":"Khả năng đọc của trang",`${quality.label}. ${reasons} ${quality.recommended_action||""}`.trim());
+        if(quality.handwriting_model_active===false)addResult(fields,"Chữ viết tay","Hệ thống mới phát hiện trường hợp có thể là chữ viết tay hoặc ảnh khó đọc để chuyển người duyệt; chưa dùng model chữ viết tay để tự điền dữ liệu. Không được hiểu OCR confidence thấp là chắc chắn có chữ viết tay.");
+      }
+      const policy=documentPolicyFor(result.document_type);
+      if(policy){
+        const sourceNames=(policy.official_source_ids||[]).map(id=>documentPolicies.official_sources?.[id]?.name||id);
+        const fieldsNeeded=(policy.required_business_fields||[]).join(", ")||"do người duyệt xác định";
+        addResult(fields,policy.state==="current_reviewed"?"Phiên bản quy tắc chứng từ":"⚑ Quy tắc chứng từ cần cập nhật",`${policy.display_name} · trạng thái ${policy.state} · kiểm tra lần cuối ${policy.last_verified_at||"chưa có"} · hạn rà soát ${policy.next_review_due||"chưa đặt"}. Trường cần kiểm tra: ${fieldsNeeded}.`);
+        addResult(fields,"Nguồn cập nhật chính thức",`${sourceNames.join("; ")||"Chưa gắn nguồn"}. ${policy.automation_limit||"Mọi thay đổi phải được nghiệp vụ phê duyệt."}`);
+      }
       addResult(fields,"Kết quả đọc chữ (OCR)",`${tokens.length} vùng chữ · ${readable.length} vùng đạt ngưỡng hiển thị${mean==null?"":` · độ tin cậy trung bình ${Math.round(mean*100)}%`}. Khung xanh trên ảnh cho biết vị trí OCR đã đọc.`);
       if(readable.length){
         const excerpt=readable.slice(0,12).map(token=>token.text).join(" · ");
@@ -416,9 +436,13 @@ function renderGraph(a) {
     addResult(brief,"Đã tìm thấy gì",`${related.length} hồ sơ cũ nằm trong cùng mạng liên kết và dùng chung ${labels.length} loại thông tin.`);
     addResult(brief,"Giá trị nghiệp vụ","Giúp người duyệt mở đúng hồ sơ cần so sánh thay vì dò thủ công toàn bộ kho claim.");
     addResult(brief,"Giới hạn","Hệ thống chỉ biết loại thông tin trùng; giá trị được băm trong graph để giảm lộ dữ liệu. Quan hệ hợp lệ vẫn có thể xảy ra.");
+    const detailById=new Map((graph.related_claim_details||[]).map(row=>[row.claim_id,row]));
     related.forEach(id=>{
       const card=document.createElement("article");card.className="related-claim-card";
-      const copy=document.createElement("div");const title=document.createElement("b");title.textContent=id;const detail=document.createElement("small");detail.textContent=`Dùng chung: ${labels.join(", ")||"thông tin liên kết"}`;copy.append(title,detail);
+      const relationshipDetail=detailById.get(id);
+      const perClaimLabels=(relationshipDetail?.shared_entities||[]).map(row=>`${({contact_phone:"Số điện thoại",repair_shop:"Xưởng sửa chữa",vehicle_plate:"Biển số"}[row.entity_type]||row.entity_type)} ${row.masked_value} · xuất hiện ở ${row.claim_occurrence_count} hồ sơ`);
+      const timing=relationshipDetail?.available_at?` · có trước ${relationshipDetail.days_before_current} ngày (${new Date(relationshipDetail.available_at).toLocaleDateString("vi-VN")})`:"";
+      const copy=document.createElement("div");const title=document.createElement("b");title.textContent=id;const detail=document.createElement("small");detail.textContent=`Dùng chung: ${perClaimLabels.join("; ")||labels.join(", ")||"thông tin liên kết"}${timing}`;copy.append(title,detail);
       const link=document.createElement("a");link.href=`/?view=workbench&claim_id=${encodeURIComponent(id)}&tab=relations`;link.textContent="Mở và đối chiếu →";card.append(copy,link);relatedBox.append(card);
     });
     const heading=document.createElement("h3");heading.textContent="4 câu hỏi cần trả lời trước khi quyết định";checklist.append(heading);
@@ -506,7 +530,8 @@ async function runAnalysisJob(id,{force=false}={}) {
 async function load() {
   setError("");$("refreshButton").disabled=true;
   try {
-    const health=await api.health();
+    const [health,policies]=await Promise.all([api.health(),api.documentPolicies().catch(()=>null)]);
+    documentPolicies=policies;
     const requested=new URLSearchParams(location.search).get("claim_id");
     const id=requested||(health.mode==="live"?"CLM-DEMO-SYN-001":"CLM-2026-00418");
     let result;

@@ -28,8 +28,10 @@ export class ClaimReviewClient {
   version() { return this.request("/version"); }
   modelEvidence() { return this.request("/system/model-evidence"); }
   improvementStatus() { return this.request("/system/improvement-status"); }
+  documentPolicies() { return this.request("/system/document-policies"); }
   listClaims() { return this.request("/claims"); }
   listAnalysisJobs() { return this.request("/analysis-jobs"); }
+  operations() { return this.request("/system/operations"); }
 
   createClaim(claimId, payload) {
     return this.request(`/claims/${encodeURIComponent(claimId)}/intake`, {
