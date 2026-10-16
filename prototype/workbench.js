@@ -1,9 +1,9 @@
-import {ClaimReviewClient, ClaimApiError} from "/api-client.js?v=20261015g";
+import {ClaimReviewClient, ClaimApiError} from "/api-client.js?v=20261016a";
 
 const api = new ClaimReviewClient();
 const $ = (id) => document.getElementById(id);
 const statusNames = {completed:"Đã chạy",completed_precomputed:"Trường chuẩn bị sẵn",unavailable:"Chưa kích hoạt",skipped_missing_input:"Thiếu đầu vào",blocked_missing_input:"Thiếu dữ liệu bảng",error:"Gặp lỗi",skipped_optional:"Không yêu cầu",partial:"Chưa đầy đủ"};
-const moduleNames = {tabular_risk:"Xếp hạng hồ sơ",document_pipeline:"Đọc chứng từ",damage_segmentation:"Ảnh hư hỏng",media_authenticity:"Nguồn gốc ảnh",consistency:"Đối chiếu thông tin",relationships:"Quan hệ hồ sơ",guided_capture:"Ảnh chụp hướng dẫn"};
+const moduleNames = {tabular_risk:"Xếp hạng hồ sơ",document_pipeline:"Đọc chứng từ",damage_segmentation:"Ảnh hư hỏng",vehicle_plate_reader:"Đọc biển số trên ảnh",media_authenticity:"Nguồn gốc ảnh",consistency:"Đối chiếu thông tin",relationships:"Quan hệ hồ sơ",guided_capture:"Ảnh chụp hướng dẫn"};
 const categoryNames = {risk:"Điểm ưu tiên",damage:"Ảnh xe",document:"Chứng từ",consistency:"Đối chiếu",relationship:"Quan hệ",authenticity:"Nguồn gốc ảnh"};
 const priorityNames = {normal:"Thông thường",review:"Cần rà soát",high:"Ưu tiên cao"};
 const analysisNames = {complete:"Đủ module",partial:"Phân tích một phần",blocked:"Chưa chấm được"};
@@ -113,6 +113,7 @@ function moduleDetail(key,value) {
   if(value.status==="completed_precomputed") return "Trường demo đã chuẩn bị sẵn; chưa đọc tệp bằng OCR/KIE.";
   if(key==="damage_segmentation" && value.status==="unavailable") return "Chưa có checkpoint YOLO trên máy demo.";
   if(key==="document_pipeline" && value.status==="unavailable") return "Chưa có checkpoint chứng từ trên máy demo.";
+  if(key==="vehicle_plate_reader" && value.status==="unavailable") return "Chưa có OCR cục bộ để đọc biển số nhìn thấy trên ảnh.";
   if(key==="guided_capture" && value.status==="skipped_optional") return "Chưa dùng bước chụp ảnh hướng dẫn.";
   if(value.status==="skipped_missing_input") return "Chưa có bằng chứng đầu vào cho module này.";
   if(value.status==="blocked_missing_input") {
@@ -173,7 +174,7 @@ function addOverlay(container, image, data, kind) {
     svg.setAttribute("preserveAspectRatio","xMidYMid meet");
     for (const item of data) {
       let shape;
-      const color=kind==="damage"?(damageColors[item.class_name]||"#16a88c"):kind==="field"?"#b66a12":"#287a9f";
+      const color=kind==="damage"?(damageColors[item.class_name]||"#16a88c"):kind==="field"?"#b66a12":kind==="plate"?"#e44b3f":"#287a9f";
       if (kind==="damage" && item.mask_polygon?.length) {
         shape=document.createElementNS("http://www.w3.org/2000/svg","polygon");
         shape.setAttribute("points",item.mask_polygon.map(point=>point.join(",")).join(" "));
@@ -183,13 +184,20 @@ function addOverlay(container, image, data, kind) {
         shape=document.createElementNS("http://www.w3.org/2000/svg","rect");
         shape.setAttribute("x",box[0]);shape.setAttribute("y",box[1]);shape.setAttribute("width",box[2]-box[0]);shape.setAttribute("height",box[3]-box[1]);
       }
-      shape.setAttribute("fill",kind==="damage"?`${color}55`:kind==="field"?"#d6a34333":"#287a9f12");shape.setAttribute("stroke",color);shape.setAttribute("stroke-width",kind==="ocr"?"1.25":"3");
+      shape.setAttribute("fill",kind==="damage"?`${color}55`:kind==="field"?"#d6a34333":kind==="plate"?"#e44b3f22":"#287a9f12");shape.setAttribute("stroke",color);shape.setAttribute("stroke-width",kind==="ocr"?"1.25":"3");
       shape.setAttribute("vector-effect","non-scaling-stroke");svg.append(shape);
       if(kind==="damage"&&item.box_xyxy?.length===4){
         const [x,y]=item.box_xyxy;const label=`${damageNames[item.class_name]||item.class_name} ${Math.round((item.confidence||0)*100)}%`;
         const group=document.createElementNS("http://www.w3.org/2000/svg","g");
         const text=document.createElementNS("http://www.w3.org/2000/svg","text");text.setAttribute("x",x+5);text.setAttribute("y",Math.max(16,y+15));text.setAttribute("fill","#fff");text.setAttribute("font-size","13");text.setAttribute("font-weight","700");text.textContent=label;
         const background=document.createElementNS("http://www.w3.org/2000/svg","rect");background.setAttribute("x",x);background.setAttribute("y",Math.max(0,y));background.setAttribute("width",Math.max(86,label.length*7.2));background.setAttribute("height","20");background.setAttribute("rx","3");background.setAttribute("fill",color);background.setAttribute("opacity",".94");
+        group.append(background,text);svg.append(group);
+      }
+      if(kind==="plate"&&item.bbox){
+        const x=item.bbox.x1,y=item.bbox.y1;const label=`Biển số: ${item.normalized_value} · ${Math.round((item.confidence||0)*100)}%`;
+        const group=document.createElementNS("http://www.w3.org/2000/svg","g");
+        const text=document.createElementNS("http://www.w3.org/2000/svg","text");text.setAttribute("x",x+5);text.setAttribute("y",Math.max(16,y+15));text.setAttribute("fill","#fff");text.setAttribute("font-size","13");text.setAttribute("font-weight","700");text.textContent=label;
+        const background=document.createElementNS("http://www.w3.org/2000/svg","rect");background.setAttribute("x",x);background.setAttribute("y",Math.max(0,y));background.setAttribute("width",Math.max(140,label.length*7));background.setAttribute("height","20");background.setAttribute("rx","3");background.setAttribute("fill",color);background.setAttribute("opacity",".96");
         group.append(background,text);svg.append(group);
       }
     }
@@ -215,21 +223,22 @@ function authenticitySummary(report) {
   }
   if(forensic.length) return {verdict:"Pixel forensic đề nghị rà soát",basis:"Model pixel forensic đã hiệu chuẩn vượt ngưỡng rà soát. Đây là tín hiệu sàng lọc, không phải chứng cứ độc lập về ảnh AI.",action:"Xem đây là tín hiệu sàng lọc; đối chiếu file gốc, Content Credentials, chuỗi tiếp nhận và ảnh chụp mới."};
   if(edited.length) return {verdict:"Metadata khai báo phần mềm chỉnh sửa",basis:`Phát hiện ${edited.length} dấu phần mềm chỉnh sửa trong metadata. Dấu vết này chưa cho biết vùng nào đã thay đổi hoặc thay đổi có hợp lệ hay không.`,action:"Yêu cầu file camera gốc hoặc ảnh chụp mới có hướng dẫn; đối chiếu hash và hồ sơ liên quan."};
-  return {verdict:"Chưa đủ bằng chứng xác định ảnh AI",basis:"Không tìm thấy marker AI đã xác minh. Metadata hoặc watermark có thể bị xóa khi ảnh được gửi qua ứng dụng khác.",action:"Không kết luận thật/giả. Dùng file gốc, chụp có hướng dẫn và đối chiếu các bằng chứng khác."};
+  return {verdict:"Chưa xác minh được ảnh camera gốc hay ảnh do AI tạo",basis:"Không có bằng chứng dương tính đủ mạnh. Ảnh từ công cụ AI khác, ảnh bị xóa metadata, ảnh qua mạng xã hội hoặc ảnh chụp lại màn hình vẫn có thể lọt.",action:"Không kết luận thật/giả. Yêu cầu file camera gốc hoặc phiên chụp có hướng dẫn, rồi đối chiếu biển số, góc xe, thời gian và hồ sơ liên quan."};
 }
 
 function authenticityChecks(report) {
   const findings=report?.findings||[];
   const has=predicate=>findings.some(predicate);
   const outcome=predicate=>findings.find(predicate)?.outcome;
+  const forensicError=has(item=>item.code==="forensic_model_error");
+  const forensicRan=has(item=>item.code.startsWith("forensic_model_")&&!['forensic_model_not_configured','forensic_model_error'].includes(item.code));
   return [
-    ["Metadata camera/EXIF",has(item=>item.code==="metadata_absent")?"Không tìm thấy":"Có dữ liệu đọc được","Thiếu EXIF có thể do mạng xã hội hoặc re-encode; không chứng minh ảnh giả."],
-    ["Content Credentials/C2PA",has(item=>item.code==="c2pa_unavailable")?"Chưa kiểm tra được":has(item=>item.code==="c2pa_validation_problem")?"Có vấn đề":"Không có cảnh báo đã xác minh","Chữ ký hợp lệ giúp truy nguồn; không có chữ ký không chứng minh ảnh thật."],
-    ["Marker AI được khai báo",has(item=>item.code.startsWith("ai_metadata_marker")||item.code==="c2pa_ai_assertion_present")?"Đã phát hiện":"Không tìm thấy","Marker có thể bị xóa, nên kết quả âm tính không loại trừ ảnh AI."],
-    ["Dấu phần mềm chỉnh sửa",has(item=>item.code.startsWith("editing_software_marker"))?"Đã phát hiện":"Không tìm thấy","Nếu có, hệ thống chỉ biết phần mềm được khai báo, chưa biết pixel nào bị sửa."],
-    ["Tái sử dụng giữa hồ sơ",outcome(item=>item.code==="cross_claim_image_reuse")==="detected"?"Đã phát hiện":"Chưa phát hiện","Ảnh trùng/gần trùng là lý do điều tra thêm, chưa tự chứng minh gian lận."],
-    ["Pixel forensic đúng miền",has(item=>item.code==="forensic_model_not_configured")?"Chưa được kích hoạt":"Đã chạy model hiệu chuẩn","Chỉ được bật khi benchmark ảnh bảo hiểm và calibration gate đạt yêu cầu."],
-    ["SynthID",has(item=>item.code==="synthid_provider_not_integrated")?"Chưa tích hợp provider":"Có kết quả provider","SynthID không phải marker phổ quát cho mọi công cụ tạo ảnh."],
+    ["1. Dấu vết file và camera",has(item=>item.code==="metadata_absent")?"Không có EXIF camera":"Đã đọc metadata","EXIF giúp đối chiếu thiết bị và thời gian, nhưng có thể bị xóa hoặc làm giả.",has(item=>item.code==="metadata_absent")?"gap":"checked"],
+    ["2. Content Credentials / C2PA",has(item=>item.code==="c2pa_unavailable")?"Máy chưa có công cụ xác minh":has(item=>item.code==="c2pa_validation_problem")?"Chữ ký có vấn đề":has(item=>item.code==="c2pa_manifest_present")||has(item=>item.code==="c2pa_ai_assertion_present")?"Có manifest":"Không có manifest","Credential hợp lệ có thể cho biết nguồn và lịch sử sửa; vắng credential không chứng minh ảnh thật.",has(item=>item.code==="c2pa_validation_problem")?"flag":has(item=>item.code==="c2pa_unavailable")?"gap":"checked"],
+    ["3. Khai báo AI / phần mềm sửa",has(item=>item.code.startsWith("ai_metadata_marker")||item.code==="c2pa_ai_assertion_present")?"Có marker AI":has(item=>item.code.startsWith("editing_software_marker"))?"Có dấu phần mềm sửa":"Không thấy khai báo","Chỉ phát hiện dấu được giữ lại trong file; tool khác hoặc thao tác xóa metadata có thể không để lại dấu.",has(item=>item.code.startsWith("ai_metadata_marker")||item.code==="c2pa_ai_assertion_present"||item.code.startsWith("editing_software_marker"))?"flag":"checked"],
+    ["4. So khớp ảnh giữa hồ sơ",outcome(item=>item.code==="cross_claim_image_reuse")==="detected"?"Có ảnh trùng / gần trùng":"Chưa thấy ảnh tái sử dụng","So sánh hash và perceptual hash trong kho claim local; không tìm kiếm Internet.",outcome(item=>item.code==="cross_claim_image_reuse")==="detected"?"flag":"checked"],
+    ["5. Pixel forensic đúng miền",forensicRan?"Đã chạy model hiệu chuẩn":forensicError?"Model chạy lỗi":"Chưa có model đạt cổng kiểm định","Detector pixel chỉ được bật khi đã đo trên ảnh bảo hiểm cùng miền; điểm số vẫn là tín hiệu sàng lọc.",forensicRan?"checked":"gap"],
+    ["6. Google SynthID",has(item=>item.code==="synthid_provider_not_integrated")?"Chưa kết nối provider":"Có kết quả provider","SynthID hiện chỉ bao phủ nội dung từ công cụ tương thích của Google; không phát hiện mọi công cụ AI.",has(item=>item.code==="synthid_provider_not_integrated")?"gap":"checked"],
   ];
 }
 
@@ -260,6 +269,7 @@ function renderEvidence(a) {
   const images=a.evidence.filter(e=>e.kind==="image" && e.source_uri?.startsWith("runtime://"));
   const documents=a.evidence.filter(e=>e.kind==="document" && e.source_uri?.startsWith("runtime://"));
   const detections=a.extracted_fields?.damage_detections||[];
+  const plateReadings=a.extracted_fields?.vehicle_plate_readings||[];
   const docResults=a.extracted_fields?.document_results||[];
   const authenticity=a.extracted_fields?.media_authenticity||[];
   const vehicle=$("vehiclePreview");vehicle.replaceChildren();vehicle.classList.remove("flagged-high","flagged-review");
@@ -267,6 +277,7 @@ function renderEvidence(a) {
   if (images.length) {
     const img=document.createElement("img");img.alt="Ảnh xe đã nộp cho hồ sơ";img.src=api.evidenceContentUrl(a.claim_id,images[0].evidence_id);
     vehicle.append(img);addOverlay(vehicle,img,detections.filter(d=>d.evidence_id===images[0].evidence_id),"damage");
+    addOverlay(vehicle,img,plateReadings.filter(d=>d.evidence_id===images[0].evidence_id),"plate");
     const imageReport=authenticity.find(row=>row.evidence_id===images[0].evidence_id);
     imageFlags=signalForEvidence(a,images[0].evidence_id);
     vehicle.classList.add(imageFlags.some(signal=>signal.severity==="high")?"flagged-high":imageFlags.length?"flagged-review":"flagged-none");
@@ -283,16 +294,33 @@ function renderEvidence(a) {
     addResult(damageList,"Tệp đã phân tích",`${images[0].label} · SHA-256 ${images[0].sha256?images[0].sha256.slice(0,12)+"…":"chưa có"}`);
     grouped.sort((a,b)=>Math.max(...b[1])-Math.max(...a[1])).forEach(([name,scores])=>addResult(damageList,damageNames[name]||name,`${scores.length} vùng · độ tin cậy cao nhất ${Math.round(Math.max(...scores)*100)}%`));
     if(grouped.length)addResult(damageList,"Cách đọc vùng khoanh","Màu và nhãn trên ảnh là vùng model đề nghị kiểm tra. Độ tin cậy không phải tỷ lệ thiệt hại hoặc xác suất gian lận.");
+    const imagePlates=plateReadings.filter(item=>item.evidence_id===images[0].evidence_id);
+    const plateStatus=a.module_status?.vehicle_plate_reader||{};
+    if(imagePlates.length){
+      const top=imagePlates[0], declared=String(a.extracted_fields?.plate_number||"").replace(/[^0-9A-Z]/gi,"").toUpperCase();
+      const comparison=declared?top.normalized_value===declared?"khớp biển số khai báo":"KHÁC biển số khai báo":"hồ sơ chưa có biển số khai báo để đối chiếu";
+      addResult(damageList,"Biển số đọc trực tiếp từ ảnh",`${top.normalized_value} · độ tin cậy OCR ${Math.round(top.confidence*100)}% · ${comparison}. Khung đỏ chỉ vị trí chữ được đọc, không phải vùng hư hỏng.`);
+    }else if(plateStatus.status==="completed"){
+      addResult(damageList,"Biển số trên ảnh","Chưa đọc được biển số đạt ngưỡng. Có thể biển số nằm ngoài khung, quá nhỏ, bị che, chói hoặc góc chụp quá xiên; hệ thống không tự lấy biển số khai báo để giả làm kết quả đọc ảnh.");
+    }else{
+      addResult(damageList,"Biển số trên ảnh",plateStatus.reason||"Module đọc biển số chưa chạy.");
+    }
   }
   addResult(damageList,"Hành động với ảnh hư hỏng",damage.action);
   const auth=authenticitySummary(authenticity[0]);
   addResult(damageList,"Nguồn gốc ảnh",auth.verdict);
   addResult(damageList,"Căn cứ",auth.basis);
   if(authenticity[0]){
+    const details=document.createElement("details");details.className="auth-details";
+    const coverage=authenticity[0].image_info?.assessment_coverage||{};
+    const summary=document.createElement("summary");summary.textContent=`Xem ${coverage.total_layers||6} lớp kiểm tra nguồn gốc và vùng mù`;
+    const note=document.createElement("div");note.className="auth-coverage";
+    const count=coverage.performed_count;
+    note.innerHTML=`<b>${count==null?"Phạm vi kiểm tra":`${count}/${coverage.total_layers} lớp tự động đã chạy`}</b><span>Đây là độ phủ công cụ, không phải % ảnh thật.</span>`;
     const checklist=document.createElement("div");checklist.className="auth-checklist";
-    const heading=document.createElement("h4");heading.textContent="Ảnh đang có và còn thiếu bằng chứng gì?";checklist.append(heading);
-    authenticityChecks(authenticity[0]).forEach(([label,status,detail])=>{const row=document.createElement("div");const head=document.createElement("p");const b=document.createElement("b");b.textContent=label;const badge=document.createElement("span");badge.textContent=status;head.append(b,badge);const small=document.createElement("small");small.textContent=detail;row.append(head,small);checklist.append(row)});
-    damageList.append(checklist);
+    authenticityChecks(authenticity[0]).forEach(([label,status,detail,tone])=>{const row=document.createElement("div");row.className=`auth-row ${tone||"checked"}`;const head=document.createElement("p");const b=document.createElement("b");b.textContent=label;const badge=document.createElement("span");badge.textContent=status;head.append(b,badge);const small=document.createElement("small");small.textContent=detail;row.append(head,small);checklist.append(row)});
+    const blind=document.createElement("div");blind.className="auth-blind-spots";blind.innerHTML="<b>Những cách làm giả vẫn có thể lọt</b><p>Ảnh AI từ provider khác · xóa metadata · chỉnh cục bộ tinh vi · ảnh chụp lại màn hình · ảnh mới chưa từng có trong kho. Vì vậy hệ thống dùng kết quả để yêu cầu bằng chứng tốt hơn, không tự kết luận gian lận.</p>";
+    details.append(summary,note,checklist,blind);damageList.append(details);
   }
   addResult(damageList,"Hành động với nguồn gốc ảnh",auth.action);
   const preview=$("documentPreview");preview.replaceChildren();preview.classList.remove("flagged-high","flagged-review");

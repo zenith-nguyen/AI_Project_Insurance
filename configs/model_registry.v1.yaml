@@ -81,10 +81,10 @@ modules:
     status: demo_only
   media_authenticity:
     implementation: layered_provenance_editing_reuse_and_forensics_scaffold
-    version: media_authenticity_v3
+    version: media_authenticity_v4
     task: ai_generated_and_tampered_media_triage
     artifact_uri: src/media_authenticity/analyzer.py
-    artifact_hash: fd265ec82411c50607e62d3cdfd847263b297d794a07c80c5c38b66adaa5e56d
+    artifact_hash: 16096d9eb0baaf707d1232f2915369447358a53c276f2c72734c858f2b2883d2
     evidence: reports/MEDIA_AUTHENTICITY_AND_RELATIONSHIP_MATCHING_V3_2026-10-14.md
     primary_metric: engineering_contract_tests
     metric_value: 1.0

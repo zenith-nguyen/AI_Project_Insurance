@@ -40,7 +40,7 @@ def test_golden_claim_runs_real_tabular_rules_and_graph(tmp_path):
         "tabular_risk": "tabular_v1",
         "consistency": "consistency_v2",
         "relationships": "point_in_time_v2",
-        "media_authenticity": "media_authenticity_v3",
+        "media_authenticity": "media_authenticity_v4",
     }
     assert any("YOLO was not invoked" in warning for warning in result.warnings)
     assert result.module_status["document_pipeline"]["status"] == "completed_precomputed"
@@ -240,7 +240,7 @@ def test_verified_ai_provenance_becomes_claim_signal(tmp_path):
     result = live.analyze("CLM-RUNTIME-AI", AnalyzeRequest())
     signal = next(item for item in result.signals if item.category == "authenticity")
     assert signal.severity == "high"
-    assert signal.model_version == "media_authenticity_v3"
+    assert signal.model_version == "media_authenticity_v4"
 
 
 def test_missing_documents_keep_tabular_score_and_plate_graph_has_no_shared_entity(tmp_path):

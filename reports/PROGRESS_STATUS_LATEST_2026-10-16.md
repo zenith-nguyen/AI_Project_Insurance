@@ -10,11 +10,16 @@
 | OCR fast640 | CER 30,12%; 52,4 giây/trang; field chính 27/27 | Nhanh hơn 41,1% nhưng mất nhiều chữ; bị gate loại, không thay model live |
 | Graph SC07-P | Tìm đúng 2/2 history trong scope riêng; không dùng dữ liệu tương lai | Đưa hồ sơ có nhiều thực thể dùng chung lên ưu tiên để người duyệt xác minh, không kết luận gian lận |
 | Bộ gán nhãn thật | Labeling kit private có consent log, hai annotator và adjudication | Sẵn quy trình thu 50–100 trang hợp lệ để nâng OCR đúng miền |
-| Kiểm thử code | 146 passed, 1 skipped trước smoke; test mới bao phủ tier lock, field metric, time rebase và graph scope | Giảm lỗi khi bàn giao cho thành viên khác trên Windows/local API |
+| Kiểm thử code | 150 passed, 1 skipped; test bao phủ API/UI, model registry, plate OCR, authenticity, cache, tier lock và graph scope | Giảm lỗi khi bàn giao cho thành viên khác trên Windows/local API |
+| OCR biển số trên ảnh xe | Reader cục bộ `vi-pattern-v1`; smoke đọc đúng `51K-482.76` với confidence 0,99998 và đối chiếu với khai báo | Giúp phát hiện biển số không khớp mà không yêu cầu người dùng nhập JSON; khi ảnh không đủ rõ hệ thống trả “không đọc chắc” |
+| Authenticity v4 | Sáu lớp được hiển thị riêng; smoke chạy 3/6 lớp và phát hiện metadata AI cùng ảnh gần trùng | Người duyệt biết căn cứ nào có, lớp nào thiếu; `3/6` là độ phủ kiểm tra, không phải xác suất ảnh thật/giả |
+| Bộ demo Việt Nam v3 | 3 claim, 3 loại chứng từ PNG/PDF, ảnh mới có biển số, hướng dẫn và manifest SHA-256 | Có kịch bản trình bày sát luồng nghiệp vụ hơn nhưng vẫn ghi rõ dữ liệu tổng hợp, không có giá trị pháp lý |
 
 ## Trạng thái sản phẩm
 
-Ứng dụng local vẫn chạy tại `http://127.0.0.1:8000/`. XGBoost, rules, NetworkX, media authenticity, YOLO và document pipeline được báo active qua `/readiness`. Hệ thống không gọi LLM ngoài để kết luận claim.
+Ứng dụng local vẫn chạy tại `http://127.0.0.1:8000/`. XGBoost, rules, NetworkX, media authenticity v4, YOLO, OCR biển số và document pipeline được báo active qua `/readiness`. Hệ thống không gọi LLM ngoài để kết luận claim.
+
+Smoke end-to-end mới nhất đã đọc đúng biển số `51K-482.76`, tạo 6 vùng dự đoán hư hỏng, phát hiện metadata tự khai báo AI, tìm ảnh gần trùng giữa các claim và trích đúng ngày `2026-10-12`, tổng tiền `42.680.000 VNĐ`, biển số từ chứng từ. Đây là kiểm tra chức năng trên dữ liệu tổng hợp, không phải metric accuracy ngoài đời.
 
 Bộ 27 hồ sơ **chưa phải bằng chứng accuracy trên bảo hiểm Việt Nam thật**. Hiện mới có 1/27 case được chạy actual theo graph-only smoke; OCR đã chạy đủ 27 báo giá nhưng các scenario còn lại vẫn cần chạy tách scope và được người nghiệp vụ ký UAT.
 

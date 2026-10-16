@@ -22,6 +22,10 @@ def test_missing_metadata_remains_inconclusive(tmp_path):
     assert report.human_review_required is False
     assert any(item.code == "metadata_absent" for item in report.findings)
     assert any("not evidence" in limitation for limitation in report.limitations)
+    coverage = report.image_info["assessment_coverage"]
+    assert coverage["is_truth_score"] is False
+    assert "metadata" in coverage["performed_layers"]
+    assert "calibrated_pixel_model" in coverage["unavailable_layers"]
 
 
 def test_ai_generator_metadata_is_a_review_signal(tmp_path):

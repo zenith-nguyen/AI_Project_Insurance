@@ -19,6 +19,7 @@ from src.features.preprocessing import features
 from src.graph.claim_graph import build_graph, claim_features, normalize_entity
 from src.integration.consistency import check_amount, check_document_date, check_plate
 from src.image.inference import YOLODamageAdapter
+from src.image.plate import VehiclePlateReader, normalize_plate
 from src.media_authenticity import CalibratedImageForensics, MediaAuthenticityAnalyzer
 from src.registry import ModelRegistry
 
@@ -210,6 +211,7 @@ class LiveClaimService:
                 device=os.getenv("INSURANCE_YOLO_DEVICE"),
             )
         self.document_runtime = None
+        self.plate_reader = None
         layout_checkpoint = os.getenv("INSURANCE_LAYOUTLM_CHECKPOINT")
         if layout_checkpoint:
             registered_kie = registry.modules["document_kie"]
@@ -218,6 +220,8 @@ class LiveClaimService:
                 expected_tree_hash=registered_kie.artifact_hash,
                 device=os.getenv("INSURANCE_DOCUMENT_DEVICE"),
             )
+            if os.getenv("INSURANCE_ENABLE_VEHICLE_PLATE_OCR", "1").lower() in {"1", "true", "yes"}:
+                self.plate_reader = VehiclePlateReader(self.document_runtime.read_image_text)
             if os.getenv("INSURANCE_PRELOAD_MODELS", "0").lower() in {"1", "true", "yes"}:
                 self.document_runtime.start_warmup()
         self.store = JsonlAuditStore(audit_log)
@@ -271,6 +275,11 @@ class LiveClaimService:
             "damage_segmentation": {
                 "active": self.damage is not None,
                 "reason": None if self.damage is not None else "Set INSURANCE_YOLO_WEIGHTS and install requirements-gpu.txt.",
+            },
+            "vehicle_plate_reader": {
+                "active": self.plate_reader is not None,
+                "reason": None if self.plate_reader is not None else "Document OCR is required for local vehicle-plate reading.",
+                "version": self.plate_reader.model_version if self.plate_reader is not None else None,
             },
             "document_pipeline": {
                 "active": self.document_runtime is not None,
@@ -334,14 +343,17 @@ class LiveClaimService:
         extracted: dict[str, object] = {"claim_amount": claim_amount, "incident_date": incident_date, "plate_number": plate_number}
         authenticity_reports: list[dict] = []
         damage_detections: list[dict] = []
+        vehicle_plate_readings: list[dict] = []
         document_results: list[dict] = []
         runtime_warnings: list[str] = []
         image_count = 0
         document_count = len(documents)
         authenticity_failures = 0
         damage_failures = 0
+        plate_failures = 0
         document_failures = 0
         damage_cache_hits = 0
+        plate_cache_hits = 0
         document_cache_hits = 0
         capture_steps: dict[str, set[int]] = {}
 
@@ -438,6 +450,54 @@ class LiveClaimService:
                     except Exception as error:
                         damage_failures += 1
                         runtime_warnings.append(f"Damage inference failed for {item['evidence_id']}: {type(error).__name__}.")
+                if self.plate_reader is not None:
+                    try:
+                        plate_cache_key = hashlib.sha256(
+                            (
+                                f"{item.get('sha256', '')}:vehicle-plate-v1:"
+                                f"{self.plate_reader.model_version}:{self.document_runtime.cache_version}"
+                            ).encode()
+                        ).hexdigest()
+                        cached_plate = None if request.force_recompute else self.runtime_store.load_inference_cache(
+                            claim_id, item["evidence_id"], "vehicle_plate", plate_cache_key,
+                        )
+                        if progress:
+                            progress(
+                                "vehicle_plate",
+                                (
+                                    f"Ảnh {image_index}/{image_total}: dùng lại kết quả đọc biển số đã lưu."
+                                    if cached_plate is not None else
+                                    f"Ảnh {image_index}/{image_total}: đang tìm và đọc biển số nhìn thấy được."
+                                ),
+                            )
+                        if cached_plate is not None:
+                            readings = [dict(row) for row in cached_plate.get("readings", [])]
+                            plate_cache_hits += 1
+                        else:
+                            image_path = self.runtime_store.evidence_path(claim_id, item["evidence_id"])
+                            readings = self.plate_reader.predict(image_path)
+                            self.runtime_store.save_inference_cache(
+                                claim_id, item["evidence_id"], "vehicle_plate", plate_cache_key,
+                                {"readings": readings},
+                            )
+                        for reading in readings:
+                            reading.update({"evidence_id": item["evidence_id"]})
+                        vehicle_plate_readings.extend(readings)
+                        if readings and plate_number and normalize_plate(str(plate_number)) != readings[0]["normalized_value"]:
+                            signals.append(Signal(
+                                signal_id=f"{item['evidence_id']}-vehicle-plate-mismatch",
+                                category="consistency", title="Biển số nhìn thấy trên ảnh khác khai báo",
+                                explanation=(
+                                    f"OCR đọc biển số {readings[0]['normalized_value']} trên ảnh, "
+                                    f"trong khi hồ sơ khai {normalize_plate(str(plate_number))}."
+                                ),
+                                severity="review", evidence_ids=[item["evidence_id"]],
+                                confidence=readings[0]["confidence"], model_name=self.plate_reader.model_name,
+                                model_version=self.plate_reader.model_version,
+                            ))
+                    except Exception as error:
+                        plate_failures += 1
+                        runtime_warnings.append(f"Vehicle plate reading failed for {item['evidence_id']}: {type(error).__name__}.")
             elif item["kind"] == "document" and self.document_runtime is not None:
                 document_index += 1
                 try:
@@ -595,6 +655,7 @@ class LiveClaimService:
         missing = sorted(required - present)
         extracted["media_authenticity"] = authenticity_reports
         extracted["damage_detections"] = damage_detections
+        extracted["vehicle_plate_readings"] = vehicle_plate_readings
         extracted["document_results"] = document_results
         extracted["guided_capture"] = {
             "sessions": [
@@ -621,6 +682,19 @@ class LiveClaimService:
             "status": ("error" if damage_failures else "completed" if self.damage is not None else "unavailable") if image_count else "skipped_missing_input",
             "reason": ("Damage inference failed." if damage_failures else None if self.damage is not None else "YOLO checkpoint is not configured.") if image_count else "No vehicle image was provided.",
             "evidence_cache_hits": damage_cache_hits,
+            "evidence_processed": image_total,
+        }
+        module_status["vehicle_plate_reader"] = {
+            "status": ("error" if plate_failures == image_count else "completed") if image_count and self.plate_reader is not None else (
+                "unavailable" if image_count else "skipped_missing_input"
+            ),
+            "reason": (
+                "Vehicle plate OCR failed." if image_count and plate_failures == image_count else
+                None if image_count and self.plate_reader is not None else
+                "Local plate OCR requires the document OCR runtime." if image_count else
+                "No vehicle image was provided."
+            ),
+            "evidence_cache_hits": plate_cache_hits,
             "evidence_processed": image_total,
         }
         module_status["media_authenticity"] = {
@@ -661,6 +735,7 @@ class LiveClaimService:
                 "media_authenticity": MediaAuthenticityAnalyzer.version,
                 **({"damage_segmentation": self.damage.model_version} if self.damage is not None else {}),
                 **({"document_pipeline": getattr(self.document_runtime, "pipeline_version", "document-runtime-v1")} if self.document_runtime is not None else {}),
+                **({"vehicle_plate_reader": self.plate_reader.model_version} if self.plate_reader is not None else {}),
             },
             module_status=module_status,
             warnings=[

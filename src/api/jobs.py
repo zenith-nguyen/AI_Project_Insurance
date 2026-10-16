@@ -17,6 +17,7 @@ STAGE_MESSAGES = {
     "evidence": "Đang kiểm tra ảnh, hư hỏng và chứng từ.",
     "image_authenticity": "Đang kiểm tra metadata, provenance và ảnh dùng lại.",
     "damage": "YOLO đang khoanh vùng hư hỏng trên ảnh xe.",
+    "vehicle_plate": "PaddleOCR đang tìm biển số có thể đọc được trên ảnh xe.",
     "document_loading": "Đang chuẩn bị các model đọc chứng từ.",
     "document_classifier": "DiT đang nhận dạng loại chứng từ.",
     "document_ocr": "PaddleOCR đang đọc chữ trên chứng từ.",

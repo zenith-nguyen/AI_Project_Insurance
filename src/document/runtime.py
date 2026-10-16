@@ -151,3 +151,11 @@ class DocumentRuntimeAdapter:
         with tempfile.TemporaryDirectory(prefix="insurance-document-") as directory:
             image = self._first_page(source, Path(directory) / "page-1.png")
             return self._get_pipeline().process(image, claim_id, document_id, progress=progress)
+
+    def read_image_text(self, path: str | Path):
+        """Reuse the already loaded local OCR engine for a vehicle image.
+
+        The caller is responsible for applying a domain-specific parser.  This
+        avoids loading a second OCR stack solely for plate candidates.
+        """
+        return self._get_pipeline().ocr.predict(Path(path))

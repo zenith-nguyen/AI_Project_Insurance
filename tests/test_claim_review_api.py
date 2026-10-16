@@ -20,13 +20,13 @@ def test_browser_api_client_is_served_by_the_backend():
     assert landing.headers["cache-control"] == "no-store, max-age=0"
     workbench = client.get("/?view=workbench")
     assert workbench.status_code == 200
-    assert 'src="/workbench.js?v=20261015g"' in workbench.text
+    assert 'src="/workbench.js?v=20261016a"' in workbench.text
     assert "Quyết định của người duyệt" in workbench.text
     assert "DIỄN GIẢI NGHIỆP VỤ" in workbench.text
     assert "Phát hiện → ý nghĩa → hành động" in workbench.text
     script = client.get("/workbench.js")
     assert script.status_code == 200
-    assert 'import {ClaimReviewClient, ClaimApiError} from "/api-client.js?v=20261015g"' in script.text
+    assert 'import {ClaimReviewClient, ClaimApiError} from "/api-client.js?v=20261016a"' in script.text
     assert "evidenceContentUrl" in script.text
     assert "addOverlay" in script.text
     assert "Chứng từ bồi thường (biên bản, báo giá hoặc hóa đơn)" in script.text
