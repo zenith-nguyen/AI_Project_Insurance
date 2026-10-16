@@ -8,6 +8,7 @@
 | Chuẩn hóa dữ liệu | 222 file đầu ra khóa hash; render lại 27 báo giá; tách expected khỏi input | Giảm rủi ro model nhìn đáp án và giúp thành viên khác chạy lại đúng bộ dữ liệu |
 | OCR robust | CER 18,02%; WER 49,75%; 89,0 giây/trang; ngày/tiền/biển số 27/27 | Field chính hữu ích trên mẫu sạch, nhưng toàn văn và thời gian xử lý chưa đạt mức sản phẩm |
 | OCR fast640 | CER 30,12%; 52,4 giây/trang; field chính 27/27 | Nhanh hơn 41,1% nhưng mất nhiều chữ; bị gate loại, không thay model live |
+| OCR fast1280/1600 | CER 28,87% / 27,96%; mean khoảng 58,0 / 68,3 giây; field chính 27/27 | Cả hai nhanh hơn nhưng làm tăng lỗi chữ, bị gate loại; live được chuẩn hóa rõ thành `vi-robust` |
 | Graph SC07-P | Tìm đúng 2/2 history trong scope riêng; không dùng dữ liệu tương lai | Đưa hồ sơ có nhiều thực thể dùng chung lên ưu tiên để người duyệt xác minh, không kết luận gian lận |
 | Bộ gán nhãn thật | Labeling kit private có consent log, hai annotator và adjudication | Sẵn quy trình thu 50–100 trang hợp lệ để nâng OCR đúng miền |
 | Kiểm thử code | 150 passed, 1 skipped; test bao phủ API/UI, model registry, plate OCR, authenticity, cache, tier lock và graph scope | Giảm lỗi khi bàn giao cho thành viên khác trên Windows/local API |
@@ -25,7 +26,7 @@ Bộ 27 hồ sơ **chưa phải bằng chứng accuracy trên bảo hiểm Việ
 
 ## Quyết định model
 
-Giữ OCR `robust` trong cấu hình live. Không chuyển sang `fast640` vì promotion gate yêu cầu chất lượng và tốc độ cùng cải thiện. Cache theo hash vẫn được dùng để lần phân tích lại không lặp OCR của file không đổi.
+Giữ OCR `vi-robust` trong cấu hình live. Không chuyển sang fast640/1280/1600 vì promotion gate yêu cầu chất lượng và tốc độ cùng cải thiện. `scripts/run_live.ps1` đã đặt rõ `INSURANCE_OCR_LANG=vi` để máy mới không rơi về tiếng Anh. Cache theo hash vẫn được dùng để lần phân tích lại không lặp OCR của file không đổi.
 
 ## Việc tiếp theo
 

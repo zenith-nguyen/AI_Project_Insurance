@@ -10,6 +10,8 @@ Benchmark dùng 27 báo giá được render lại từ PDF của bộ demo. Tra
 | Candidate | CER ↓ | WER ↓ | Mean latency ↓ | P95 latency ↓ | Ngày | Tổng tiền | Biển số |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | `vi-robust` | 18,02% | 49,75% | 89,0 giây | 97,4 giây | 27/27 | 27/27 | 27/27 |
+| `vi-fast_upright-max1280` | 28,87% | 66,33% | 58,0 giây | 61,6 giây | 27/27 | 27/27 | 27/27 |
+| `vi-fast_upright-max1600` | 27,96% | 63,05% | 68,3 giây | 69,7 giây | 27/27 | 27/27 | 27/27 |
 | `vi-fast_upright-max640` | 30,12% | 68,40% | 52,4 giây | 56,6 giây | 27/27 | 27/27 | 27/27 |
 
 Candidate 640 giảm mean latency 36,6 giây/trang, tương đương khoảng 41,1%. Đổi lại, CER tăng 12,10 điểm phần trăm và WER tăng 18,65 điểm phần trăm. Ba field chính vẫn được tìm thấy trong bố cục sạch này, nhưng phần toàn văn kém hơn rõ rệt; điều đó có thể làm giảm chất lượng LayoutLMv3 trên chứng từ khó hơn.
@@ -18,7 +20,7 @@ Candidate 640 giảm mean latency 36,6 giây/trang, tương đương khoảng 41
 
 Promotion gate yêu cầu cùng tier, cùng số trang, candidate PASS, có business field ground truth, không giảm field accuracy, CER tốt hơn và mean latency tốt hơn. Candidate 640 đạt 6/7 kiểm tra nhưng thất bại ở `cer_improved`, nên trạng thái là **experimental/rejected**, không thay cấu hình live.
 
-Candidate `max1280` được dừng sau một trang vì mất 77,7 giây, cải thiện quá ít so với baseline để đáng chạy thêm toàn bộ tập. Kết quả dở dang không được dùng làm metric hay chọn model.
+Hai candidate bổ sung ngày 2026-10-16 cũng bị loại. Max1280 giảm khoảng 31,0 giây/trang nhưng CER tăng thêm 10,85 điểm phần trăm. Max1600 giảm khoảng 20,7 giây/trang nhưng CER tăng thêm 9,94 điểm phần trăm. Tăng kích thước resize không khắc phục được phần chất lượng mất do bỏ orientation/unwarp. Cấu hình live tiếp tục dùng `lang=vi`, `profile=robust`; script khởi động đã đặt rõ hai giá trị này để clone mới không rơi về OCR tiếng Anh.
 
 ## Ý nghĩa nghiệp vụ
 
@@ -39,4 +41,8 @@ Aggregate evidence nằm tại:
 
 - `reports/metrics/system/demo27_ocr_robust_2026-10-16.json`
 - `reports/metrics/system/demo27_ocr_fast640_2026-10-16.json`
+- `reports/metrics/system/demo27_ocr_fast1280_2026-10-16.json`
+- `reports/metrics/system/demo27_ocr_fast1600_2026-10-16.json`
+- `reports/metrics/system/demo27_ocr_comparison_fast1280_2026-10-16.json`
+- `reports/metrics/system/demo27_ocr_comparison_fast1600_2026-10-16.json`
 - `reports/metrics/system/demo27_ocr_comparison_2026-10-16.json`

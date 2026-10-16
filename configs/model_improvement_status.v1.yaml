@@ -32,15 +32,16 @@ milestones:
     status: waiting_for_domain_data
     technical_evidence: >-
       Baseline SROIE CER 40,97%; document adapter đã nối live. Benchmark tổng hợp 27 trang:
-      robust CER 18,02%, mean 89,0 giây/trang; fast640 CER 30,12%, mean 52,4 giây/trang;
-      cả hai tìm thấy ngày/tổng tiền/biển số 27/27. Fast640 bị promotion gate loại vì CER giảm chất lượng.
+      vi-robust CER 18,02%, mean 89,0 giây/trang; fast640 CER 30,12%, fast1280 CER 28,87%,
+      fast1600 CER 27,96%; cả bốn tìm thấy ngày/tổng tiền/biển số 27/27. Các fast candidate
+      đều bị promotion gate loại vì CER giảm chất lượng. Live mặc định rõ ràng dùng lang=vi, profile=robust.
     current_metric: "Synthetic robust CER 0.1802, WER 0.4975, mean 89.0s; domain claim locked"
     business_value: >-
       Tự điền ngày, tổng tiền và biển số để giảm nhập tay; confidence thấp vẫn
       chuyển người duyệt xác nhận.
     business_kpi: "Field accuracy trọng yếu; correction rate; thời gian đọc/chứng từ"
     gate: "Validation tiếng Việt tách biệt; business field accuracy và latency đạt ngưỡng đã khóa"
-    next_action: "Chốt benchmark 27 trang tổng hợp rồi gắn nhãn 50–100 trang đúng miền; so sánh orientation, deskew, crop, contrast và OCR tiếng Việt"
+    next_action: "Gắn nhãn 50–100 trang đúng miền; thử deskew/crop/contrast theo điều kiện và OCR runtime GPU/ONNX trên cùng manifest"
     blocked_by: "Chưa có validation set chứng từ bảo hiểm Việt Nam có ground truth"
   xgboost:
     order: 3

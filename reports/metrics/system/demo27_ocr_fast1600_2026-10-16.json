@@ -1,0 +1,144 @@
+{
+  "schema_version": "vietnamese_ocr_benchmark_v1",
+  "benchmark_tier": "synthetic_engineering",
+  "normalization_policy": "unicode_nfc_whitespace_v1_case_sensitive_diacritics_preserved",
+  "gate": {
+    "minimum_pages": 27,
+    "observed_pages": 27,
+    "enough_pages_for_declared_tier": true,
+    "enough_pages_for_domain_claim": false,
+    "passed": true,
+    "meaning": "PASS permits synthetic engineering comparison only; it does not support real-domain accuracy claims."
+  },
+  "overall": {
+    "pages": 27,
+    "cer": 0.2795761078998073,
+    "wer": 0.6304901336728198,
+    "exact_match_rate": 0.0,
+    "character_edits": 4353,
+    "reference_characters": 15570
+  },
+  "latency_seconds": {
+    "mean": 68.31718518518518,
+    "median": 68.355,
+    "p95": 69.71946999999999,
+    "total": 1844.5639999999999
+  },
+  "error_indicators": {
+    "empty_prediction_pages": 0,
+    "accent_only_mismatch_pages": 0
+  },
+  "business_field_accuracy": {
+    "document_date": {
+      "pages": 27,
+      "matched_pages": 27,
+      "exact_presence_rate": 1.0
+    },
+    "plate_number": {
+      "pages": 27,
+      "matched_pages": 27,
+      "exact_presence_rate": 1.0
+    },
+    "total_vnd": {
+      "pages": 27,
+      "matched_pages": 27,
+      "exact_presence_rate": 1.0
+    }
+  },
+  "by_document_type": {
+    "repair_estimate": {
+      "pages": 27,
+      "cer": 0.2795761078998073,
+      "wer": 0.6304901336728198,
+      "exact_match_rate": 0.0,
+      "character_edits": 4353,
+      "reference_characters": 15570
+    }
+  },
+  "worst_pages": [
+    {
+      "sample_id": "DEMO27-CLM-00-C",
+      "document_type": "repair_estimate",
+      "cer": 0.2804878048780488,
+      "wer": 0.6293103448275862,
+      "exact_match": false,
+      "latency_seconds": 68.8724
+    },
+    {
+      "sample_id": "DEMO27-CLM-00-N",
+      "document_type": "repair_estimate",
+      "cer": 0.2804878048780488,
+      "wer": 0.6293103448275862,
+      "exact_match": false,
+      "latency_seconds": 68.6956
+    },
+    {
+      "sample_id": "DEMO27-CLM-01-N",
+      "document_type": "repair_estimate",
+      "cer": 0.2804878048780488,
+      "wer": 0.6293103448275862,
+      "exact_match": false,
+      "latency_seconds": 68.355
+    },
+    {
+      "sample_id": "DEMO27-CLM-02-N",
+      "document_type": "repair_estimate",
+      "cer": 0.2804878048780488,
+      "wer": 0.6293103448275862,
+      "exact_match": false,
+      "latency_seconds": 69.7558
+    },
+    {
+      "sample_id": "DEMO27-CLM-02-P",
+      "document_type": "repair_estimate",
+      "cer": 0.2804878048780488,
+      "wer": 0.6293103448275862,
+      "exact_match": false,
+      "latency_seconds": 68.883
+    },
+    {
+      "sample_id": "DEMO27-CLM-03-H",
+      "document_type": "repair_estimate",
+      "cer": 0.2804878048780488,
+      "wer": 0.6293103448275862,
+      "exact_match": false,
+      "latency_seconds": 66.2336
+    },
+    {
+      "sample_id": "DEMO27-CLM-03-N",
+      "document_type": "repair_estimate",
+      "cer": 0.2804878048780488,
+      "wer": 0.6293103448275862,
+      "exact_match": false,
+      "latency_seconds": 69.6347
+    },
+    {
+      "sample_id": "DEMO27-CLM-03-P",
+      "document_type": "repair_estimate",
+      "cer": 0.2804878048780488,
+      "wer": 0.6293103448275862,
+      "exact_match": false,
+      "latency_seconds": 67.106
+    },
+    {
+      "sample_id": "DEMO27-CLM-04-H",
+      "document_type": "repair_estimate",
+      "cer": 0.2804878048780488,
+      "wer": 0.6293103448275862,
+      "exact_match": false,
+      "latency_seconds": 69.537
+    },
+    {
+      "sample_id": "DEMO27-CLM-04-N",
+      "document_type": "repair_estimate",
+      "cer": 0.2804878048780488,
+      "wer": 0.6293103448275862,
+      "exact_match": false,
+      "latency_seconds": 67.9513
+    }
+  ],
+  "privacy": "Raw reference and predicted text are intentionally excluded from this report.",
+  "created_at": "2026-10-16T11:30:11.972218+00:00",
+  "manifest_sha256": "ffe5dbca5004e0f673b2c13a20112b8038dad36208002cacc8f32448aed796f1",
+  "predictions_sha256": "6e236b002e1fcce7c9e881e3b259383337509623ec5c3c3c691f6bd92ac72306"
+}
