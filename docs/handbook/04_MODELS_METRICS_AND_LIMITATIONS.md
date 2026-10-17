@@ -15,6 +15,12 @@ KPI Recall@10% tuyệt đối 60% không khả thi trên dataset có prevalence 
 
 Không tối ưu tiếp theo final test đã khóa. Cải thiện bằng validation, dữ liệu mới, error analysis và domain validation.
 
+## Baseline được hiểu như thế nào?
+
+Baseline là mốc đơn giản được nhóm tái lập trong protocol của dự án, không mặc định là metric lấy từ một link bên ngoài. Nguồn bên ngoài, baseline dự án, candidate và final result được tách riêng trong `configs/baseline_registry.v1.yaml`. API `/system/baselines` và Dashboard cho biết model nào nhóm tự huấn luyện/fine-tune, model nào chỉ benchmark, hai metric có cùng split để so trực tiếp hay không và uplift mang ý nghĩa nghiệp vụ gì.
+
+Tài liệu giải thích và bảng số liệu đầy đủ: `reports/BASELINE_CLARIFICATION_AND_UPGRADE_2026-10-17.md`.
+
 ## Model nào do nhóm huấn luyện?
 
 - **XGBoost** được nhóm huấn luyện trên dữ liệu bảng Layer B, với preprocessing fit trong fold/split huấn luyện. Artifact dùng để chấm live là `bundle.joblib` và được kiểm tra SHA-256.

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Claim Review · Dashboard quản lý</title>
-  <link rel="stylesheet" href="/workbench.css?v=20261015e">
+  <link rel="stylesheet" href="/workbench.css?v=20261017a">
 </head>
 <body>
 <div class="shell">
@@ -62,12 +62,17 @@
         <div class="section-heading"><div><div class="eyebrow">CHỨNG MINH HỆ THỐNG</div><h2>Model local, checkpoint và nơi lưu dữ liệu</h2></div><span id="externalApiBadge" class="business-badge">—</span></div>
         <div class="proof-summary"><div><span>Suy luận</span><strong id="processingLocation">—</strong></div><div><span>Dữ liệu claim gửi LLM ngoài</span><strong id="externalData">—</strong></div><div><span>Kho claim</span><strong id="claimStorage">—</strong></div><div><span>Audit log</span><strong id="auditStorage">—</strong></div></div>
         <div class="proof-explainer"><article><b>Giá trị nghiệp vụ</b><p>Model tự động gom bằng chứng, xếp hàng chờ và chỉ đúng nơi con người cần kiểm tra. Mục tiêu là giảm thời gian rà soát và tránh bỏ sót tín hiệu; hệ thống không tự kết luận gian lận.</p></article><article><b>Cách chứng minh</b><p>Mỗi kết quả gắn với model version, checkpoint hash, metric và tập đánh giá. Trạng thái active cho biết model thật đang chạy trên máy demo.</p></article><article><b>Giới hạn chung</b><p>Metric trên dữ liệu nghiên cứu chưa chứng minh hiệu quả tại bảo hiểm Việt Nam. Module yếu hoặc ngoài miền phải chuyển người duyệt và được nêu rõ.</p></article></div>
+        <div class="baseline-guide">
+          <article><b>1 · Nguồn bên ngoài</b><p>Kiến trúc hoặc checkpoint như YOLO, DiT, PaddleOCR và LayoutLMv3 do bên ngoài công bố. Nhóm ghi rõ nguồn, không nhận là tự phát minh model.</p></article>
+          <article><b>2 · Baseline của dự án</b><p>Nhóm phải chạy một mốc đơn giản trên split đã khóa: rule, model nhỏ hoặc checkpoint pretrained. Số đo này do nhóm tái lập trong protocol của dự án.</p></article>
+          <article><b>3 · Candidate/final</b><p>Candidate chỉ được chọn trên validation khi vượt rule đặt trước. Final test dùng sau khi khóa model và không được lấy để chỉnh lại.</p></article>
+        </div>
         <div id="modelProof" class="model-proof"></div>
         <p class="muted">Hash checkpoint, metric và evaluation split lấy trực tiếp từ model registry. Đây là bằng chứng tái lập kỹ thuật; không thay cho validation trên dữ liệu bảo hiểm Việt Nam.</p>
       </section>
     </div>
   </main>
 </div>
-<script type="module" src="/dashboard.js?v=20261016b"></script>
+<script type="module" src="/dashboard.js?v=20261017a"></script>
 </body>
 </html>

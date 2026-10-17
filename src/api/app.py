@@ -8,6 +8,7 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 
 from src.registry import load_registry
+from src.baselines.registry import load_baseline_registry
 from src.document.policy import DocumentPolicyRegistry
 
 from .jobs import AnalysisJobManager
@@ -18,6 +19,7 @@ from .service import FixtureClaimService
 ROOT = Path(__file__).resolve().parents[2]
 MODE = os.getenv("INSURANCE_API_MODE", "fixture")
 REGISTRY = load_registry(ROOT / "configs/model_registry.v1.yaml")
+BASELINES = load_baseline_registry(ROOT / "configs/baseline_registry.v1.yaml")
 DOCUMENT_POLICIES = DocumentPolicyRegistry.load(ROOT / "configs/vietnam_document_policy.v1.yaml")
 if MODE == "fixture":
     SERVICE = FixtureClaimService(ROOT / "prototype/fixtures/claim_analysis_demo.json", ROOT / "runtime/claims")
@@ -140,10 +142,17 @@ def model_evidence() -> dict:
                 "artifact_hash": model.artifact_hash, "metric": model.primary_metric,
                 "metric_value": model.metric_value, "evaluation_split": model.evaluation_split,
                 "status": model.status, "training_origin": training.get(name, "See registry/report."),
+                "baseline": BASELINES.modules.get(name),
             }
             for name, model in REGISTRY.modules.items()
         },
     }
+
+
+@app.get("/system/baselines")
+def baselines() -> dict:
+    """Explain baseline ownership, candidate comparison and business meaning."""
+    return BASELINES.public_summary()
 
 
 @app.get("/system/improvement-status")

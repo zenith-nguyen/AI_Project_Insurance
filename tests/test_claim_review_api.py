@@ -35,9 +35,9 @@ def test_browser_api_client_is_served_by_the_backend():
     assert 'id="relationshipChecklist"' in workbench.text
     dashboard = client.get("/dashboard")
     assert dashboard.status_code == 200
-    assert 'src="/dashboard.js?v=20261016b"' in dashboard.text
+    assert 'src="/dashboard.js?v=20261017a"' in dashboard.text
     dashboard_script = client.get("/dashboard.js")
-    assert 'from "/api-client.js?v=20261016b"' in dashboard_script.text
+    assert 'from "/api-client.js?v=20261017a"' in dashboard_script.text
     assert "OPERATIONS" in dashboard.text
     assert 'id="claimRows"' in dashboard.text
     assert 'id="improvementRoadmap"' in dashboard.text
@@ -90,6 +90,14 @@ def test_dashboard_queue_and_model_proof_are_available():
     assert payload["external_llm_api_used"] is False
     assert payload["claim_data_sent_to_external_llm"] is False
     assert payload["models"]["tabular_risk"]["artifact_hash"]
+    assert payload["models"]["tabular_risk"]["baseline"]["comparison"]["delta"] == 0.135
+    assert payload["models"]["document_classifier"]["baseline"]["comparison"]["comparable"] is False
+
+    baselines = client.get("/system/baselines")
+    assert baselines.status_code == 200
+    baseline_payload = baselines.json()
+    assert baseline_payload["updated_at"] == "2026-10-17"
+    assert baseline_payload["modules"]["document_kie"]["comparison"]["delta"] > 0.23
 
     improvement = client.get("/system/improvement-status")
     assert improvement.status_code == 200

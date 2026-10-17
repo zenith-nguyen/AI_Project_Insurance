@@ -1,0 +1,82 @@
+{
+  "schema_version": "baseline_registry_check_v1",
+  "checked_at": "2026-10-17T11:32:24.255245+00:00",
+  "status": "PASS",
+  "checks": [
+    {
+      "name": "module_coverage",
+      "passed": true,
+      "detail": "baseline=8, model=8"
+    },
+    {
+      "name": "tabular_risk.same_split",
+      "passed": true,
+      "detail": "frozen_test_200"
+    },
+    {
+      "name": "tabular_risk.delta",
+      "passed": true,
+      "detail": 0.13500000000000006
+    },
+    {
+      "name": "tabular_risk.direction",
+      "passed": true,
+      "detail": "higher_is_better"
+    },
+    {
+      "name": "damage_segmentation.same_split",
+      "passed": true,
+      "detail": "cardd_validation_431"
+    },
+    {
+      "name": "damage_segmentation.delta",
+      "passed": true,
+      "detail": 0.010865000000000014
+    },
+    {
+      "name": "damage_segmentation.direction",
+      "passed": true,
+      "detail": "higher_is_better"
+    },
+    {
+      "name": "document_classifier.no_false_uplift",
+      "passed": true,
+      "detail": "Đây là baseline bên ngoài được nhóm benchmark, không phải model nhóm tự train."
+    },
+    {
+      "name": "ocr.no_false_uplift",
+      "passed": true,
+      "detail": "Runtime tiếng Việt tốt nhất trong các cấu hình demo đã thử; chưa chứng minh tốt hơn baseline trên cùng validation đúng miền."
+    },
+    {
+      "name": "document_kie.same_split",
+      "passed": true,
+      "detail": "sroie_validation_93"
+    },
+    {
+      "name": "document_kie.delta",
+      "passed": true,
+      "detail": 0.23802363415483674
+    },
+    {
+      "name": "document_kie.direction",
+      "passed": true,
+      "detail": "higher_is_better"
+    },
+    {
+      "name": "consistency.no_false_uplift",
+      "passed": true,
+      "detail": "Đây là baseline kỹ thuật do nhóm xây, chưa có accuracy nghiệp vụ."
+    },
+    {
+      "name": "relationships.no_false_uplift",
+      "passed": true,
+      "detail": "Đây là baseline thuật toán quan hệ, chưa có precision/recall trên mạng lưới gian lận thật."
+    },
+    {
+      "name": "media_authenticity.no_false_uplift",
+      "passed": true,
+      "detail": "Baseline hiện tìm provenance, chỉnh sửa và reuse; không phải universal AI detector."
+    }
+  ]
+}

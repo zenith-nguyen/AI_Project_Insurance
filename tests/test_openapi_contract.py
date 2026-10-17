@@ -7,6 +7,7 @@ def test_openapi_has_claim_lifecycle_endpoints():
         "/health",
         "/version",
         "/readiness",
+        "/system/baselines",
         "/system/document-policies",
         "/system/operations",
         "/claims/{claim_id}/intake",

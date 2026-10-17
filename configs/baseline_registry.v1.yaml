@@ -1,0 +1,216 @@
+schema_version: "1.0"
+updated_at: "2026-10-17"
+definitions:
+  external_reference: "Kiến trúc hoặc checkpoint do bên ngoài công bố; nhóm phải ghi nguồn và không nhận là tự huấn luyện từ đầu."
+  project_baseline: "Mốc đơn giản do nhóm chạy lại trên split của dự án để biết candidate có tạo thêm giá trị hay không."
+  candidate: "Phương án phức tạp hơn được chọn trên validation theo quy tắc khóa trước."
+  final_result: "Kết quả đánh giá sau khi đã khóa candidate; final test không được dùng để chỉnh model."
+modules:
+  tabular_risk:
+    baseline:
+      name: "Rule baseline v1"
+      origin_type: team_implemented
+      source: "Luật Python và ngưỡng claim amount fit chỉ trên train"
+      team_action: "Nhóm tự xây luật, chạy và đánh giá. Logistic Regression AP 0,671 trên CV được giữ thêm làm simple-ML reference."
+      metric: average_precision
+      value: 0.424
+      split: frozen_test_200
+    current:
+      name: "XGBoost tabular_v1"
+      origin_type: team_implemented
+      source: "Pipeline huấn luyện của dự án"
+      team_action: "Nhóm huấn luyện, chọn model bằng repeated CV, hiệu chuẩn và đánh giá khóa."
+      metric: average_precision
+      value: 0.559
+      split: frozen_test_200
+    comparison:
+      comparable: true
+      direction: higher_is_better
+      delta: 0.135
+      secondary: "Recall@10% tăng từ 16,3% lên 22,4% (+6,1 điểm phần trăm), chưa đạt KPI +10 điểm."
+      conclusion: "XGBoost xếp hạng tốt hơn rule trên test nghiên cứu, nhưng chưa đạt KPI tương đối đã đề xuất."
+    business_meaning: "So sánh cho biết model có đưa thêm hồ sơ dương tính vào phần 10% hàng đợi được xem trước hay không."
+    decision: "Giữ XGBoost làm candidate nghiên cứu; phát triển tiếp trên train_fs/val_fs và cần external test mới."
+    limitation: "Nhãn fraud_reported và prevalence nguồn chưa đại diện production Việt Nam; điểm không phải xác suất gian lận."
+  damage_segmentation:
+    baseline:
+      name: "YOLOv8n-seg baseline"
+      origin_type: team_trained_from_external_weights
+      source: "Kiến trúc/trọng số khởi tạo Ultralytics, nhóm fine-tune trên CarDD"
+      team_action: "Nhóm chạy 100 epoch theo split cố định và đo validation."
+      metric: validation_mask_map50_95
+      value: 0.517514
+      split: cardd_validation_431
+    current:
+      name: "YOLOv8s-seg candidate v1"
+      origin_type: team_trained_from_external_weights
+      source: "Kiến trúc/trọng số khởi tạo Ultralytics, nhóm fine-tune trên CarDD"
+      team_action: "Nhóm fine-tune, chọn checkpoint trên validation và khóa final test."
+      metric: validation_mask_map50_95
+      value: 0.528379
+      split: cardd_validation_431
+    comparison:
+      comparable: true
+      direction: higher_is_better
+      delta: 0.010865
+      secondary: "Final-test mask mAP50-95 của candidate là 0,513978 trên 419 ảnh."
+      conclusion: "Candidate vượt đúng ngưỡng +0,0100 đã khóa, nhưng chậm hơn và dent/scratch không tốt hơn baseline."
+    business_meaning: "Mốc này kiểm tra việc dùng model lớn hơn có khoanh vùng hư hỏng tốt hơn đủ để bù chi phí suy luận hay không."
+    decision: "Giữ YOLOv8s-seg làm candidate; không tối ưu tiếp bằng final test."
+    limitation: "CarDD chưa đại diện đầy đủ ảnh giám định tại Việt Nam và một số lớp hư hỏng vẫn yếu."
+  document_classifier:
+    baseline:
+      name: "DiT pretrained RVL-CDIP"
+      origin_type: external_pretrained_team_evaluated
+      source: "microsoft/dit-base-finetuned-rvlcdip tại revision đã khóa"
+      team_action: "Nhóm không huấn luyện DiT; nhóm tự tạo independent validation 320 ảnh và đo lại."
+      metric: macro_f1
+      value: 0.9282600937527126
+      split: independent_validation_320
+    current:
+      name: "DiT pretrained RVL-CDIP"
+      origin_type: external_pretrained_team_evaluated
+      source: "Cùng checkpoint baseline"
+      team_action: "Chưa có candidate fine-tune đúng miền Việt Nam."
+      metric: macro_f1
+      value: 0.9282600937527126
+      split: independent_validation_320
+    comparison:
+      comparable: false
+      direction: none
+      delta: null
+      secondary: "Không có candidate riêng để tuyên bố cải thiện."
+      conclusion: "Đây là baseline bên ngoài được nhóm benchmark, không phải model nhóm tự train."
+    business_meaning: "Cho biết checkpoint có đủ khả năng định tuyến loại tài liệu trong miền RVL-CDIP trước khi đầu tư gắn nhãn riêng."
+    decision: "Giữ làm baseline kỹ thuật; chưa xem là bộ phân loại chứng từ bảo hiểm Việt Nam."
+    limitation: "Taxonomy RVL-CDIP khác biên bản, báo giá và giấy tờ bảo hiểm Việt Nam."
+  ocr:
+    baseline:
+      name: "PaddleOCR pretrained baseline"
+      origin_type: external_pretrained_team_evaluated
+      source: "PaddleOCR official models"
+      team_action: "Nhóm không train OCR từ đầu; nhóm benchmark trên 93 trang SROIE."
+      metric: character_error_rate
+      value: 0.409656383653424
+      split: sroie_validation_93
+    current:
+      name: "PaddleOCR vi-robust runtime"
+      origin_type: external_pretrained_team_evaluated
+      source: "PaddleOCR tiếng Việt với cấu hình robust"
+      team_action: "Nhóm chọn cấu hình bằng benchmark 27 trang tổng hợp và thêm cache/warm-up."
+      metric: character_error_rate
+      value: 0.18015414258188825
+      split: synthetic_vietnamese_demo_27
+    comparison:
+      comparable: false
+      direction: lower_is_better
+      delta: null
+      secondary: "Không lấy 0,4097 - 0,1802 làm mức cải thiện vì hai số đến từ hai dataset khác nhau."
+      conclusion: "Runtime tiếng Việt tốt nhất trong các cấu hình demo đã thử; chưa chứng minh tốt hơn baseline trên cùng validation đúng miền."
+    business_meaning: "Baseline cho biết lượng chữ phải sửa; candidate chỉ được promote khi vừa giảm lỗi trường nghiệp vụ vừa giảm thời gian/công sửa."
+    decision: "Giữ vi-robust cho demo; thu thập 50–100 trang đúng miền trước khi công bố uplift."
+    limitation: "27 trang là tổng hợp; CER và latency không đại diện chứng từ thật hoặc chữ viết tay."
+  document_kie:
+    baseline:
+      name: "Rule KIE v1"
+      origin_type: team_implemented
+      source: "Regex/normalization do nhóm xây"
+      team_action: "Nhóm tự viết và đánh giá hai field date/total trên cùng validation."
+      metric: validation_field_micro_f1
+      value: 0.6833855799373042
+      split: sroie_validation_93
+    current:
+      name: "LayoutLMv3 candidate v2"
+      origin_type: team_trained_from_external_weights
+      source: "microsoft/layoutlmv3-base, nhóm fine-tune trên SROIE"
+      team_action: "Nhóm fine-tune, chọn checkpoint-264 trên validation và chạy final test đúng một lần."
+      metric: validation_field_micro_f1
+      value: 0.9214092140921409
+      split: sroie_validation_93
+    comparison:
+      comparable: true
+      direction: higher_is_better
+      delta: 0.2380236341548367
+      secondary: "Final-test field micro-F1 là 0,865937 trên 361 ảnh."
+      conclusion: "LayoutLMv3 tăng khoảng 23,8 điểm F1 so với rule trên cùng validation và vượt gate +0,02."
+    business_meaning: "So sánh đo khả năng giảm trường ngày/tổng tiền bị bỏ sót so với regex đơn giản."
+    decision: "Giữ checkpoint-264; chỉ cải thiện bằng validation/dữ liệu mới, không dùng lại final test để tune."
+    limitation: "SROIE là receipt; chưa chứng minh khả năng đọc biên bản và báo giá bảo hiểm Việt Nam."
+  consistency:
+    baseline:
+      name: "Consistency rules v2"
+      origin_type: deterministic_engineering
+      source: "Luật Python do nhóm xây"
+      team_action: "Nhóm version hóa và test contract; không có bước huấn luyện."
+      metric: engineering_contract
+      value: 1.0
+      split: synthetic_demo
+    current:
+      name: "Consistency rules v2"
+      origin_type: deterministic_engineering
+      source: "Cùng baseline đang dùng"
+      team_action: "Chưa có candidate thay thế."
+      metric: engineering_contract
+      value: 1.0
+      split: synthetic_demo
+    comparison:
+      comparable: false
+      direction: none
+      delta: null
+      secondary: "PASS chỉ chứng minh code chạy đúng contract."
+      conclusion: "Đây là baseline kỹ thuật do nhóm xây, chưa có accuracy nghiệp vụ."
+    business_meaning: "Tạo mốc minh bạch để đo precision cảnh báo khi có case nghiệp vụ được xác minh."
+    decision: "Giữ rule làm fallback có giải thích; cần rule-owner sign-off."
+    limitation: "Synthetic PASS không đồng nghĩa cảnh báo đúng trên hồ sơ thật."
+  relationships:
+    baseline:
+      name: "NetworkX point-in-time v2"
+      origin_type: deterministic_engineering
+      source: "Thuật toán graph do nhóm triển khai bằng NetworkX"
+      team_action: "Nhóm xây entity normalization, hashing và timestamp gate; không train model."
+      metric: engineering_contract
+      value: 1.0
+      split: synthetic_demo
+    current:
+      name: "NetworkX point-in-time v2"
+      origin_type: deterministic_engineering
+      source: "Cùng baseline đang dùng"
+      team_action: "Chưa có graph-ML candidate."
+      metric: engineering_contract
+      value: 1.0
+      split: synthetic_demo
+    comparison:
+      comparable: false
+      direction: none
+      delta: null
+      secondary: "Hiện mới có P/N/H synthetic scenarios."
+      conclusion: "Đây là baseline thuật toán quan hệ, chưa có precision/recall trên mạng lưới gian lận thật."
+    business_meaning: "Cho điều tra viên danh sách hồ sơ liên quan có căn cứ và đúng thời điểm."
+    decision: "Giữ làm graph baseline; xây bộ edge/entity đã xác minh trước khi thử graph ML."
+    limitation: "Thực thể trùng có thể hợp lệ; liên kết không phải kết luận gian lận."
+  media_authenticity:
+    baseline:
+      name: "Layered provenance/reuse baseline v4"
+      origin_type: deterministic_engineering
+      source: "Metadata, C2PA hook, exact/near duplicate và editing trace do nhóm tích hợp"
+      team_action: "Nhóm xây pipeline và contract tests; pixel model mặc định tắt."
+      metric: engineering_contract
+      value: 1.0
+      split: synthetic_unit_fixtures
+    current:
+      name: "Layered provenance/reuse baseline v4"
+      origin_type: deterministic_engineering
+      source: "Cùng baseline đang dùng"
+      team_action: "Chưa promote AI-image pixel detector."
+      metric: engineering_contract
+      value: 1.0
+      split: synthetic_unit_fixtures
+    comparison:
+      comparable: false
+      direction: none
+      delta: null
+      secondary: "Không có benchmark đúng miền để công bố accuracy phát hiện ảnh AI."
+      conclusion: "Baseline hiện tìm provenance, chỉnh sửa và reuse; không phải universal AI detector."
+    business_meaning: "Ưu tiên bằng chứng có thể kiểm tra được và giảm nguy cơ cáo buộc sai khách hàng."
+    decision: "Giữ safeguard inconclusive; chỉ bật pixel model sau calibration gate."
+    limitation: "Ảnh AI bị xóa marker hoặc qua mạng xã hội vẫn có thể lọt."
