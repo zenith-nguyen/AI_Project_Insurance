@@ -8,7 +8,7 @@ Windows và macOS dùng chung một lệnh preflight + Docker + smoke test:
 python scripts/handoff.py up
 ```
 
-Trên macOS dùng `python3 scripts/handoff.py up` nếu cần. Đây là đường chạy ưu tiên cho đội UI. Hướng dẫn bàn giao gọn nằm tại `docs/final_handoff/00_START_HERE.md`.
+Trên macOS dùng `python3 scripts/handoff.py up` nếu cần. Đây là đường chạy ưu tiên cho đội UI. Hướng dẫn bàn giao gọn nằm tại `docs/final_handoff/00_HUONG_DAN_BAT_DAU.md`.
 
 ## Đội UI
 

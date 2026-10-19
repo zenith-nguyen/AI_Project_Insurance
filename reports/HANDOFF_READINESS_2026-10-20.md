@@ -39,4 +39,4 @@ Ba gate này không thể tự động tick bằng code. Sau khi có bằng ch�
 
 ## Gói bàn giao
 
-Gói compact chứa ba tài liệu người nhận cần đọc, một PDF hợp nhất, HTML UI mẫu, OpenAPI, model registry, release manifest và SHA-256. Full handbook `00–08` vẫn ở Git để tra cứu sâu nhưng không làm gói compact rối hơn.
+Gói compact chứa bốn tài liệu được đánh số theo thứ tự sử dụng, một PDF hợp nhất, HTML UI mẫu, OpenAPI, model registry, release manifest và SHA-256. File `01_GITHUB_CAI_DAT_VA_CAP_NHAT.md` quy định cách nhận phiên bản mới mà không làm mất code local. Full handbook `00–08` vẫn ở Git để tra cứu sâu nhưng không làm gói compact rối hơn.

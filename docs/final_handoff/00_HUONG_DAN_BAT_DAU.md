@@ -58,12 +58,13 @@ python scripts/check_project_done.py --level research_handoff --no-fail
 
 Kết quả `engineering_foundation: PASS` cho phép phát triển/demo nội bộ. `research_handoff` chỉ PASS sau ba xác nhận thủ công: golden multimodal run được ký, một người không viết hệ thống chạy handbook thành công, và đội UI/backend chấp nhận bàn giao. `pilot_ready` còn cần dữ liệu Việt Nam hợp lệ, privacy/security, load test, UAT, monitoring và rollback.
 
-## Ba file cần đọc
+## Bốn file cần đọc theo thứ tự
 
-1. `00_START_HERE.md` — chạy sản phẩm và xác định đúng phạm vi.
-2. `01_API_AND_MODEL_INTEGRATION.md` — đội UI/backend và ML nối hệ thống.
-3. `02_OPERATIONS_MACOS_AND_LIMITS.md` — vận hành, macOS, lỗi thường gặp và giới hạn.
+1. `00_HUONG_DAN_BAT_DAU.md` — chọn chế độ và chạy sản phẩm.
+2. `01_GITHUB_CAI_DAT_VA_CAP_NHAT.md` — clone, pull bản mới và phát hành thay đổi.
+3. `02_API_UI_VA_MODEL.md` — đội UI/backend và ML nối hệ thống.
+4. `03_VAN_HANH_MACOS_VA_XU_LY_LOI.md` — vận hành, macOS, lỗi thường gặp và giới hạn.
 
-Gói bàn giao còn có OpenAPI, model registry và một HTML UI mẫu. Checksum trong `SHA256SUMS.txt` dùng để phát hiện file bị thay đổi sau khi đóng gói.
+Gói bàn giao còn có OpenAPI, model registry và một HTML UI mẫu. Checksum trong `08_SHA256SUMS.txt` dùng để phát hiện file bị thay đổi sau khi đóng gói.
 
 Trạng thái kiểm tra mới nhất trong repo: `reports/HANDOFF_READINESS_2026-10-20.md`.

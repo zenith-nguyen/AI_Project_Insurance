@@ -12,7 +12,7 @@ The shortest supported handoff path is the fixture Docker application. It needs 
 python scripts/handoff.py up
 ```
 
-Use `python3` on macOS when `python` is not available. The command runs preflight, starts `compose.yaml`, waits for health and smoke-tests the UI/API. Start with `docs/final_handoff/00_START_HERE.md`; model/API integration and macOS risks are kept in the same three-file handoff set.
+Use `python3` on macOS when `python` is not available. The command runs preflight, starts `compose.yaml`, waits for health and smoke-tests the UI/API. Start with `docs/final_handoff/00_HUONG_DAN_BAT_DAU.md`; Git updates, model/API integration and macOS risks are kept in the same numbered handoff set.
 
 The API lifecycle, UI/backend responsibilities, guided-capture example and error-handling rules are documented in `reports/API_HANDOFF_GUIDE_2026-10-13.md`. Browser clients can import `prototype/api-client.js` instead of duplicating raw `fetch` calls.
 

@@ -34,14 +34,15 @@ SUPPORT_FILES = [
     ROOT / "reports/PRODUCT_BUILD_STATUS_2026-10-13.md",
 ]
 COMPACT_DOCS = [
-    ROOT / "docs/final_handoff/00_START_HERE.md",
-    ROOT / "docs/final_handoff/01_API_AND_MODEL_INTEGRATION.md",
-    ROOT / "docs/final_handoff/02_OPERATIONS_MACOS_AND_LIMITS.md",
+    ROOT / "docs/final_handoff/00_HUONG_DAN_BAT_DAU.md",
+    ROOT / "docs/final_handoff/01_GITHUB_CAI_DAT_VA_CAP_NHAT.md",
+    ROOT / "docs/final_handoff/02_API_UI_VA_MODEL.md",
+    ROOT / "docs/final_handoff/03_VAN_HANH_MACOS_VA_XU_LY_LOI.md",
 ]
 COMPACT_FILES = {
-    "03_SAMPLE_UI.html": ROOT / "prototype/insurance_review_console_v2.html",
-    "04_OPENAPI.json": ROOT / "contracts/claim_review_openapi.v1.json",
-    "05_MODEL_REGISTRY.yaml": ROOT / "configs/model_registry.v1.yaml",
+    "04_UI_HTML_MAU.html": ROOT / "prototype/insurance_review_console_v2.html",
+    "05_OPENAPI.json": ROOT / "contracts/claim_review_openapi.v1.json",
+    "06_MODEL_REGISTRY.yaml": ROOT / "configs/model_registry.v1.yaml",
 }
 
 
@@ -170,11 +171,11 @@ def build_compact(output_root: Path, status: str, release_version: str, confirm_
     if missing:
         raise FileNotFoundError("Missing compact handoff inputs:\n" + "\n".join(missing))
 
-    stamp = datetime.now().astimezone().strftime("%Y%m%dT%H%M%S")
-    package_name = f"AI_INSURANCE_HANDOFF_COMPACT_{release_version}_{status.upper()}_{stamp}"
+    safe_version = re.sub(r"[^A-Za-z0-9._-]+", "_", release_version).strip("_")
+    package_name = f"00_BAN_GIAO_CLAIM_REVIEW_{safe_version}_{status.upper()}"
     package = output_root / package_name
     if package.exists():
-        shutil.rmtree(package)
+        raise FileExistsError(f"Package already exists: {package}. Use a new release version.")
     package.mkdir(parents=True)
 
     for source in COMPACT_DOCS:
@@ -182,13 +183,13 @@ def build_compact(output_root: Path, status: str, release_version: str, confirm_
     for target_name, source in COMPACT_FILES.items():
         shutil.copy2(source, package / target_name)
 
-    merged = package / "00_HANDOFF_GUIDE.md"
+    merged = package / "00_HUONG_DAN_BAT_DAU_SOURCE.md"
     merged.write_text(
         "\n\n---\n\n".join(path.read_text(encoding="utf-8") for path in COMPACT_DOCS),
         encoding="utf-8",
     )
     try:
-        render_pdf(merged, package / "00_HANDOFF_GUIDE.pdf", status, release_version)
+        render_pdf(merged, package / "00_HUONG_DAN_BAT_DAU.pdf", status, release_version)
     finally:
         merged.unlink(missing_ok=True)
 
@@ -203,11 +204,11 @@ def build_compact(output_root: Path, status: str, release_version: str, confirm_
         "final_gates_confirmed": bool(confirm_gates),
         "warning": None if status == "final" else "DRAFT/CANDIDATE package; not approved for production use.",
     }
-    (package / "RELEASE_MANIFEST.json").write_text(
+    (package / "07_RELEASE_MANIFEST.json").write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
     files = sorted(path for path in package.iterdir() if path.is_file())
-    (package / "SHA256SUMS.txt").write_text(
+    (package / "08_SHA256SUMS.txt").write_text(
         "\n".join(f"{sha256(path)}  {path.name}" for path in files) + "\n", encoding="utf-8"
     )
 

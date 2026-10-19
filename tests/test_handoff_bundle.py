@@ -34,11 +34,12 @@ def test_confirmation_cannot_bypass_definition_of_done(tmp_path):
 def test_compact_bundle_has_few_recipient_facing_files(tmp_path):
     package, archive = build_compact(tmp_path, "draft", "test-v1")
     assert archive.is_file()
-    assert (package / "00_START_HERE.md").is_file()
-    assert (package / "00_HANDOFF_GUIDE.pdf").read_bytes().startswith(b"%PDF")
-    assert (package / "03_SAMPLE_UI.html").is_file()
-    assert (package / "04_OPENAPI.json").is_file()
-    manifest = json.loads((package / "RELEASE_MANIFEST.json").read_text(encoding="utf-8"))
+    assert (package / "00_HUONG_DAN_BAT_DAU.md").is_file()
+    assert (package / "00_HUONG_DAN_BAT_DAU.pdf").read_bytes().startswith(b"%PDF")
+    assert (package / "01_GITHUB_CAI_DAT_VA_CAP_NHAT.md").is_file()
+    assert (package / "04_UI_HTML_MAU.html").is_file()
+    assert (package / "05_OPENAPI.json").is_file()
+    manifest = json.loads((package / "07_RELEASE_MANIFEST.json").read_text(encoding="utf-8"))
     assert manifest["status"] == "draft"
     assert manifest["research_handoff_done"] is False
-    assert len([path for path in package.iterdir() if path.is_file()]) <= 9
+    assert len([path for path in package.iterdir() if path.is_file()]) <= 10
