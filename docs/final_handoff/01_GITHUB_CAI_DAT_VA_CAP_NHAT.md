@@ -108,3 +108,5 @@ Tạo branch → sửa code/config → chạy test → cập nhật OpenAPI/regi
 ```
 
 Mỗi bản demo/handoff nên có Git commit, release version, model hash và checksum ZIP. Nhờ đó nhóm có thể tiếp tục nâng cấp sau lần bàn giao này mà không mất lịch sử hoặc làm hỏng bản đang demo.
+
+`04_UI_HTML_MAU.html` là ảnh chụp tổng quan tại thời điểm phát hành. Giao diện có thể tiếp tục thay đổi sau khi pull; localhost chạy từ code mới luôn là nguồn đúng nhất.

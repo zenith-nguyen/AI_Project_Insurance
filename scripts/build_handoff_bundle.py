@@ -40,7 +40,7 @@ COMPACT_DOCS = [
     ROOT / "docs/final_handoff/03_VAN_HANH_MACOS_VA_XU_LY_LOI.md",
 ]
 COMPACT_FILES = {
-    "04_UI_HTML_MAU.html": ROOT / "prototype/insurance_review_console_v2.html",
+    "04_UI_HTML_MAU.html": ROOT / "docs/final_handoff/04_UI_HTML_MAU.html",
     "05_OPENAPI.json": ROOT / "contracts/claim_review_openapi.v1.json",
     "06_MODEL_REGISTRY.yaml": ROOT / "configs/model_registry.v1.yaml",
 }

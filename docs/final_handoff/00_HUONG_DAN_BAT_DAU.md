@@ -65,6 +65,6 @@ Kết quả `engineering_foundation: PASS` cho phép phát triển/demo nội b�
 3. `02_API_UI_VA_MODEL.md` — đội UI/backend và ML nối hệ thống.
 4. `03_VAN_HANH_MACOS_VA_XU_LY_LOI.md` — vận hành, macOS, lỗi thường gặp và giới hạn.
 
-Gói bàn giao còn có OpenAPI, model registry và một HTML UI mẫu. Checksum trong `08_SHA256SUMS.txt` dùng để phát hiện file bị thay đổi sau khi đóng gói.
+Gói bàn giao còn có OpenAPI, model registry và `04_UI_HTML_MAU.html`. File HTML nhúng ảnh chụp ba màn hình hiện hành để xem offline và có nút mở giao diện localhost thật. Checksum trong `08_SHA256SUMS.txt` dùng để phát hiện file bị thay đổi sau khi đóng gói.
 
 Trạng thái kiểm tra mới nhất trong repo: `reports/HANDOFF_READINESS_2026-10-20.md`.
