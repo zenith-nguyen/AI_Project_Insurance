@@ -1,0 +1,7 @@
+stage,owner,status,dataset,feature_schema,algorithm,artifact_hash,AP,Recall_at_10pct,Precision_at_10pct,latency_ms,decision,notes
+B0,,todo,feature_selection_v1_val_fs,,RuleBaseline,,,,,,,Fit rule only on train_fs
+B1,,todo,feature_selection_v1_val_fs,,LogisticRegression,,,,,,,Preprocessing inside fold
+B2,,todo,feature_selection_v1_val_fs,,XGBoost,,,,,,,No image/document/graph
+B3,,blocked,claim_linked_external,,B2+document,,,,,,,Need linked documents and timestamps
+B4,,blocked,claim_linked_external,,B3+image,,,,,,,Need linked vehicle images
+B5,,blocked,claim_linked_external,,B4+consistency+graph,,,,,,,Need point-in-time entities and external labels

@@ -1,0 +1,65 @@
+schema_version: "1.0"
+updated_at: "2026-10-19"
+id_column: claim_id
+label_column: fraud_label
+primary_metric: average_precision
+k_values: [0.05, 0.10, 0.20]
+bootstrap:
+  samples: 1000
+  confidence: 0.95
+  seed: 20261019
+stages:
+  B0:
+    title: "Rule baseline"
+    score_column: B0_score
+    definition: "Luật đơn giản fit tham số chỉ trên train; không dùng model học máy."
+    required_inputs: [tabular_claim]
+    current_data_status: ready_for_reproduction
+  B1:
+    title: "Logistic Regression"
+    score_column: B1_score
+    definition: "Baseline ML tuyến tính, preprocessing fit bên trong fold."
+    required_inputs: [tabular_claim]
+    current_data_status: ready_for_reproduction
+  B2:
+    title: "XGBoost tabular"
+    score_column: B2_score
+    definition: "Candidate tabular hiện tại, chưa dùng ảnh/chứng từ/graph."
+    required_inputs: [tabular_claim]
+    current_data_status: ready_for_reproduction
+  B3:
+    title: "B2 + document signals"
+    score_column: B3_score
+    definition: "B2 cộng field/confidence từ OCR, DiT và LayoutLMv3 của cùng claim."
+    required_inputs: [tabular_claim, claim_linked_documents, received_at]
+    current_data_status: blocked_until_claim_linked_labels
+  B4:
+    title: "B3 + image signals"
+    score_column: B4_score
+    definition: "B3 cộng damage/authenticity features từ ảnh của cùng claim."
+    required_inputs: [tabular_claim, claim_linked_documents, claim_linked_images, received_at]
+    current_data_status: blocked_until_claim_linked_labels
+  B5:
+    title: "Full point-in-time pipeline"
+    score_column: B5_score
+    definition: "B4 cộng consistency và relationship features chỉ có trước scored_at."
+    required_inputs: [tabular_claim, claim_linked_documents, claim_linked_images, point_in_time_entities, received_at, available_at]
+    current_data_status: blocked_until_claim_linked_labels
+comparisons:
+  - name: B1_vs_B0
+    baseline: B0
+    candidate: B1
+  - name: B2_vs_B0
+    baseline: B0
+    candidate: B2
+  - name: B2_vs_B1
+    baseline: B1
+    candidate: B2
+  - name: B5_vs_B2
+    baseline: B2
+    candidate: B5
+data_policy:
+  development_split: "feature_selection_v1/train_fs + val_fs"
+  original_frozen_test: "spent_for_feature_policy; do_not_use_for_new_B3_B5_selection"
+  final_requirement: "new external claim-linked test after B0-B5 definitions and thresholds are frozen"
+  forbidden_join: "Do not join Kaggle, CarDD and SROIE rows as if they were the same claim."

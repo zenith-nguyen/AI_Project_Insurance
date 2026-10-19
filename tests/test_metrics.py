@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from src.evaluation.metrics import precision_at_k, recall_at_k, stratified_bootstrap, top_mask
+from src.evaluation.metrics import paired_stratified_bootstrap, precision_at_k, recall_at_k, stratified_bootstrap, top_mask
 from src.evaluation.prevalence import scenario_at_k
 from src.evaluation.operations import choose_thresholds, operational_metrics
 from src.simulation.net_value import net_value
@@ -24,6 +24,17 @@ def test_bootstrap_is_seeded_and_has_both_classes():
     y = [0, 0, 1, 1, 0, 1]
     scores = [0.1, 0.2, 0.8, 0.9, 0.3, 0.7]
     assert stratified_bootstrap(y, scores, 0.5, samples=30, seed=4) == stratified_bootstrap(y, scores, 0.5, samples=30, seed=4)
+
+
+def test_paired_bootstrap_reports_candidate_minus_baseline_and_zero_flag():
+    y = [1, 1, 1, 0, 0, 0, 0, 0]
+    baseline = [0.9, 0.2, 0.1, 0.8, 0.7, 0.6, 0.5, 0.4]
+    candidate = [0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2]
+    report = paired_stratified_bootstrap(y, baseline, candidate, 0.5, samples=40, seed=7)
+    assert report["average_precision"]["delta"] > 0
+    assert report["recall_at_k"]["candidate"] >= report["recall_at_k"]["baseline"]
+    assert isinstance(report["average_precision"]["contains_zero"], bool)
+    assert report == paired_stratified_bootstrap(y, baseline, candidate, 0.5, samples=40, seed=7)
 
 
 def test_operational_actions_partition_claims():

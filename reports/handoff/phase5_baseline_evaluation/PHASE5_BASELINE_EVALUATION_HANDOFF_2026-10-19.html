@@ -1,0 +1,534 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Phase 5 Baseline B0-B5 Evaluation Handoff</title><style>
+:root{--ink:#172326;--muted:#647579;--line:#d9e1e0;--navy:#142d33;--teal:#17877f;--paper:#f5f7f7;--warn:#fff4df}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.62 "Segoe UI",Arial,sans-serif}
+header{background:var(--navy);color:white;padding:34px max(28px,calc((100vw - 1100px)/2))}header b{font-size:14px;letter-spacing:.11em;color:#8fd0c7}header h1{margin:7px 0 0;font-size:34px}
+main{max-width:1100px;margin:28px auto;background:white;border:1px solid var(--line);padding:42px 52px}main img{display:block;max-width:100%;height:auto;border:1px solid var(--line);border-radius:8px;margin:14px 0 24px}h1{font-size:32px}h2{font-size:23px;margin-top:38px;padding-top:8px;border-top:2px solid var(--navy)}h3{font-size:18px;margin-top:28px;color:#174f52}p,li{max-width:92ch}table{width:100%;border-collapse:collapse;margin:18px 0 25px;font-size:14px}th,td{padding:11px 12px;border:1px solid var(--line);vertical-align:top}th{background:#eaf2f1;text-align:left}blockquote{margin:18px 0;padding:14px 18px;border-left:4px solid var(--teal);background:#eff8f6}code{background:#eef2f1;padding:2px 5px;border-radius:3px}strong{color:#102f32}a{color:#08756e}.footer{max-width:1100px;margin:0 auto 30px;color:var(--muted);font-size:12px}@media print{body{background:white}header{padding:20px 0;color:#172326;background:white;border-bottom:3px solid #142d33}main{border:0;margin:0 auto;padding:25px 0}h2{break-after:avoid}table{break-inside:avoid}p:has(> img){break-before:page;break-after:page;min-height:700px;display:flex;align-items:center}main img{break-inside:avoid;width:100%;margin:0}.footer{display:none}}@media(max-width:760px){main{margin:0;padding:24px 18px;border:0}header{padding:25px 18px}table{font-size:12px;display:block;overflow:auto}}
+</style></head><body><header><b>AI PROJECT INSURANCE · 19/10/2026</b><h1>Phase 5 Baseline B0-B5 Evaluation Handoff</h1></header><main><h1>PHASE 5 — BASELINE B0–B5 &amp; EVALUATION HANDOFF</h1>
+<p><strong>Ngày cập nhật:</strong> 19/10/2026
+<strong>Dự án:</strong> AI Project Insurance
+<strong>Mục đích:</strong> tài liệu bàn giao cho thành viên phụ trách baseline, bootstrap và evaluation report.</p>
+<hr />
+<h1>Phase 5 — Baseline &amp; Evaluation handoff kit</h1>
+<p><strong>Ngày cập nhật:</strong> 19/10/2026
+<strong>Người nhận:</strong> thành viên phụ trách Baseline B0–B5 và Evaluation Report</p>
+<h2>Đọc theo thứ tự</h2>
+<ol>
+<li><code>01_TASK_BRIEF_AND_B0_B5.md</code> — phạm vi, định nghĩa B0–B5 và điều được phép kết luận.</li>
+<li><code>02_EXPERIMENT_PROTOCOL.md</code> — split, leakage gate, metric, paired bootstrap và biểu đồ.</li>
+<li><code>03_DATA_AND_PREDICTION_CONTRACT.md</code> — dữ liệu/format cần giao giữa người train và người evaluation.</li>
+<li><code>04_RUNBOOK.md</code> — lệnh chạy và output cần nộp.</li>
+<li><code>05_REPORT_TEMPLATE.md</code> — khung Baseline &amp; Evaluation Report.</li>
+<li><code>06_REVIEW_CHECKLIST.md</code> — checklist review/Definition of Done.</li>
+<li><code>phase5_predictions_SCHEMA_EXAMPLE.csv</code> — file giả chỉ để kiểm tra format, tuyệt đối không dùng làm kết quả.</li>
+<li><code>07_REFERENCE_MAP.md</code> — bản đồ file evidence hiện có trong repo.</li>
+</ol>
+<h2>Code đã chuẩn bị</h2>
+<ul>
+<li>Cấu hình: <code>configs/phase5_evaluation.v1.yaml</code></li>
+<li>Evaluator: <code>scripts/evaluate_phase5_baselines.py</code></li>
+<li>Paired CI: <code>src/evaluation/metrics.py::paired_stratified_bootstrap</code></li>
+</ul>
+<h2>Điều quan trọng nhất</h2>
+<p>Hiện có thể phát triển B0–B2 bằng dữ liệu tabular <code>train_fs/val_fs</code>. B3–B5 chỉ được tính PR-AUC/Recall@K khi ảnh, chứng từ, quan hệ và nhãn thuộc <strong>cùng claim_id</strong>, đồng thời mọi dữ liệu đầu vào đã tồn tại trước <code>scored_at</code>.</p>
+<p>Không ghép hàng Kaggle, ảnh CarDD và hóa đơn SROIE thành một “claim” giả để công bố metric B3–B5.</p>
+<hr />
+<h1>01 — Task brief và định nghĩa B0–B5</h1>
+<h2>Mục tiêu</h2>
+<p>Xây chuỗi ablation tăng dần từ rule đơn giản đến pipeline đầy đủ và trả lời ba câu hỏi:</p>
+<ol>
+<li>Candidate có xếp hạng claim tốt hơn baseline không?</li>
+<li>Module mới đóng góp thêm bao nhiêu trên <strong>cùng claim/split</strong>?</li>
+<li>Mức tăng có đủ ổn định hay CI 95% của hiệu số vẫn chứa 0?</li>
+</ol>
+<p>Hệ thống hỗ trợ ưu tiên hồ sơ cho con người. Score không phải xác suất gian lận production và không được dùng một mình để từ chối bồi thường.</p>
+<h2>Định nghĩa khóa</h2>
+<table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>Thành phần</th>
+<th>Input hợp lệ</th>
+<th>Trạng thái dữ liệu hiện tại</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>B0</td>
+<td>Rule baseline</td>
+<td>Dữ liệu bảng của claim</td>
+<td>Chạy được</td>
+</tr>
+<tr>
+<td>B1</td>
+<td>Logistic Regression</td>
+<td>Cùng feature/split tabular với B0/B2</td>
+<td>Chạy được</td>
+</tr>
+<tr>
+<td>B2</td>
+<td>XGBoost tabular</td>
+<td>Dữ liệu bảng, chưa dùng ảnh/chứng từ/graph</td>
+<td>Chạy được</td>
+</tr>
+<tr>
+<td>B3</td>
+<td>B2 + document signals</td>
+<td>OCR/KIE/classification của cùng claim, <code>received_at &lt;= scored_at</code></td>
+<td>Chờ claim-linked labeled data</td>
+</tr>
+<tr>
+<td>B4</td>
+<td>B3 + image signals</td>
+<td>Damage/authenticity của ảnh cùng claim</td>
+<td>Chờ claim-linked labeled data</td>
+</tr>
+<tr>
+<td>B5</td>
+<td>B4 + consistency/relationship</td>
+<td>Feature graph point-in-time, edge <code>available_at &lt;= scored_at</code></td>
+<td>Chờ claim-linked labeled data</td>
+</tr>
+</tbody>
+</table>
+<p>Định nghĩa này phải được khóa trước khi mở external test. Nếu rubric chính thức của môn học có định nghĩa B0–B5 khác, cập nhật YAML và biên bản thay đổi trước khi chạy.</p>
+<h2>Deliverables bắt buộc</h2>
+<ul>
+<li>prediction CSV cho từng stage trên đúng cùng claim;</li>
+<li>bảng AP, Recall@5/10/20%, Precision@5/10/20%;</li>
+<li>bootstrap CI 95% riêng từng model và paired delta CI cho B1–B0, B2–B0, B2–B1, B5–B2;</li>
+<li>PR curves và Recall/Precision@K curves;</li>
+<li>error analysis ở top queue;</li>
+<li>model/data/split hash, seed và version;</li>
+<li>kết luận trung thực khi CI chứa 0;</li>
+<li>Baseline &amp; Evaluation Report hoàn chỉnh.</li>
+</ul>
+<h2>Phần nhóm đã có sẵn</h2>
+<ul>
+<li>B0 rule implementation: <code>src/baselines/rules.py</code>.</li>
+<li>B1/B2 model factory và preprocessing: <code>src/models/train.py</code>.</li>
+<li>Metric/top-K/bootstrap: <code>src/evaluation/metrics.py</code>.</li>
+<li>Split phát triển mới: <code>data/gold/feature_selection_v1/{train_fs,val_fs}.parquet</code>.</li>
+<li>Baseline ownership: <code>configs/baseline_registry.v1.yaml</code>.</li>
+</ul>
+<h2>Phần người nhận task phải làm</h2>
+<ol>
+<li>Xác nhận field nào có sẵn ở từng thời điểm chấm.</li>
+<li>Tạo predictions B0–B2 trên <code>val_fs</code> mà không đọc test cũ để chọn feature/model.</li>
+<li>Chuẩn bị data contract B3–B5 và đánh dấu blocked nếu chưa có claim-linked labels.</li>
+<li>Chạy evaluator, đọc paired CI, viết error analysis và báo cáo.</li>
+<li>Không biến engineering PASS của graph/OCR/YOLO thành PR-AUC của claim fraud.</li>
+</ol>
+<hr />
+<h1>02 — Experiment protocol</h1>
+<h2>Split policy</h2>
+<h3>Development hiện tại</h3>
+<ul>
+<li><code>train_fs</code>: 560 claim, 138 positive.</li>
+<li><code>val_fs</code>: 140 claim, 35 positive.</li>
+<li>Hai split được tạo chỉ từ original train, không trùng claim ID.</li>
+<li>Mọi lựa chọn feature/cấu hình mới dùng hai split này.</li>
+</ul>
+<h3>Frozen test cũ</h3>
+<p>Test 200 claim đã được dùng cho baseline v1 và một sensitivity analysis. Nó được xem là <strong>spent for feature-policy decisions</strong>. Không dùng test này để chọn B3–B5, threshold hoặc feature.</p>
+<h3>Final evaluation mới</h3>
+<p>Cần external claim-linked test mới sau khi khóa:</p>
+<ul>
+<li>định nghĩa B0–B5;</li>
+<li>feature schema và time availability;</li>
+<li>model/hyperparameter;</li>
+<li>calibration;</li>
+<li>queue K và paired comparisons;</li>
+<li>policy missing input/fallback.</li>
+</ul>
+<h2>Leakage gates</h2>
+<p>Một run chỉ hợp lệ khi:</p>
+<ul>
+<li>preprocessing fit trong train/fold;</li>
+<li>feature không chứa target hoặc proxy sau quyết định;</li>
+<li>document/image phải thuộc cùng <code>claim_id</code>;</li>
+<li><code>received_at &lt;= scored_at</code>;</li>
+<li>graph edge có <code>available_at &lt;= scored_at</code>;</li>
+<li>threshold chọn từ validation;</li>
+<li>test không được dùng để sửa pipeline;</li>
+<li>B0–B5 prediction cùng claim/order/label.</li>
+</ul>
+<h2>Metric</h2>
+<p>Primary metric của repo là <strong>Average Precision (AP)</strong>, thường được trình bày như summary của đường PR. Khi viết “PR-AUC”, phải ghi rõ đang dùng AP hay trapezoidal AUC; không trộn hai định nghĩa.</p>
+<p>Operational metrics:</p>
+<ul>
+<li>Recall@K: trong toàn bộ positive, bao nhiêu được đưa vào top K% hàng đợi;</li>
+<li>Precision@K: trong top K% hàng đợi, bao nhiêu là positive;</li>
+<li>K mặc định: 5%, 10%, 20%;</li>
+<li>queue size dùng <code>ceil(n × K)</code> và stable tie order;</li>
+<li>calibration: Brier/ECE chỉ áp dụng khi score được diễn giải là probability đã calibration.</li>
+</ul>
+<h2>Bootstrap 1.000 lần</h2>
+<h3>CI từng model</h3>
+<p>Resample positive và negative riêng, có hoàn lại, giữ số lượng mỗi lớp. Báo percentile 2,5% và 97,5%.</p>
+<h3>CI hiệu số</h3>
+<p>Để so B5 với B2, dùng <strong>cùng indices bootstrap cho cả hai model</strong>:</p>
+<pre><code class="language-text">delta_draw = metric(B5 on draw) - metric(B2 on same draw)
+</code></pre>
+<p>Diễn giải:</p>
+<ul>
+<li>CI hoàn toàn &gt; 0: candidate tốt hơn có bằng chứng trên sample hiện tại;</li>
+<li>CI chứa 0: chưa đủ bằng chứng khác biệt;</li>
+<li>CI hoàn toàn &lt; 0: candidate kém hơn;</li>
+<li>không được viết “không khác biệt” thành “hai model bằng nhau”.</li>
+</ul>
+<h2>Error analysis bắt buộc</h2>
+<p>Với K=10%, xuất tối thiểu:</p>
+<ul>
+<li>positive bị bỏ khỏi queue;</li>
+<li>negative bị đưa vào queue;</li>
+<li>claim thay đổi vị trí mạnh nhất giữa B5 và B2;</li>
+<li>missing module/fallback;</li>
+<li>nhóm input và feature tạo cờ;</li>
+<li>kiểm tra theo thời điểm để loại leakage.</li>
+</ul>
+<p>Không dùng chính các lỗi trong final test để tune lại model.</p>
+<hr />
+<h1>03 — Data và prediction contract</h1>
+<h2>Prediction CSV</h2>
+<p>Một file wide duy nhất:</p>
+<pre><code class="language-csv">claim_id,fraud_label,B0_score,B1_score,B2_score,B3_score,B4_score,B5_score
+CLM-001,0,0.12,0.18,0.20,,,
+CLM-002,1,0.72,0.81,0.86,,,
+</code></pre>
+<p>Quy tắc:</p>
+<ul>
+<li><code>claim_id</code> duy nhất, không null;</li>
+<li><code>fraud_label</code> chỉ 0/1 và phải có cả hai lớp;</li>
+<li>mỗi stage được đánh giá phải có score cho tất cả claim;</li>
+<li>không điền <code>0</code> thay cho module thiếu; để trống và stage sẽ được ghi <code>not evaluated</code>;</li>
+<li>score phải finite; không NaN một phần;</li>
+<li>tất cả stage dùng cùng label và cùng hàng.</li>
+</ul>
+<h2>Data tối thiểu cho B3–B5</h2>
+<table>
+<thead>
+<tr>
+<th>Nhóm</th>
+<th>Field bắt buộc</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Claim</td>
+<td><code>claim_id</code>, label, <code>scored_at</code>, tabular features</td>
+</tr>
+<tr>
+<td>Document</td>
+<td><code>claim_id</code>, <code>document_id</code>, <code>received_at</code>, type, extracted field, confidence, missing/error state</td>
+</tr>
+<tr>
+<td>Image</td>
+<td><code>claim_id</code>, <code>evidence_id</code>, <code>received_at</code>, damage classes/area/confidence, authenticity/reuse state</td>
+</tr>
+<tr>
+<td>Relationship</td>
+<td>entity type/value đã chuẩn hóa hoặc hash, <code>available_at</code>, related claim count, temporal distance</td>
+</tr>
+<tr>
+<td>Audit</td>
+<td>pipeline/model version, feature schema hash, prediction timestamp</td>
+</tr>
+</tbody>
+</table>
+<h2>Feature aggregation đề xuất</h2>
+<p>Không đưa raw ảnh/raw token trực tiếp vào XGBoost phase này. Tạo feature có nghĩa:</p>
+<ul>
+<li>Document: số chứng từ, loại chứng từ thiếu, confidence thấp nhất/trung bình, field conflict count, correction-required flag.</li>
+<li>Image: số vùng hư hỏng, diện tích mask tương đối, class count, max/mean confidence, reuse/metadata/editing flags.</li>
+<li>Graph: shared entity count, related claim count trước thời điểm chấm, cluster size point-in-time, shortest path count.</li>
+<li>Consistency: amount/date/plate mismatch flags và confidence.</li>
+</ul>
+<p>Mọi feature phải có data dictionary: định nghĩa, kiểu, missing policy, thời điểm xuất hiện, owner và leakage decision.</p>
+<h2>Hash và provenance</h2>
+<p>Mỗi run phải lưu:</p>
+<ul>
+<li>input file SHA-256;</li>
+<li>split manifest/hash;</li>
+<li>code commit;</li>
+<li>config hash;</li>
+<li>seed;</li>
+<li>model artifact hash;</li>
+<li>prediction hash;</li>
+<li>thời điểm chạy UTC;</li>
+<li>người chạy.</li>
+</ul>
+<hr />
+<h1>04 — Runbook</h1>
+<h2>1. Chuẩn bị môi trường</h2>
+<pre><code class="language-powershell">cd D:\AI_Project_Insurance
+.\.venv\Scripts\python.exe -m pytest tests\test_metrics.py -q
+</code></pre>
+<h2>2. Kiểm tra dữ liệu development</h2>
+<pre><code class="language-powershell">Get-Content data\gold\feature_selection_v1\manifest.json
+</code></pre>
+<p>Xác nhận hash <code>train_fs</code> và <code>val_fs</code> khớp manifest. Không thay file và giữ nguyên seed.</p>
+<h2>3. Sinh prediction</h2>
+<p>Người train phải xuất file theo <code>phase5_predictions_SCHEMA_EXAMPLE.csv</code>. B0–B2 chạy trên cùng <code>val_fs</code>. B3–B5 để trống nếu chưa có claim-linked labels.</p>
+<p>Không dùng <code>src/models/train_stages.py</code> hiện tại làm kết quả Phase 5 nếu script còn đọc <code>dataset_v2/test.parquet</code>; phải chuyển nó sang <code>train_fs/val_fs</code> trước.</p>
+<h2>4. Chạy evaluator</h2>
+<pre><code class="language-powershell">.\.venv\Scripts\python.exe scripts\evaluate_phase5_baselines.py `
+  path\to\phase5_predictions.csv `
+  --config configs\phase5_evaluation.v1.yaml `
+  --output-dir reports\phase5 `
+  --dataset-name feature_selection_v1_val_fs
+</code></pre>
+<p>Output:</p>
+<pre><code class="language-text">reports/phase5/
+├── phase5_metrics.json
+├── PHASE5_EVALUATION_REPORT.md
+├── phase5_pr_curves.png
+└── phase5_at_k.png
+</code></pre>
+<h2>5. Đọc paired comparison</h2>
+<p>Trong <code>phase5_metrics.json</code>:</p>
+<pre><code class="language-json">{
+  &quot;delta&quot;: 0.03,
+  &quot;lower&quot;: -0.01,
+  &quot;upper&quot;: 0.08,
+  &quot;contains_zero&quot;: true
+}
+</code></pre>
+<p>Kết luận: candidate có point estimate cao hơn 0,03 nhưng CI chứa 0, nên chưa đủ bằng chứng candidate tốt hơn.</p>
+<h2>6. Trước khi nộp</h2>
+<pre><code class="language-powershell">.\.venv\Scripts\python.exe -m pytest -q
+git status --short
+</code></pre>
+<p>Chỉ commit source/config/report cần thiết. Prediction chứa dữ liệu thật hoặc PII không được đẩy lên GitHub public.</p>
+<hr />
+<h1>05 — Baseline &amp; Evaluation Report template</h1>
+<h2>1. Executive summary</h2>
+<ul>
+<li>B-stage cao nhất đã đánh giá:</li>
+<li>Dataset/split:</li>
+<li>Primary metric:</li>
+<li>Candidate được chọn:</li>
+<li>Candidate có vượt baseline không:</li>
+<li>CI hiệu số có chứa 0 không:</li>
+<li>Kết luận nghiệp vụ:</li>
+<li>Điều chưa được phép tuyên bố:</li>
+</ul>
+<h2>2. Scope và câu hỏi nghiên cứu</h2>
+<p>Nêu rõ xếp hạng hàng đợi, không phải quyết định gian lận tự động.</p>
+<h2>3. Data lineage và leakage control</h2>
+<table>
+<thead>
+<tr>
+<th>Dataset</th>
+<th>Vai trò</th>
+<th style="text-align: right;">Rows/positives</th>
+<th>Hash</th>
+<th>Test status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>train_fs</td>
+<td>fit/CV</td>
+<td style="text-align: right;"></td>
+<td></td>
+<td>không dùng final claim</td>
+</tr>
+<tr>
+<td>val_fs</td>
+<td>development evaluation</td>
+<td style="text-align: right;"></td>
+<td></td>
+<td>dùng chọn candidate</td>
+</tr>
+<tr>
+<td>external test</td>
+<td>final</td>
+<td style="text-align: right;"></td>
+<td></td>
+<td>chỉ mở sau freeze</td>
+</tr>
+</tbody>
+</table>
+<h2>4. B0–B5 definitions</h2>
+<p>Sao chép định nghĩa đã khóa từ YAML; ghi rõ stage nào blocked và lý do.</p>
+<h2>5. Model selection</h2>
+<p>Nêu model candidates, preprocessing-in-fold, calibration, primary metric và tie-break.</p>
+<h2>6. Kết quả</h2>
+<table>
+<thead>
+<tr>
+<th>Stage</th>
+<th style="text-align: right;">AP</th>
+<th style="text-align: right;">Recall@5%</th>
+<th style="text-align: right;">Recall@10%</th>
+<th style="text-align: right;">Recall@20%</th>
+<th style="text-align: right;">Precision@10%</th>
+<th style="text-align: right;">Latency</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h2>7. Paired bootstrap</h2>
+<table>
+<thead>
+<tr>
+<th>Comparison</th>
+<th>Metric</th>
+<th style="text-align: right;">Delta</th>
+<th style="text-align: right;">CI 95%</th>
+<th>Contains zero</th>
+<th>Decision</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h2>8. Curves</h2>
+<p>Chèn PR curve và Recall/Precision@K. Mỗi curve ghi dataset và số positive.</p>
+<h2>9. Error analysis</h2>
+<p>Tóm tắt false queue/false miss, nhóm feature, missing module và các case cần business review.</p>
+<h2>10. Business interpretation</h2>
+<ul>
+<li>Với cùng năng lực review K%, thêm bao nhiêu positive được đưa lên?</li>
+<li>Precision hàng đợi thay đổi thế nào?</li>
+<li>Thời gian/chi phí module mới có xứng đáng không?</li>
+<li>False hold hoặc false investigation có tăng không?</li>
+</ul>
+<h2>11. Limitations</h2>
+<p>Nhãn, prevalence, domain shift, data size, CI, missing inputs, claim linkage, PII và UAT.</p>
+<h2>12. Reproducibility</h2>
+<p>Commit, config, seed, environment, hashes, commands và output paths.</p>
+<h2>13. Decision</h2>
+<p>Chọn một: <code>promote</code>, <code>continue research</code>, <code>reject</code>, <code>not evaluable</code>. Ghi căn cứ và next action.</p>
+<hr />
+<h1>06 — Review checklist và Definition of Done</h1>
+<h2>Data</h2>
+<ul>
+<li>[ ] Cùng <code>claim_id</code> giữa label, tabular, document, image và graph.</li>
+<li>[ ] Không có cross-split duplicate/leakage.</li>
+<li>[ ] Mọi feature có <code>available_at/received_at &lt;= scored_at</code>.</li>
+<li>[ ] Train/validation/test hash được lưu.</li>
+<li>[ ] PII không vào GitHub public.</li>
+</ul>
+<h2>Experiment</h2>
+<ul>
+<li>[ ] B0–B5 được khóa trước final test.</li>
+<li>[ ] B0/B1/B2 dùng cùng feature eligibility và split.</li>
+<li>[ ] Preprocessing fit trong fold/train.</li>
+<li>[ ] Threshold/calibration không fit bằng test.</li>
+<li>[ ] Seed/config/dependency/model hash được ghi.</li>
+</ul>
+<h2>Evaluation</h2>
+<ul>
+<li>[ ] AP, Recall@5/10/20%, Precision@5/10/20%.</li>
+<li>[ ] Bootstrap phân tầng 1.000 lần.</li>
+<li>[ ] Paired delta CI cho comparison đã khóa.</li>
+<li>[ ] PR curve và Recall/Precision@K curve.</li>
+<li>[ ] CI chứa 0 được kết luận “chưa đủ bằng chứng”.</li>
+<li>[ ] Error analysis top queue.</li>
+</ul>
+<h2>Business</h2>
+<ul>
+<li>[ ] Nói rõ score dùng xếp hàng, không kết luận fraud.</li>
+<li>[ ] K gắn với năng lực review.</li>
+<li>[ ] Có latency và fallback khi module thiếu.</li>
+<li>[ ] Có false hold/false investigation discussion.</li>
+<li>[ ] B3–B5 blocked nếu chưa có claim-linked labeled data.</li>
+</ul>
+<h2>Definition of Done</h2>
+<p>Task chỉ DONE khi code chạy lại được, evidence có hash, report khớp JSON, reviewer kiểm tra leakage/comparison và mọi limitation được ghi. Nếu chưa có external claim-linked test, trạng thái tối đa là <strong>development evaluation complete</strong>, không phải final/production validated.</p>
+<hr />
+<h1>07 — Reference map</h1>
+<table>
+<thead>
+<tr>
+<th>Cần đọc</th>
+<th>File</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Baseline ownership</td>
+<td><code>configs/baseline_registry.v1.yaml</code></td>
+</tr>
+<tr>
+<td>Phase 5 B0–B5 config</td>
+<td><code>configs/phase5_evaluation.v1.yaml</code></td>
+</tr>
+<tr>
+<td>Gold split và test policy</td>
+<td><code>README.md</code>, <code>data/gold/feature_selection_v1/manifest.json</code></td>
+</tr>
+<tr>
+<td>Feature policy</td>
+<td><code>configs/features.yaml</code></td>
+</tr>
+<tr>
+<td>Stage feature proposal</td>
+<td><code>configs/stages.yaml</code></td>
+</tr>
+<tr>
+<td>Rule baseline</td>
+<td><code>src/baselines/rules.py</code></td>
+</tr>
+<tr>
+<td>Model training</td>
+<td><code>src/models/train.py</code></td>
+</tr>
+<tr>
+<td>Metric/bootstrap</td>
+<td><code>src/evaluation/metrics.py</code></td>
+</tr>
+<tr>
+<td>Current tabular results</td>
+<td><code>reports/RESULTS.md</code></td>
+</tr>
+<tr>
+<td>Feature-policy validation</td>
+<td><code>reports/FEATURE_POLICY.md</code></td>
+</tr>
+<tr>
+<td>Robustness</td>
+<td><code>reports/ROBUSTNESS.md</code></td>
+</tr>
+<tr>
+<td>Baseline explanation</td>
+<td><code>reports/BASELINE_CLARIFICATION_AND_UPGRADE_2026-10-17.md</code></td>
+</tr>
+<tr>
+<td>Model limitation</td>
+<td><code>docs/handbook/04_MODELS_METRICS_AND_LIMITATIONS.md</code></td>
+</tr>
+</tbody>
+</table>
+<h2>Historical numbers for context only</h2>
+<ul>
+<li>Frozen test B0 rule: AP 0,424; Recall@10% 16,3%; Precision@10% 40,0%.</li>
+<li>Frozen test XGBoost v1: AP 0,559; Recall@10% 22,4%; Precision@10% 55,0%.</li>
+<li>Train repeated CV: Logistic AP 0,671; XGBoost AP 0,706.</li>
+<li><code>val_fs</code> feature-policy result: research_full AP 0,670; bias-excluded AP 0,598; stage1 AP 0,267; stage3 AP 0,500.</li>
+</ul>
+<p>Không đặt các số thuộc CV, val_fs và frozen test vào cùng một hàng rồi tính hiệu số.</p>
+<hr />
+<h1>Tin nhắn gửi thành viên phụ trách</h1>
+<p>Bạn phụ trách <strong>Phase 5 — Baseline B0–B5 &amp; Evaluation Report</strong>. Mình đã chuẩn bị task brief, protocol chống leakage, data contract, runbook, report template, checklist và evaluator trong gói này.</p>
+<p>Việc đầu tiên là đọc <code>00_README.md</code> rồi xác nhận định nghĩa B0–B5 trong <code>configs/phase5_evaluation.v1.yaml</code>. Trước mắt chạy B0 Rule, B1 Logistic Regression và B2 XGBoost trên cùng <code>train_fs/val_fs</code>. B3–B5 chỉ được đánh giá khi document/image/graph thật sự thuộc cùng <code>claim_id</code> và có timestamp trước lúc chấm; không ghép Kaggle, CarDD và SROIE thành claim giả.</p>
+<p>Output cần có AP, Recall/Precision@5/10/20%, PR curve, paired bootstrap 1.000 lần và CI hiệu số. Nếu CI chứa 0, kết luận là “chưa đủ bằng chứng candidate tốt hơn”. Frozen test cũ không được dùng để chọn feature/cấu hình mới. Khi có prediction CSV đúng schema, chạy lệnh trong <code>04_RUNBOOK.md</code>.</p></main><div class="footer">Bản trình bày được tạo từ tài liệu nguồn trong repository; số liệu nghiên cứu không phải cam kết production.</div></body></html>
