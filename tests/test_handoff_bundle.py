@@ -3,7 +3,7 @@ import zipfile
 
 import pytest
 
-from scripts.build_handoff_bundle import build
+from scripts.build_handoff_bundle import build, build_compact
 
 
 def test_numbered_draft_handoff_bundle_contains_pdf_contract_and_checksums(tmp_path):
@@ -29,3 +29,16 @@ def test_final_bundle_requires_explicit_gate_confirmation(tmp_path):
 def test_confirmation_cannot_bypass_definition_of_done(tmp_path):
     with pytest.raises(ValueError, match="Definition of Done"):
         build(tmp_path, "final", "test-v1", confirm_gates=True)
+
+
+def test_compact_bundle_has_few_recipient_facing_files(tmp_path):
+    package, archive = build_compact(tmp_path, "draft", "test-v1")
+    assert archive.is_file()
+    assert (package / "00_START_HERE.md").is_file()
+    assert (package / "00_HANDOFF_GUIDE.pdf").read_bytes().startswith(b"%PDF")
+    assert (package / "03_SAMPLE_UI.html").is_file()
+    assert (package / "04_OPENAPI.json").is_file()
+    manifest = json.loads((package / "RELEASE_MANIFEST.json").read_text(encoding="utf-8"))
+    assert manifest["status"] == "draft"
+    assert manifest["research_handoff_done"] is False
+    assert len([path for path in package.iterdir() if path.is_file()]) <= 9

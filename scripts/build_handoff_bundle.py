@@ -33,6 +33,16 @@ SUPPORT_FILES = [
     ROOT / "configs/model_registry.v1.yaml",
     ROOT / "reports/PRODUCT_BUILD_STATUS_2026-10-13.md",
 ]
+COMPACT_DOCS = [
+    ROOT / "docs/final_handoff/00_START_HERE.md",
+    ROOT / "docs/final_handoff/01_API_AND_MODEL_INTEGRATION.md",
+    ROOT / "docs/final_handoff/02_OPERATIONS_MACOS_AND_LIMITS.md",
+]
+COMPACT_FILES = {
+    "03_SAMPLE_UI.html": ROOT / "prototype/insurance_review_console_v2.html",
+    "04_OPENAPI.json": ROOT / "contracts/claim_review_openapi.v1.json",
+    "05_MODEL_REGISTRY.yaml": ROOT / "configs/model_registry.v1.yaml",
+}
 
 
 def sha256(path: Path) -> str:
@@ -57,7 +67,12 @@ def markdown_lines(markdown: str, width: int = 102) -> list[str]:
             lines.extend(textwrap.wrap(stripped, width=width, subsequent_indent="  ") or [""])
             continue
         cleaned = re.sub(r"\[([^]]+)]\([^)]+\)", r"\1", stripped)
-        cleaned = cleaned.replace("`", "")
+        cleaned = cleaned.replace("`", "").replace("**", "").replace("__", "")
+        if cleaned.startswith("|") and cleaned.endswith("|"):
+            cells = [cell.strip() for cell in cleaned.strip("|").split("|")]
+            if cells and all(re.fullmatch(r":?-{3,}:?", cell) for cell in cells):
+                continue
+            cleaned = "  |  ".join(cells)
         prefix = ""
         if cleaned.startswith("#"):
             level = len(cleaned) - len(cleaned.lstrip("#"))
@@ -104,7 +119,7 @@ def build(output_root: Path, status: str, release_version: str, confirm_gates: b
     if missing:
         raise FileNotFoundError("Missing handoff inputs:\n" + "\n".join(missing))
 
-    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    stamp = datetime.now().astimezone().strftime("%Y%m%dT%H%M%S")
     package_name = f"AI_INSURANCE_HANDOFF_{release_version}_{status.upper()}_{stamp}"
     package = output_root / package_name
     if package.exists():
@@ -142,14 +157,79 @@ def build(output_root: Path, status: str, release_version: str, confirm_gates: b
     return package, archive
 
 
+def build_compact(output_root: Path, status: str, release_version: str, confirm_gates: bool = False) -> tuple[Path, Path]:
+    """Build a small recipient-facing package while keeping the full handbook in Git."""
+    from scripts.check_project_done import evaluate
+
+    research_status = evaluate(level="research_handoff")
+    if status == "final" and not confirm_gates:
+        raise ValueError("FINAL requires --confirm-gates after completing the research handoff checklist.")
+    if status == "final" and not research_status["done"]:
+        raise ValueError("FINAL Definition of Done is not satisfied: " + ", ".join(research_status["blockers"]))
+    missing = [str(path) for path in [*COMPACT_DOCS, *COMPACT_FILES.values()] if not path.is_file()]
+    if missing:
+        raise FileNotFoundError("Missing compact handoff inputs:\n" + "\n".join(missing))
+
+    stamp = datetime.now().astimezone().strftime("%Y%m%dT%H%M%S")
+    package_name = f"AI_INSURANCE_HANDOFF_COMPACT_{release_version}_{status.upper()}_{stamp}"
+    package = output_root / package_name
+    if package.exists():
+        shutil.rmtree(package)
+    package.mkdir(parents=True)
+
+    for source in COMPACT_DOCS:
+        shutil.copy2(source, package / source.name)
+    for target_name, source in COMPACT_FILES.items():
+        shutil.copy2(source, package / target_name)
+
+    merged = package / "00_HANDOFF_GUIDE.md"
+    merged.write_text(
+        "\n\n---\n\n".join(path.read_text(encoding="utf-8") for path in COMPACT_DOCS),
+        encoding="utf-8",
+    )
+    try:
+        render_pdf(merged, package / "00_HANDOFF_GUIDE.pdf", status, release_version)
+    finally:
+        merged.unlink(missing_ok=True)
+
+    manifest = {
+        "package": package_name,
+        "status": status,
+        "release_version": release_version,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "scope": "Technical PoC / research handoff candidate",
+        "research_handoff_done": research_status["done"],
+        "research_handoff_blockers": research_status["blockers"],
+        "final_gates_confirmed": bool(confirm_gates),
+        "warning": None if status == "final" else "DRAFT/CANDIDATE package; not approved for production use.",
+    }
+    (package / "RELEASE_MANIFEST.json").write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+    files = sorted(path for path in package.iterdir() if path.is_file())
+    (package / "SHA256SUMS.txt").write_text(
+        "\n".join(f"{sha256(path)}  {path.name}" for path in files) + "\n", encoding="utf-8"
+    )
+
+    archive = output_root / f"{package_name}.zip"
+    archive.parent.mkdir(parents=True, exist_ok=True)
+    with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as bundle:
+        for path in sorted(package.iterdir()):
+            if path.is_file():
+                bundle.write(path, Path(package_name) / path.name)
+    return package, archive
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--status", choices=("draft", "final"), default="draft")
     parser.add_argument("--release-version", default="research-v1")
     parser.add_argument("--output-dir", type=Path, default=ROOT / "dist")
     parser.add_argument("--confirm-gates", action="store_true")
+    parser.add_argument("--compact", action="store_true", help="Build the small recipient-facing handoff package.")
     args = parser.parse_args()
-    package, archive = build(args.output_dir, args.status, args.release_version, args.confirm_gates)
+    builder = build_compact if args.compact else build
+    package, archive = builder(args.output_dir, args.status, args.release_version, args.confirm_gates)
     print(f"Package: {package}")
     print(f"ZIP: {archive}")
     print(f"ZIP SHA-256: {sha256(archive)}")

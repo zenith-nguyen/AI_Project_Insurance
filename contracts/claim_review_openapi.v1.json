@@ -84,6 +84,27 @@
         }
       }
     },
+    "/system/baselines": {
+      "get": {
+        "summary": "Baselines",
+        "description": "Explain baseline ownership, candidate comparison and business meaning.",
+        "operationId": "baselines_system_baselines_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Baselines System Baselines Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/system/improvement-status": {
       "get": {
         "summary": "Improvement Status",
@@ -98,6 +119,27 @@
                   "additionalProperties": true,
                   "type": "object",
                   "title": "Response Improvement Status System Improvement Status Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/system/document-policies": {
+      "get": {
+        "summary": "Document Policies",
+        "description": "Current versioned VN document policy and its official-source review state.",
+        "operationId": "document_policies_system_document_policies_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Document Policies System Document Policies Get"
                 }
               }
             }
@@ -530,6 +572,27 @@
         }
       }
     },
+    "/system/operations": {
+      "get": {
+        "summary": "System Operations",
+        "description": "Queue/capacity telemetry for operations and scale planning.",
+        "operationId": "system_operations_system_operations_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response System Operations System Operations Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/claims/{claim_id}/analysis": {
       "get": {
         "summary": "Analysis",
@@ -807,6 +870,18 @@
               }
             ],
             "title": "Error"
+          },
+          "queue_position": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Queue Position",
+            "default": 0
+          },
+          "worker_capacity": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Worker Capacity",
+            "default": 1
           }
         },
         "type": "object",

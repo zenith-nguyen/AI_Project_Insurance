@@ -4,6 +4,16 @@ This repository reproduces a **tabular research baseline** for the UEH CPMAI pro
 
 Team-ready handoff documents for Progress Report 2 are indexed in `reports/handoff/README.md`.
 
+## One-command handoff (Windows/macOS)
+
+The shortest supported handoff path is the fixture Docker application. It needs no raw data, checkpoint or GPU:
+
+```bash
+python scripts/handoff.py up
+```
+
+Use `python3` on macOS when `python` is not available. The command runs preflight, starts `compose.yaml`, waits for health and smoke-tests the UI/API. Start with `docs/final_handoff/00_START_HERE.md`; model/API integration and macOS risks are kept in the same three-file handoff set.
+
 The API lifecycle, UI/backend responsibilities, guided-capture example and error-handling rules are documented in `reports/API_HANDOFF_GUIDE_2026-10-13.md`. Browser clients can import `prototype/api-client.js` instead of duplicating raw `fetch` calls.
 
 The numbered handoff handbook starts at `docs/handbook/00_START_HERE.md`. Build a PDF + ZIP draft with `python scripts/build_handoff_bundle.py --status draft`; final packaging is deliberately gated by the release/UAT checklist.
