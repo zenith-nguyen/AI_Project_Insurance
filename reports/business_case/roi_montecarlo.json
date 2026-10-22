@@ -1,0 +1,65 @@
+{
+  "status": "placeholder_unverified",
+  "currency": "VND",
+  "portfolio_claims": 10000,
+  "constraints": {
+    "K1_max_total_review_rate": 0.2,
+    "K2_max_siu_rate": 0.05
+  },
+  "monte_carlo": {
+    "iterations": 5000,
+    "seed": 20261022
+  },
+  "scoring_model": "B2 XGBoost on feature_selection_v1/val_fs",
+  "scenarios": {
+    "prevalence_0.05": {
+      "operating_point": {
+        "t1": 0.425502118918131,
+        "t2": 0.7722218694551936
+      },
+      "total_review_rate": 0.19428571428571428,
+      "siu_rate": 0.005714285714285714,
+      "fraud_recall_review_queue": 0.6285714285714286,
+      "net_value_vnd": {
+        "mean": 4300972270.028834,
+        "median": 3482198051.3104496,
+        "p5": 435661133.71872866,
+        "p95": 10840243803.497522,
+        "prob_positive": 0.9788
+      }
+    },
+    "prevalence_0.07": {
+      "operating_point": {
+        "t1": 0.4979510220154276,
+        "t2": 0.7722218694551936
+      },
+      "total_review_rate": 0.18171428571428572,
+      "siu_rate": 0.008,
+      "fraud_recall_review_queue": 0.5714285714285714,
+      "net_value_vnd": {
+        "mean": 6032389575.430364,
+        "median": 4964036338.634871,
+        "p5": 1125771150.2842634,
+        "p95": 14380930289.694803,
+        "prob_positive": 0.9964
+      }
+    },
+    "prevalence_0.1": {
+      "operating_point": {
+        "t1": 0.4979510220154276,
+        "t2": 0.6894231230582831
+      },
+      "total_review_rate": 0.19428571428571428,
+      "siu_rate": 0.04,
+      "fraud_recall_review_queue": 0.5714285714285714,
+      "net_value_vnd": {
+        "mean": 9337575785.745056,
+        "median": 7775547830.8995075,
+        "p5": 1882914660.4785373,
+        "p95": 21654357932.91864,
+        "prob_positive": 0.9944
+      }
+    }
+  },
+  "caveat": "Scenario conditioned on placeholder cost distributions; not a measured business outcome. Confirm real costs before use."
+}

@@ -1,0 +1,51 @@
+# Giả định chi phí cho Monte Carlo ROI (phần "Chốt giả định chi phí" do Thanh Vy sở hữu).
+# TRẠNG THÁI: placeholder_unverified. Đây là CON SỐ MINH HỌA để chạy khung Monte Carlo,
+# CHƯA phải chi phí thật đã kiểm chứng. Không dùng kết quả cho quyết định tài chính cho tới
+# khi Thanh Vy thay bằng số có nguồn và đổi status thành "confirmed".
+schema_version: "1.0"
+status: placeholder_unverified
+owner_of_assumptions: "Thanh Vy (chốt số thật)"
+currency: VND
+
+portfolio_claims: 10000          # quy mô danh mục để quy đổi giá trị ròng ra VND
+monte_carlo:
+  iterations: 5000               # số lần mô phỏng (trong khoảng 1.000-5.000 theo task)
+  seed: 20261022
+
+constraints:
+  K1_max_total_review_rate: 0.20 # trần tỷ lệ hồ sơ được review (manual + SIU)
+  K2_max_siu_rate: 0.05          # trần tỷ lệ hồ sơ chuyển SIU
+
+prevalence_scenarios: [0.05, 0.07, 0.10]
+
+# Mỗi tham số là một phân phối. Beta cho tỷ lệ [0,1]; log-normal cho chi phí/tổn thất dương
+# lệch phải; uniform cho khoảng không chắc chắn đều.
+distributions:
+  fraud_loss_avoided:                 # VND tổn thất tránh được trên mỗi hồ sơ gian lận bị chặn
+    dist: lognormal
+    median: 30000000
+    sigma: 0.5
+  prevention_effectiveness_manual:    # tỷ lệ tổn thất thực sự chặn được khi review thường
+    dist: beta
+    alpha: 5
+    beta: 5                            # kỳ vọng 0,50
+  prevention_effectiveness_siu:       # SIU điều tra sâu hơn nên chặn được nhiều hơn
+    dist: beta
+    alpha: 7.5
+    beta: 2.5                          # kỳ vọng 0,75
+  review_cost:                        # VND chi phí mỗi hồ sơ review thường
+    dist: lognormal
+    median: 250000
+    sigma: 0.4
+  siu_cost:                           # VND chi phí tăng thêm mỗi hồ sơ chuyển SIU
+    dist: lognormal
+    median: 2500000
+    sigma: 0.4
+  false_hold_cost:                    # VND chi phí giữ nhầm một hồ sơ hợp lệ (ma sát khách hàng)
+    dist: uniform
+    low: 200000
+    high: 800000
+  ai_operation_cost_per_claim:        # VND chi phí vận hành AI trên mỗi hồ sơ
+    dist: uniform
+    low: 2000
+    high: 8000
