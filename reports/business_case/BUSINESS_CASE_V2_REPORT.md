@@ -41,13 +41,21 @@ Tham số bất định (Beta/log-normal/uniform: p, Recall AI/luật, L̄, η, 
 
 ![Phân phối NPV](bc_npv_distribution.png)
 
+![ΔNV hằng năm: AI so với luật](bc_delta_nv.png)
+
 ![Net Value: AI so với luật](bc_nv_ai_vs_rule.png)
 
-## 3. Precision hoà vốn (break-even)
+## 3. Thời gian hoàn vốn (DPP)
+
+Khi dự án **có** hoàn vốn, thời gian hoàn vốn chiết khấu trung vị chỉ **~0,96 năm** (dòng tiền năm 1 đủ bù vốn đầu tư C₀). Nhưng đây là điều kiện: chỉ **47% kịch bản hoàn vốn trong vòng 3 năm** (P(DPP≤3 năm) = 0,47), phần còn lại không hoàn vốn trong horizon. Khi thắng thì thắng nhanh, nhưng xác suất thắng ở N=20.000 chỉ quanh ngưỡng 50/50 — khớp với NPV trung vị ≈ 0.
+
+![Phân phối DPP](bc_dpp.png)
+
+## 4. Precision hoà vốn (break-even)
 
 Precision hoà vốn trung vị **Prec\* = 0,124**; Precision AI trung vị 0,206 > Prec\*, và **P(Precision AI > Prec\*) = 0,72**. Nghĩa là về mặt precision, hàng đợi AI vượt ngưỡng hoà vốn trong ~72% kịch bản — tín hiệu tích cực, nhưng NPV còn chịu thêm C₀ và chi phí cố định nên vẫn ở ngưỡng.
 
-## 4. Độ nhạy theo N và điểm hoà vốn
+## 5. Độ nhạy theo N và điểm hoà vốn
 
 | N (hồ sơ/năm) | 10k | 20k | 30k | 40k | 50k | 75k | 100k |
 |---|---:|---:|---:|---:|---:|---:|---:|
@@ -58,19 +66,19 @@ Precision hoà vốn trung vị **Prec\* = 0,124**; Precision AI trung vị 0,20
 
 ![Độ nhạy theo N và điểm hoà vốn](bc_sensitivity.png)
 
-## 5. Kết luận và khuyến nghị
+## 6. Kết luận và khuyến nghị
 
 - Ở **N=20.000**, quyết định **chưa rõ ràng** (NPV ≈ 0, P(NPV>0) 47%). Không nên khẳng định có lãi.
 - Dự án **chuyển có lợi khi quy mô ≥ ~22.600 hồ sơ/năm**; vì vậy nên **mở rộng kênh/định tuyến thêm hồ sơ qua hệ thống**, hoặc chạy **pilot** để (a) xác nhận N thực, (b) thu nhãn thật nâng Recall, (c) đo lại chi phí.
 - AI vượt luật về xếp hạng và precision hoà vốn, nên giá trị gia tăng là có cơ sở; rào cản là **quy mô và chi phí cố định**, không phải chất lượng mô hình.
 
-## 6. Giới hạn
+## 7. Giới hạn
 
 1. Recall gốc từ 49 hồ sơ (Jeffreys), frozen test p=24,5%; tập nhỏ nên đuôi phân phối rộng.
 2. Nhiều chi phí là khoảng uniform (ít thông tin); cần số kế toán thật để siết lại.
 3. Là kịch bản có điều kiện trên giả định, chưa phải cam kết tài chính.
 
-## 7. Tái lập
+## 8. Tái lập
 
 ```bash
 python scripts/monte_carlo_business_case.py --N 20000   # số chuẩn của Thanh Vy

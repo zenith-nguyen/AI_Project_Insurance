@@ -68,6 +68,21 @@ def main() -> int:
     ax.grid(alpha=.2); ax.legend(fontsize=8); fig.tight_layout()
     fig.savefig(OUT / "bc_nv_ai_vs_rule.png", dpi=180); plt.close(fig)
 
+    # Chart 4: discounted payback period (DPP), finite cases only.
+    dpp = res["DPP"]
+    finite = dpp[np.isfinite(dpp)]
+    p_le3 = float((dpp <= 3).mean())
+    fig, ax = plt.subplots(figsize=(8, 4.4))
+    if finite.size:
+        ax.hist(np.clip(finite, 0, 3), bins=40, color="#d08a1f", alpha=0.8)
+        ax.axvline(float(np.median(finite)), color="#1a1a1a", lw=1.5,
+                   label=f"Trung vị (khi hoàn vốn) = {np.median(finite):.2f} năm")
+    ax.axvline(3, color="#c0504d", lw=1, ls="--", label=f"P(DPP≤3 năm) = {p_le3:.2f}")
+    ax.set(xlabel="Thời gian hoàn vốn chiết khấu (năm)", ylabel="Số lần",
+           title="Phân phối DPP (chỉ các kịch bản hoàn vốn trong 3 năm)", xlim=(0, 3.2))
+    ax.grid(alpha=.2); ax.legend(fontsize=8); fig.tight_layout()
+    fig.savefig(OUT / "bc_dpp.png", dpi=180); plt.close(fig)
+
     # Sensitivity + break-even on N.
     N_grid = [10_000, 20_000, 30_000, 40_000, 50_000, 75_000, 100_000]
     med_npv, prob_pos = [], []
