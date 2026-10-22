@@ -1,16 +1,14 @@
-"""Run the full Monte Carlo business case (NV, NPV, ROI, DPP) on Thanh Vy's assumptions.
+"""Charts, sensitivity and report for Thanh Vy's canonical business case model.
 
-Reads configs/business_case_v2_thanh_vy.yaml, runs 10,000 iterations, and writes a
-report plus charts to reports/business_case/. Structural scalars (N, discount rate,
-SIU split) are researched estimates until the source doc confirms them, so N and the
-discount rate are also swept for sensitivity.
+The economic model is scripts/monte_carlo_business_case.py (Thanh Vy, authoritative).
+This runner only consumes its simulate()/summary() to draw figures, sweep the claim
+volume N, find the break-even N, and write a report. It adds nothing to the model.
 
 Run:
     python scripts/run_business_case.py
 """
 from __future__ import annotations
 
-import copy
 import json
 import sys
 from pathlib import Path
@@ -21,74 +19,96 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "scripts"))
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
-from src.data.common import config
-from src.simulation.business_case import simulate
+import monte_carlo_business_case as mcbc
 
 OUT = ROOT / "reports/business_case"
 BILLION = 1_000_000_000
+ITERS = 10_000        # headline run
+ITERS_SWEEP = 4_000   # cheaper runs for the N sensitivity (per-iteration DPP loop is slow)
+BASE_N = mcbc.DECISION["N"]
 
 
 def main() -> int:
-    cfg = config("configs/business_case_v2_thanh_vy.yaml")
-    result = simulate(cfg)
-    draws = result.pop("_draws")
     OUT.mkdir(parents=True, exist_ok=True)
+    res = mcbc.simulate(ITERS, dec={"N": BASE_N})
+    s = mcbc.summary(res)
+    s["IRR_median_flows"] = mcbc.irr_of_median(res)
 
-    # Chart 1: NPV distribution.
-    fig, axis = plt.subplots(figsize=(8, 4.4))
-    axis.hist(draws["npv"] / BILLION, bins=60, color="#1f6f54", alpha=0.78)
-    axis.axvline(result["npv"]["median"] / BILLION, color="#1a1a1a", linewidth=1.5, label=f"Trung vị = {result['npv']['median']/BILLION:.1f} tỷ")
-    axis.axvline(0, color="#c0504d", linewidth=1, linestyle="--", label=f"P(NPV>0) = {result['probabilities']['npv_positive']:.2f}")
-    axis.set(xlabel="NPV 3 năm (tỷ VND)", ylabel="Số lần mô phỏng", title="Phân phối NPV (10.000 lần, seed 2026)")
-    axis.grid(alpha=0.2); axis.legend(fontsize=8)
-    fig.tight_layout(); fig.savefig(OUT / "bc_npv_distribution.png", dpi=180); plt.close(fig)
+    npv, dnv = res["NPV"] / BILLION, res["dNV"] / BILLION
+    nv_ai, nv_rule = res["A"]["NV"] / BILLION, res["B"]["NV"] / BILLION
+
+    # Chart 1: incremental NPV (3 years).
+    fig, ax = plt.subplots(figsize=(8, 4.4))
+    ax.hist(npv, bins=70, color="#1f6f54", alpha=0.78)
+    ax.axvline(float(np.median(npv)), color="#1a1a1a", lw=1.5, label=f"Trung vị = {np.median(npv):.2f} tỷ")
+    ax.axvline(0, color="#c0504d", lw=1, ls="--", label=f"P(NPV>0) = {s['P(NPV_inc>0)']:.2f}")
+    ax.set(xlabel="NPV tăng thêm 3 năm (tỷ VND)", ylabel="Số lần", title=f"Phân phối NPV · N={BASE_N:,} · 10.000 lần, seed 2026")
+    ax.grid(alpha=.2); ax.legend(fontsize=8); fig.tight_layout()
+    fig.savefig(OUT / "bc_npv_distribution.png", dpi=180); plt.close(fig)
 
     # Chart 2: annual delta NV.
-    fig, axis = plt.subplots(figsize=(8, 4.4))
-    axis.hist(draws["dnv"] / BILLION, bins=60, color="#5b8ff9", alpha=0.78)
-    axis.axvline(result["dnv_annual"]["median"] / BILLION, color="#1a1a1a", linewidth=1.5, label=f"Trung vị = {result['dnv_annual']['median']/BILLION:.2f} tỷ/năm")
-    axis.axvline(0, color="#c0504d", linewidth=1, linestyle="--", label=f"P(ΔNV>0) = {result['probabilities']['delta_nv_positive']:.2f}")
-    axis.set(xlabel="ΔNV hằng năm, AI so với luật (tỷ VND)", ylabel="Số lần mô phỏng", title="Giá trị ròng tăng thêm của AI so với luật")
-    axis.grid(alpha=0.2); axis.legend(fontsize=8)
-    fig.tight_layout(); fig.savefig(OUT / "bc_delta_nv.png", dpi=180); plt.close(fig)
+    fig, ax = plt.subplots(figsize=(8, 4.4))
+    ax.hist(dnv, bins=70, color="#5b8ff9", alpha=0.78)
+    ax.axvline(float(np.median(dnv)), color="#1a1a1a", lw=1.5, label=f"Trung vị = {np.median(dnv):.2f} tỷ/năm")
+    ax.axvline(0, color="#c0504d", lw=1, ls="--", label=f"P(ΔNV>0) = {s['P(dNV>0)']:.2f}")
+    ax.set(xlabel="ΔNV hằng năm, AI so với luật (tỷ VND)", ylabel="Số lần", title="Giá trị ròng tăng thêm của AI so với luật")
+    ax.grid(alpha=.2); ax.legend(fontsize=8); fig.tight_layout()
+    fig.savefig(OUT / "bc_delta_nv.png", dpi=180); plt.close(fig)
 
-    # Sensitivity on the two researched structural scalars.
-    N_grid = [20000, 40000, 60000, 80000, 100000]
-    r_grid = [0.08, 0.10, 0.12, 0.14, 0.16]
-    npv_by_N, npv_by_r = [], []
+    # Chart 3: NV_AI vs NV_rule.
+    fig, ax = plt.subplots(figsize=(8, 4.4))
+    ax.hist(nv_rule, bins=70, color="#9bbcab", alpha=0.7, label=f"NV luật (trung vị {np.median(nv_rule):.2f} tỷ)")
+    ax.hist(nv_ai, bins=70, color="#1f6f54", alpha=0.6, label=f"NV AI (trung vị {np.median(nv_ai):.2f} tỷ)")
+    ax.axvline(0, color="#c0504d", lw=1, ls="--")
+    ax.set(xlabel="Net Value hằng năm (tỷ VND)", ylabel="Số lần", title="Net Value: AI so với luật cứng")
+    ax.grid(alpha=.2); ax.legend(fontsize=8); fig.tight_layout()
+    fig.savefig(OUT / "bc_nv_ai_vs_rule.png", dpi=180); plt.close(fig)
+
+    # Sensitivity + break-even on N.
+    N_grid = [10_000, 20_000, 30_000, 40_000, 50_000, 75_000, 100_000]
+    med_npv, prob_pos = [], []
     for value in N_grid:
-        c = copy.deepcopy(cfg); c["structural"]["annual_claim_volume_N"] = value
-        npv_by_N.append(simulate(c)["npv"]["median"] / BILLION)
-    for value in r_grid:
-        c = copy.deepcopy(cfg); c["structural"]["discount_rate"] = value
-        npv_by_r.append(simulate(c)["npv"]["median"] / BILLION)
+        r = mcbc.simulate(ITERS_SWEEP, dec={"N": value})
+        med_npv.append(float(np.median(r["NPV"])) / BILLION)
+        prob_pos.append(float((r["NPV"] > 0).mean()))
+    # Locate where median NPV crosses 0 by interpolating the grid above.
+    breakeven_N = None
+    for a, b, va, vb in zip(N_grid[:-1], N_grid[1:], med_npv[:-1], med_npv[1:]):
+        if va < 0 <= vb:
+            breakeven_N = int(a + (b - a) * (0 - va) / (vb - va)); break
+
     fig, axes = plt.subplots(1, 2, figsize=(10, 4.2))
-    axes[0].plot([n / 1000 for n in N_grid], npv_by_N, marker="o", color="#1f6f54", linewidth=2)
-    axes[0].axhline(0, color="#8a9799", linewidth=1); axes[0].set(xlabel="N (nghìn hồ sơ/năm)", ylabel="NPV trung vị (tỷ VND)", title="Độ nhạy theo N")
-    axes[0].grid(alpha=0.2)
-    axes[1].plot([x * 100 for x in r_grid], npv_by_r, marker="o", color="#c0504d", linewidth=2)
-    axes[1].axhline(0, color="#8a9799", linewidth=1); axes[1].set(xlabel="Lãi suất chiết khấu (%)", ylabel="NPV trung vị (tỷ VND)", title="Độ nhạy theo lãi suất")
-    axes[1].grid(alpha=0.2)
+    axes[0].plot([n / 1000 for n in N_grid], med_npv, marker="o", color="#1f6f54", lw=2)
+    axes[0].axhline(0, color="#8a9799", lw=1)
+    if breakeven_N:
+        axes[0].axvline(breakeven_N / 1000, color="#c0504d", ls="--", lw=1, label=f"Hoà vốn N≈{breakeven_N:,}")
+        axes[0].legend(fontsize=8)
+    axes[0].set(xlabel="N (nghìn hồ sơ/năm)", ylabel="NPV trung vị (tỷ VND)", title="NPV trung vị theo N"); axes[0].grid(alpha=.2)
+    axes[1].plot([n / 1000 for n in N_grid], prob_pos, marker="o", color="#5b8ff9", lw=2)
+    axes[1].axhline(0.5, color="#8a9799", ls="--", lw=1)
+    axes[1].set(xlabel="N (nghìn hồ sơ/năm)", ylabel="P(NPV>0)", title="Xác suất NPV>0 theo N", ylim=(0, 1)); axes[1].grid(alpha=.2)
     fig.tight_layout(); fig.savefig(OUT / "bc_sensitivity.png", dpi=180); plt.close(fig)
 
-    result["sensitivity"] = {"npv_median_by_N_billion": dict(zip(map(str, N_grid), npv_by_N)),
-                             "npv_median_by_discount_billion": dict(zip(map(str, r_grid), npv_by_r))}
-    result["status"] = cfg["status"]
-    result["note_formula"] = "NV/NPV/ROI/DPP reconstructed from the parameter table with standard capital budgeting; structural scalars are researched estimates pending the source doc."
-    (OUT / "business_case_v2.json").write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    report = {
+        "status": "real_assumptions_from_thanh_vy",
+        "engine": "scripts/monte_carlo_business_case.py (canonical, Thanh Vy)",
+        "base_decision": mcbc.DECISION,
+        "summary": s,
+        "sensitivity_N": {"N": N_grid, "median_npv_billion": med_npv, "prob_npv_positive": prob_pos},
+        "breakeven_N_median_npv": breakeven_N,
+    }
+    (OUT / "business_case_v2.json").write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
     print(json.dumps({
-        "recall_real_median": {"ai": round(result["recall_real"]["ai"]["median"], 4), "rule": round(result["recall_real"]["rule"]["median"], 4)},
-        "dnv_annual_billion": {"p5": round(result["dnv_annual"]["p5"]/BILLION, 2), "median": round(result["dnv_annual"]["median"]/BILLION, 2), "p95": round(result["dnv_annual"]["p95"]/BILLION, 2)},
-        "npv_billion": {"p5": round(result["npv"]["p5"]/BILLION, 2), "median": round(result["npv"]["median"]/BILLION, 2), "p95": round(result["npv"]["p95"]/BILLION, 2)},
-        "roi_median": round(result["roi"]["median"], 2),
-        "dpp_years_median": round(result["dpp_years"]["median"], 2),
-        "probabilities": {k: round(v, 3) for k, v in result["probabilities"].items()},
+        "N": BASE_N, "Recall_AI_med": round(s["Recall_AI"][1], 4), "Recall_rule_med": round(s["Recall_rule"][1], 4),
+        "NPV_inc_billion_p5_med_p95": [round(x / BILLION, 2) for x in s["NPV_inc"]],
+        "ROI_inc_med": round(s["ROI_inc"][1], 3), "DPP_med": round(s["DPP_median_if_finite"], 2),
+        "P(NPV>0)": s["P(NPV_inc>0)"], "P(dNV>0)": s["P(dNV>0)"], "P(Prec>Prec*)": s["P(Precision>Prec*)"],
+        "breakeven_N": breakeven_N,
     }, ensure_ascii=False, indent=2))
     return 0
 
