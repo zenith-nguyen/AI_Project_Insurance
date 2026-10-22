@@ -1,0 +1,105 @@
+{
+  "split": "feature_selection_v1/val_fs",
+  "n": 140,
+  "positives": 35,
+  "note": "val_fs has 35 positives; binned calibration is noisy. Calibration is monotone so AP and queue order are unchanged.",
+  "variants": {
+    "raw": {
+      "average_precision": 0.5977500809833903,
+      "brier": 0.1463592683256795,
+      "ece_10_bins": 0.045945033670536116,
+      "mean_predicted": 0.2738204002380371,
+      "observed_prevalence": 0.25,
+      "reliability_5_quantile_bins": [
+        {
+          "mean_pred": 0.051349006593227386,
+          "obs_freq": 0.10714285714285714,
+          "count": 28
+        },
+        {
+          "mean_pred": 0.08481139689683914,
+          "obs_freq": 0.03571428571428571,
+          "count": 28
+        },
+        {
+          "mean_pred": 0.16017889976501465,
+          "obs_freq": 0.17857142857142858,
+          "count": 28
+        },
+        {
+          "mean_pred": 0.39854392409324646,
+          "obs_freq": 0.32142857142857145,
+          "count": 28
+        },
+        {
+          "mean_pred": 0.6742187738418579,
+          "obs_freq": 0.6071428571428571,
+          "count": 28
+        }
+      ]
+    },
+    "platt": {
+      "average_precision": 0.5977500809833903,
+      "brier": 0.14882737108152994,
+      "ece_10_bins": 0.061676829627582,
+      "mean_predicted": 0.2737349569797516,
+      "observed_prevalence": 0.25,
+      "reliability_5_quantile_bins": [
+        {
+          "mean_pred": 0.12377132475376129,
+          "obs_freq": 0.10714285714285714,
+          "count": 28
+        },
+        {
+          "mean_pred": 0.1597973108291626,
+          "obs_freq": 0.03571428571428571,
+          "count": 28
+        },
+        {
+          "mean_pred": 0.219369575381279,
+          "obs_freq": 0.17857142857142858,
+          "count": 28
+        },
+        {
+          "mean_pred": 0.35553914308547974,
+          "obs_freq": 0.32142857142857145,
+          "count": 28
+        },
+        {
+          "mean_pred": 0.5101974606513977,
+          "obs_freq": 0.6071428571428571,
+          "count": 28
+        }
+      ]
+    },
+    "isotonic": {
+      "average_precision": 0.5345721663761531,
+      "brier": 0.14517173593725355,
+      "ece_10_bins": 0.0338458445455347,
+      "mean_predicted": 0.2744532525539398,
+      "observed_prevalence": 0.25,
+      "reliability_5_quantile_bins": [
+        {
+          "mean_pred": 0.12977100908756256,
+          "obs_freq": 0.08620689655172414,
+          "count": 58
+        },
+        {
+          "mean_pred": 0.16670258343219757,
+          "obs_freq": 0.11538461538461539,
+          "count": 26
+        },
+        {
+          "mean_pred": 0.4143713712692261,
+          "obs_freq": 0.3870967741935484,
+          "count": 31
+        },
+        {
+          "mean_pred": 0.5486785173416138,
+          "obs_freq": 0.6,
+          "count": 25
+        }
+      ]
+    }
+  }
+}

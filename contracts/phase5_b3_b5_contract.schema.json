@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Phase 5 B3-B5 evidence manifest row",
+  "description": "One row per piece of claim-linked evidence used to score B3-B5. All evidence must share a real claim_id and satisfy event_time <= scored_at.",
+  "type": "object",
+  "required": ["claim_id", "modality", "evidence_id", "event_time", "scored_at", "source"],
+  "additionalProperties": true,
+  "properties": {
+    "claim_id": {"type": "string", "minLength": 1, "description": "Must exist in the claim/prediction set."},
+    "modality": {"type": "string", "enum": ["document", "image", "entity_edge"]},
+    "evidence_id": {"type": "string", "minLength": 1},
+    "event_time": {"type": "string", "format": "date-time", "description": "received_at for document/image, available_at for entity_edge."},
+    "scored_at": {"type": "string", "format": "date-time", "description": "Claim decision time; identical for every row of the same claim; must be >= event_time."},
+    "source": {"type": "string", "minLength": 1, "description": "Real claim provenance, not a standalone public dataset row."}
+  },
+  "$comment": "Stage requirements: B3 needs >=1 document per scored claim; B4 needs B3 + >=1 image; B5 needs B4 + >=1 entity_edge. Do not join Kaggle/CarDD/SROIE rows as the same claim."
+}

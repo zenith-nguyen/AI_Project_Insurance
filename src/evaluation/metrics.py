@@ -1,34 +1,56 @@
 """Fraud ranking and uncertainty metrics."""
 from __future__ import annotations
 
+import hashlib
 import math
 
 import numpy as np
 from sklearn.metrics import average_precision_score, brier_score_loss, roc_auc_score
 
 
-def top_mask(scores, k: float) -> np.ndarray:
+def hash_tiebreaker(ids) -> np.ndarray:
+    """Deterministic, label-free secondary key in [0, 1) per id (e.g. claim_id).
+
+    Breaks ties at a top-K boundary without using the label and without
+    depending on the arbitrary input row order. A sparse rule score with many
+    equal values at the boundary therefore selects the same claims on any run.
+    """
+    def one(value) -> float:
+        digest = hashlib.sha256(str(value).encode("utf-8")).digest()
+        return int.from_bytes(digest[:8], "big") / 2 ** 64
+    return np.asarray([one(value) for value in ids], dtype=float)
+
+
+def top_mask(scores, k: float, tie_breaker=None) -> np.ndarray:
     values = np.asarray(scores, dtype=float)
     if not 0 < k <= 1 or values.ndim != 1 or not np.isfinite(values).all():
         raise ValueError("k must be in (0,1], and scores must be finite 1D values")
     n = max(1, math.ceil(len(values) * k))
-    # Stable order resolves equal scores by their original row order.
-    chosen = np.argsort(-values, kind="stable")[:n]
+    if tie_breaker is None:
+        # Stable order resolves equal scores by their original row order.
+        chosen = np.argsort(-values, kind="stable")[:n]
+    else:
+        secondary = np.asarray(tie_breaker, dtype=float)
+        if secondary.shape != values.shape or not np.isfinite(secondary).all():
+            raise ValueError("tie_breaker must be finite and aligned with scores")
+        # Primary key: higher score first. Secondary: higher tie_breaker first.
+        # lexsort reads its last key as primary, so both are negated for descending.
+        chosen = np.lexsort((-secondary, -values))[:n]
     mask = np.zeros(len(values), dtype=bool)
     mask[chosen] = True
     return mask
 
 
-def recall_at_k(y, scores, k: float) -> float:
+def recall_at_k(y, scores, k: float, tie_breaker=None) -> float:
     labels = np.asarray(y, dtype=int)
     if labels.sum() == 0:
         return float("nan")
-    return float(labels[top_mask(scores, k)].sum() / labels.sum())
+    return float(labels[top_mask(scores, k, tie_breaker)].sum() / labels.sum())
 
 
-def precision_at_k(y, scores, k: float) -> float:
+def precision_at_k(y, scores, k: float, tie_breaker=None) -> float:
     labels = np.asarray(y, dtype=int)
-    return float(labels[top_mask(scores, k)].mean())
+    return float(labels[top_mask(scores, k, tie_breaker)].mean())
 
 
 def lift_at_k(y, scores, k: float) -> float:

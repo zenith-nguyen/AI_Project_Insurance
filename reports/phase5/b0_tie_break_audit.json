@@ -1,0 +1,22 @@
+{
+  "split": "val_fs.parquet",
+  "k": 0.1,
+  "n": 140,
+  "queue_size": 14,
+  "boundary_score": 1.5,
+  "claims_tied_at_boundary": 15,
+  "seats_above_boundary": 0,
+  "free_seats_decided_by_tie_break": 14,
+  "recall_at_k": {
+    "row_order_current": 0.17142857142857143,
+    "locked_hash_tiebreak": 0.2,
+    "random_tie_min": 0.17142857142857143,
+    "random_tie_median": 0.2,
+    "random_tie_max": 0.2
+  },
+  "precision_at_k": {
+    "row_order_current": 0.42857142857142855,
+    "locked_hash_tiebreak": 0.5
+  },
+  "locked_rule": "secondary key = sha256(claim_id) as float in [0,1); label-free, order-independent, reproducible"
+}
