@@ -94,8 +94,35 @@ def main() -> int:
     axis.grid(alpha=0.2); axis.legend(fontsize=8)
     fig.tight_layout(); fig.savefig(OUT / "roi_net_value_by_k.png", dpi=180); plt.close(fig)
 
-    # Chart 2: net-value distribution at the operating point (middle scenario).
     base = 0.07 if 0.07 in scenarios else scenarios[len(scenarios) // 2]
+
+    # Capacity sensitivity at the base prevalence (operational decision, not a cost change).
+    sensitivity = []
+    for profile in cfg.get("capacity_profiles", []):
+        point = choose_operating_point(pos, neg, dists, base, portfolio, profile["K1"], profile["K2"])
+        prof_rates = queue_rates(pos, neg, point["t1"], point["t2"], base)
+        prof_draws = simulate_net_value(prof_rates, dists, portfolio, np.random.default_rng(seed), iterations)
+        sensitivity.append({"name": profile["name"], "K1": profile["K1"], "K2": profile["K2"],
+                            "t1": point["t1"], "t2": point["t2"],
+                            "total_review_rate": prof_rates["total_review_rate"], "siu_rate": prof_rates["siu_rate"],
+                            "fraud_recall_review": prof_rates["fraud_recall_review"],
+                            "net_value_vnd": summarize(prof_draws)})
+
+    if sensitivity:
+        fig, axis = plt.subplots(figsize=(7.5, 4.4))
+        names = [f"{s['name']}\nK1={int(s['K1']*100)}% K2={int(s['K2']*100)}%" for s in sensitivity]
+        means = [s["net_value_vnd"]["mean"] / MILLION for s in sensitivity]
+        lo = [s["net_value_vnd"]["mean"] / MILLION - s["net_value_vnd"]["p5"] / MILLION for s in sensitivity]
+        hi = [s["net_value_vnd"]["p95"] / MILLION - s["net_value_vnd"]["mean"] / MILLION for s in sensitivity]
+        axis.bar(names, means, color="#1f6f54", alpha=0.8, yerr=[lo, hi], capsize=5, ecolor="#8a9799")
+        for i, s in enumerate(sensitivity):
+            axis.text(i, means[i], f"{means[i]:.0f}", ha="center", va="bottom", fontsize=9)
+        axis.set(ylabel="Giá trị ròng kỳ vọng (triệu VND / 10.000 hồ sơ)",
+                 title=f"Độ nhạy theo capacity K1/K2 · prevalence {int(base*100)}% (giả định placeholder)")
+        axis.grid(alpha=0.2, axis="y")
+        fig.tight_layout(); fig.savefig(OUT / "roi_capacity_sensitivity.png", dpi=180); plt.close(fig)
+
+    # Chart 2: net-value distribution at the operating point (middle scenario).
     best = choose_operating_point(pos, neg, dists, base, portfolio, k1, k2)
     rates = queue_rates(pos, neg, best["t1"], best["t2"], base)
     draws = simulate_net_value(rates, dists, portfolio, np.random.default_rng(seed), iterations)
@@ -116,6 +143,8 @@ def main() -> int:
         "monte_carlo": {"iterations": iterations, "seed": seed},
         "scoring_model": "B2 XGBoost on feature_selection_v1/val_fs",
         "scenarios": results,
+        "base_prevalence": base,
+        "capacity_sensitivity": sensitivity,
         "caveat": "Scenario conditioned on placeholder cost distributions; not a measured business outcome. Confirm real costs before use.",
     }
     (OUT / "roi_montecarlo.json").write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -125,6 +154,11 @@ def main() -> int:
                           "mean_net_value_million": round(v["net_value_vnd"]["mean"] / MILLION, 1),
                           "prob_positive": round(v["net_value_vnd"]["prob_positive"], 3)}
                       for k, v in results.items()}, ensure_ascii=False, indent=2))
+    print("capacity_sensitivity (prevalence %d%%):" % int(base * 100))
+    print(json.dumps([{"profile": s["name"], "K1": s["K1"], "K2": s["K2"], "t1": round(s["t1"], 4), "t2": round(s["t2"], 4),
+                       "review_rate": round(s["total_review_rate"], 4), "siu_rate": round(s["siu_rate"], 4),
+                       "mean_net_value_million": round(s["net_value_vnd"]["mean"] / MILLION, 1)}
+                      for s in sensitivity], ensure_ascii=False, indent=2))
     return 0
 
 

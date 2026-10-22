@@ -61,5 +61,59 @@
       }
     }
   },
+  "base_prevalence": 0.07,
+  "capacity_sensitivity": [
+    {
+      "name": "conservative",
+      "K1": 0.15,
+      "K2": 0.03,
+      "t1": 0.5445253168636898,
+      "t2": 0.7722218694551936,
+      "total_review_rate": 0.13142857142857142,
+      "siu_rate": 0.008,
+      "fraud_recall_review": 0.4857142857142857,
+      "net_value_vnd": {
+        "mean": 5365846586.890926,
+        "median": 4461125745.62439,
+        "p5": 1178194864.1752295,
+        "p95": 12454145015.344328,
+        "prob_positive": 0.9978
+      }
+    },
+    {
+      "name": "base",
+      "K1": 0.2,
+      "K2": 0.05,
+      "t1": 0.4979510220154276,
+      "t2": 0.7722218694551936,
+      "total_review_rate": 0.18171428571428572,
+      "siu_rate": 0.008,
+      "fraud_recall_review": 0.5714285714285714,
+      "net_value_vnd": {
+        "mean": 6032389575.430364,
+        "median": 4964036338.634871,
+        "p5": 1125771150.2842634,
+        "p95": 14380930289.694803,
+        "prob_positive": 0.9964
+      }
+    },
+    {
+      "name": "aggressive",
+      "K1": 0.25,
+      "K2": 0.05,
+      "t1": 0.3634030591204481,
+      "t2": 0.7722218694551936,
+      "total_review_rate": 0.24285714285714285,
+      "siu_rate": 0.008,
+      "fraud_recall_review": 0.6857142857142857,
+      "net_value_vnd": {
+        "mean": 6966405032.959447,
+        "median": 5701882951.534807,
+        "p5": 1125753404.3738606,
+        "p95": 16886217219.763702,
+        "prob_positive": 0.9934
+      }
+    }
+  ],
   "caveat": "Scenario conditioned on placeholder cost distributions; not a measured business outcome. Confirm real costs before use."
 }

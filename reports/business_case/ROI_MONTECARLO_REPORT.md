@@ -37,6 +37,20 @@ Giá trị ròng tính trên **10.000 hồ sơ**.
 
 Nhận xét: prevalence càng cao thì giá trị ròng càng lớn (nhiều gian lận để chặn) và SIU được dùng nhiều hơn (ở 10% SIU chạm gần trần K2). Mọi operating point đều tôn trọng K1 ≤ 20% và K2 ≤ 5%.
 
+## 3b. Độ nhạy theo năng lực xử lý K1/K2 (prevalence nền 7%)
+
+Đây là quyết định vận hành (nới/siết năng lực review), không đụng tới giả định chi phí. Giữ nguyên phân phối chi phí, chỉ đổi trần K1/K2:
+
+| Profile | K1 | K2 | t1 | t2 | % review | GTR trung bình (triệu) |
+|---|---:|---:|---:|---:|---:|---:|
+| Conservative | 15% | 3% | 0,545 | 0,772 | 13,1% | 5.366 |
+| **Base** | **20%** | **5%** | **0,498** | **0,772** | **18,2%** | **6.032** |
+| Aggressive | 25% | 5% | 0,363 | 0,772 | 24,3% | 6.966 |
+
+Nới năng lực review làm giá trị ròng kỳ vọng tăng (chặn thêm gian lận) nhưng biên lợi ích giảm dần; SIU gần như không đổi vì với bộ giả định này giá trị tăng thêm của SIU bị giới hạn bởi K2. Chọn profile tùy năng lực nhân sự thực tế của đội.
+
+![Độ nhạy theo capacity K1/K2](roi_capacity_sensitivity.png)
+
 ## 4. Phân phối giá trị ròng (kịch bản nền 7%)
 
 Trung vị 4.964 triệu, trung bình 6.032 triệu, khoảng [p5; p95] = [1.126; 14.381] triệu VND / 10.000 hồ sơ, P(GTR>0) = 0,996. Khoảng rất rộng vì tổn thất tránh được (log-normal) và effectiveness (Beta) có độ bất định lớn — đúng tinh thần Monte Carlo: kết luận là phân phối, không phải một con số.

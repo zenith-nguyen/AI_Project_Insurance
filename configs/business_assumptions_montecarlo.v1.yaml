@@ -16,6 +16,14 @@ constraints:
   K1_max_total_review_rate: 0.20 # trần tỷ lệ hồ sơ được review (manual + SIU)
   K2_max_siu_rate: 0.05          # trần tỷ lệ hồ sơ chuyển SIU
 
+# Độ nhạy theo năng lực xử lý (quyết định vận hành của chủ operating point).
+# Dùng để xem operating point và giá trị ròng đổi thế nào khi nới/siết capacity,
+# chạy tại prevalence nền. Không đụng tới giả định chi phí (phần của Thanh Vy).
+capacity_profiles:
+  - {name: conservative, K1: 0.15, K2: 0.03}
+  - {name: base, K1: 0.20, K2: 0.05}
+  - {name: aggressive, K1: 0.25, K2: 0.05}
+
 prevalence_scenarios: [0.05, 0.07, 0.10]
 
 # Mỗi tham số là một phân phối. Beta cho tỷ lệ [0,1]; log-normal cho chi phí/tổn thất dương
