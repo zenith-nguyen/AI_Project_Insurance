@@ -2,8 +2,8 @@ import numpy as np
 import pytest
 
 from src.simulation.montecarlo_roi import (
-    choose_operating_point, expected_net_value, mean_param, queue_rates,
-    sample_param, simulate_net_value,
+    bootstrap_operating_point, choose_operating_point, expected_net_value,
+    fixed_point_regret, mean_param, queue_rates, sample_param, simulate_net_value,
 )
 
 DISTS = {
@@ -51,6 +51,22 @@ def test_operating_point_respects_capacity_caps():
     assert best["total_review_rate"] <= 0.20 + 1e-9
     assert best["siu_rate"] <= 0.05 + 1e-9
     assert best["t2"] >= best["t1"]
+
+
+def test_fixed_point_regret_is_nonnegative_and_zero_at_optimum():
+    base = choose_operating_point(POS, NEG, DISTS, 0.07, 10_000, 0.20, 0.05)
+    rows = fixed_point_regret(POS, NEG, DISTS, base["t1"], base["t2"], [0.05, 0.07, 0.10], 10_000, 0.20, 0.05)
+    # Oracle is never worse than a fixed point that still respects the caps at that prevalence.
+    assert all(r["regret"] >= -1e-6 for r in rows if r["fixed_feasible"])
+    assert next(r for r in rows if r["prevalence"] == 0.07)["regret"] == pytest.approx(0.0, abs=1e-6)
+
+
+def test_bootstrap_operating_point_within_caps():
+    boot = bootstrap_operating_point(POS, NEG, DISTS, 0.07, 10_000, 0.20, 0.05,
+                                     np.random.default_rng(0), n_boot=30, inner=5)
+    assert boot["n_boot"] > 0
+    assert boot["review_rate"]["p95"] <= 0.20 + 1e-9
+    assert set(boot["net_value"]) >= {"mean", "p5", "p95", "prob_positive"}
 
 
 def test_sample_param_shapes_and_ranges():

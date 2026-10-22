@@ -141,6 +141,93 @@ def choose_operating_point(pos_scores, neg_scores, dists: dict, prevalence: floa
     return best
 
 
+def _dist_means(dists: dict) -> dict:
+    return {key: mean_param(spec) for key, spec in dists.items()}
+
+
+def _best_point_grid(pos_sorted, neg_sorted, means: dict, prevalence: float, portfolio: int,
+                     k1_max: float, k2_max: float, grid: np.ndarray):
+    """Vectorized operating-point search over a (t1, t2) grid. Returns a dict or None."""
+    p = float(prevalence)
+    def survival(sorted_scores, g):
+        idx = np.searchsorted(sorted_scores, g, side="left")
+        return (len(sorted_scores) - idx) / len(sorted_scores)
+    rp, rn = survival(pos_sorted, grid), survival(neg_sorted, grid)
+    rp_i, rp_j = rp[:, None], rp[None, :]
+    rn_i, rn_j = rn[:, None], rn[None, :]
+    caught_m = p * (rp_i - rp_j)
+    caught_s = p * rp_j
+    reviewed = p * rp_i + (1 - p) * rn_i                 # depends on t1 (row)
+    siu = p * rp_j + (1 - p) * rn_j                       # depends on t2 (col)
+    false_holds = (1 - p) * rn_i
+    avoided = (caught_m * means["prevention_effectiveness_manual"]
+               + caught_s * means["prevention_effectiveness_siu"]) * means["fraud_loss_avoided"]
+    cost = (reviewed * means["review_cost"] + siu * means["siu_cost"]
+            + false_holds * means["false_hold_cost"] + means["ai_operation_cost_per_claim"])
+    nv = portfolio * (avoided - cost)
+    feasible = (grid[None, :] >= grid[:, None]) & (reviewed <= k1_max) & (siu <= k2_max)
+    nv = np.where(feasible, nv, -np.inf)
+    if not np.isfinite(nv).any():
+        return None
+    i, j = np.unravel_index(int(np.argmax(nv)), nv.shape)
+    review_rate = float((p * rp[i] + (1 - p) * rn[i]))
+    siu_rate = float((p * rp[j] + (1 - p) * rn[j]))
+    return {"t1": float(grid[i]), "t2": float(grid[j]), "expected_net_value": float(nv[i, j]),
+            "total_review_rate": review_rate, "siu_rate": siu_rate}
+
+
+def bootstrap_operating_point(pos_scores, neg_scores, dists: dict, prevalence: float, portfolio: int,
+                              k1_max: float, k2_max: float, rng: np.random.Generator,
+                              n_boot: int = 300, grid_points: int = 80, inner: int = 20) -> dict:
+    """Resample the validation scores to show how unstable (t1, t2) and net value are
+    given the small validation set, combined with the cost Monte Carlo."""
+    pos = np.asarray(pos_scores, float)
+    neg = np.asarray(neg_scores, float)
+    means = _dist_means(dists)
+    lo = float(min(pos.min(), neg.min()))
+    hi = float(max(pos.max(), neg.max()))
+    grid = np.linspace(lo, hi, grid_points)
+    t1s, t2s, reviews, combined = [], [], [], []
+    for _ in range(n_boot):
+        pb = np.sort(pos[rng.integers(0, len(pos), len(pos))])
+        nb = np.sort(neg[rng.integers(0, len(neg), len(neg))])
+        best = _best_point_grid(pb, nb, means, prevalence, portfolio, k1_max, k2_max, grid)
+        if best is None:
+            continue
+        t1s.append(best["t1"]); t2s.append(best["t2"]); reviews.append(best["total_review_rate"])
+        rates = queue_rates(pos, neg, best["t1"], best["t2"], prevalence)  # score at that point on full sample
+        combined.extend(simulate_net_value(rates, dists, portfolio, rng, inner).tolist())
+    combined = np.asarray(combined)
+    return {
+        "n_boot": len(t1s),
+        "t1": {"median": float(np.median(t1s)), "p5": float(np.quantile(t1s, 0.05)), "p95": float(np.quantile(t1s, 0.95))},
+        "t2": {"median": float(np.median(t2s)), "p5": float(np.quantile(t2s, 0.05)), "p95": float(np.quantile(t2s, 0.95))},
+        "review_rate": {"median": float(np.median(reviews)), "p5": float(np.quantile(reviews, 0.05)), "p95": float(np.quantile(reviews, 0.95))},
+        "net_value": summarize(combined),
+        "_draws": combined,
+        "_t1_samples": np.asarray(t1s),
+    }
+
+
+def fixed_point_regret(pos_scores, neg_scores, dists: dict, t1: float, t2: float,
+                       prevalences, portfolio: int, k1_max: float, k2_max: float) -> list[dict]:
+    """Expected-net-value regret of deploying one fixed (t1, t2) vs re-optimizing per prevalence."""
+    out = []
+    for prevalence in prevalences:
+        fixed_rates = queue_rates(pos_scores, neg_scores, t1, t2, prevalence)
+        fixed_nv = expected_net_value(fixed_rates, dists, portfolio)
+        # The fixed point may exceed capacity at a different prevalence; flag it, since a
+        # negative regret only means the fixed point would breach the K1/K2 caps there.
+        feasible = fixed_rates["total_review_rate"] <= k1_max + 1e-9 and fixed_rates["siu_rate"] <= k2_max + 1e-9
+        oracle = choose_operating_point(pos_scores, neg_scores, dists, prevalence, portfolio, k1_max, k2_max)
+        out.append({"prevalence": float(prevalence), "fixed_net_value": fixed_nv,
+                    "fixed_feasible": bool(feasible),
+                    "oracle_net_value": oracle["expected_net_value"],
+                    "regret": oracle["expected_net_value"] - fixed_nv,
+                    "regret_pct": (oracle["expected_net_value"] - fixed_nv) / oracle["expected_net_value"] if oracle["expected_net_value"] else 0.0})
+    return out
+
+
 def net_value_by_capacity(pos_scores, neg_scores, dists: dict, prevalence: float,
                           portfolio: int, k1_max: float, k2_max: float,
                           rng: np.random.Generator, iterations: int, steps: int = 24) -> list[dict]:

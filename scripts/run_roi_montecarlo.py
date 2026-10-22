@@ -31,7 +31,8 @@ from src.data.common import config
 from src.features.preprocessing import features
 from src.models.train import _pipeline
 from src.simulation.montecarlo_roi import (
-    choose_operating_point, net_value_by_capacity, queue_rates, simulate_net_value, summarize,
+    bootstrap_operating_point, choose_operating_point, fixed_point_regret,
+    net_value_by_capacity, queue_rates, simulate_net_value, summarize,
 )
 
 OUT = ROOT / "reports/business_case"
@@ -135,6 +136,29 @@ def main() -> int:
     axis.grid(alpha=0.2); axis.legend(fontsize=8)
     fig.tight_layout(); fig.savefig(OUT / "roi_net_value_distribution.png", dpi=180); plt.close(fig)
 
+    # Sampling uncertainty from the 140-row validation set (bootstrap), combined with cost MC.
+    boot = bootstrap_operating_point(pos, neg, dists, base, portfolio, k1, k2, np.random.default_rng(seed))
+    fig, axis = plt.subplots(figsize=(7.5, 4.2))
+    axis.hist(boot["_draws"] / MILLION, bins=50, color="#5b8ff9", alpha=0.75)
+    axis.axvline(boot["net_value"]["mean"] / MILLION, color="#1a1a1a", linewidth=1.5,
+                 label=f"Mean = {boot['net_value']['mean']/MILLION:.0f} triệu")
+    axis.axvline(0, color="#c0504d", linewidth=1, linestyle="--", label=f"P(NV>0) = {boot['net_value']['prob_positive']:.2f}")
+    axis.set(xlabel="Giá trị ròng (triệu VND / 10.000 hồ sơ)", ylabel="Số lần mô phỏng",
+             title=f"GTR gộp bất định chi phí + lấy mẫu val_fs · prevalence {int(base*100)}%")
+    axis.grid(alpha=0.2); axis.legend(fontsize=8)
+    fig.tight_layout(); fig.savefig(OUT / "roi_sampling_bootstrap.png", dpi=180); plt.close(fig)
+
+    # Regret of deploying one fixed operating point (chosen at base prevalence) across scenarios.
+    regret = fixed_point_regret(pos, neg, dists, best["t1"], best["t2"], scenarios, portfolio, k1, k2)
+    fig, axis = plt.subplots(figsize=(7.5, 4.2))
+    x = np.arange(len(regret)); width = 0.38
+    axis.bar(x - width / 2, [r["oracle_net_value"] / MILLION for r in regret], width, label="Tối ưu theo prevalence", color="#1f6f54", alpha=0.85)
+    axis.bar(x + width / 2, [r["fixed_net_value"] / MILLION for r in regret], width, label=f"Điểm cố định (t1={best['t1']:.2f}, t2={best['t2']:.2f})", color="#9bbcab", alpha=0.95)
+    axis.set_xticks(x); axis.set_xticklabels([f"{int(r['prevalence']*100)}%" for r in regret])
+    axis.set(xlabel="Prevalence", ylabel="Giá trị ròng kỳ vọng (triệu VND)", title="Regret của operating point cố định")
+    axis.grid(alpha=0.2, axis="y"); axis.legend(fontsize=8)
+    fig.tight_layout(); fig.savefig(OUT / "roi_fixed_point_regret.png", dpi=180); plt.close(fig)
+
     report = {
         "status": cfg["status"],
         "currency": cfg["currency"],
@@ -145,6 +169,8 @@ def main() -> int:
         "scenarios": results,
         "base_prevalence": base,
         "capacity_sensitivity": sensitivity,
+        "sampling_bootstrap": {k: v for k, v in boot.items() if not k.startswith("_")},
+        "fixed_point_regret": regret,
         "caveat": "Scenario conditioned on placeholder cost distributions; not a measured business outcome. Confirm real costs before use.",
     }
     (OUT / "roi_montecarlo.json").write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -159,6 +185,14 @@ def main() -> int:
                        "review_rate": round(s["total_review_rate"], 4), "siu_rate": round(s["siu_rate"], 4),
                        "mean_net_value_million": round(s["net_value_vnd"]["mean"] / MILLION, 1)}
                       for s in sensitivity], ensure_ascii=False, indent=2))
+    print("sampling_bootstrap (prevalence %d%%, n_boot=%d):" % (int(base * 100), boot["n_boot"]))
+    print(json.dumps({"t1_p5_med_p95": [round(boot["t1"]["p5"], 3), round(boot["t1"]["median"], 3), round(boot["t1"]["p95"], 3)],
+                      "review_rate_p5_med_p95": [round(boot["review_rate"]["p5"], 3), round(boot["review_rate"]["median"], 3), round(boot["review_rate"]["p95"], 3)],
+                      "net_value_million": {"p5": round(boot["net_value"]["p5"] / MILLION, 0), "mean": round(boot["net_value"]["mean"] / MILLION, 0), "p95": round(boot["net_value"]["p95"] / MILLION, 0), "prob_positive": round(boot["net_value"]["prob_positive"], 3)}}, ensure_ascii=False, indent=2))
+    print("fixed_point_regret:")
+    print(json.dumps([{"prevalence": r["prevalence"], "fixed_million": round(r["fixed_net_value"] / MILLION, 1),
+                       "oracle_million": round(r["oracle_net_value"] / MILLION, 1), "regret_pct": round(r["regret_pct"] * 100, 1)}
+                      for r in regret], ensure_ascii=False, indent=2))
     return 0
 
 

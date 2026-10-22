@@ -59,6 +59,33 @@ Trung vị 4.964 triệu, trung bình 6.032 triệu, khoảng [p5; p95] = [1.126
 
 ![Phân phối giá trị ròng tại operating point](roi_net_value_distribution.png)
 
+## 4b. Bất định do mẫu val_fs (bootstrap 300 lần)
+
+val_fs chỉ 140 hồ sơ, nên operating point và giá trị ròng còn chịu bất định lấy mẫu. Lấy lại mẫu điểm theo lớp 300 lần, mỗi lần tìm lại operating point, rồi gộp với Monte Carlo chi phí:
+
+| Đại lượng | p5 | trung vị | p95 |
+|---|---:|---:|---:|
+| t1 | 0,324 | 0,501 | 0,553 |
+| % review | 13,7% | 18,5% | 19,9% |
+
+Giá trị ròng gộp cả bất định chi phí + lấy mẫu: p5 852, trung bình 6.040, p95 14.902 triệu VND; P(GTR>0) = 0,988 (thấp hơn chút so với khi chỉ tính bất định chi phí, do thêm nhiễu từ tập nhỏ). Kết luận: hướng giá trị dương khá vững, nhưng **t1 chính xác chưa chốt được chắc với 140 dòng** - cần tập lớn hơn để thu hẹp.
+
+![Giá trị ròng gộp bất định chi phí và lấy mẫu](roi_sampling_bootstrap.png)
+
+## 4c. Regret của một operating point cố định
+
+Thực tế chỉ deploy một cặp (t1, t2). Lấy điểm tối ưu ở prevalence nền 7% rồi áp sang các prevalence khác, so với việc tối ưu lại theo từng prevalence:
+
+| Prevalence | GTR điểm cố định (triệu) | GTR tối ưu riêng (triệu) | Regret |
+|---|---:|---:|---:|
+| 5% | 3.944 | 4.282 | 7,9% |
+| 7% | 6.011 | 6.011 | 0,0% |
+| 10% | 9.113 | 9.310 | 2,1% |
+
+Regret nhỏ (≤ 8%) → một operating point cố định chọn ở 7% vẫn bền khi prevalence dao động 5-10%, không cần đổi ngưỡng liên tục.
+
+![Regret của operating point cố định](roi_fixed_point_regret.png)
+
 ## 5. Giới hạn
 
 1. **Giả định placeholder:** chưa phải chi phí thật; chờ Thanh Vy chốt số có nguồn.
