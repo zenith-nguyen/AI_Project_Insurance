@@ -1,0 +1,170 @@
+{
+  "status": "placeholder_unverified",
+  "currency": "VND",
+  "portfolio_claims": 10000,
+  "constraints": {
+    "K1_max_total_review_rate": 0.2,
+    "K2_max_siu_rate": 0.05
+  },
+  "monte_carlo": {
+    "iterations": 5000,
+    "seed": 20261022
+  },
+  "scoring_model": "B2 XGBoost on feature_selection_v1/val_fs",
+  "scenarios": {
+    "prevalence_0.05": {
+      "operating_point": {
+        "t1": 0.425502118918131,
+        "t2": 0.7722218694551936
+      },
+      "total_review_rate": 0.19428571428571428,
+      "siu_rate": 0.005714285714285714,
+      "fraud_recall_review_queue": 0.6285714285714286,
+      "net_value_vnd": {
+        "mean": 4300972270.028834,
+        "median": 3482198051.3104496,
+        "p5": 435661133.71872866,
+        "p95": 10840243803.497522,
+        "prob_positive": 0.9788
+      }
+    },
+    "prevalence_0.07": {
+      "operating_point": {
+        "t1": 0.4979510220154276,
+        "t2": 0.7722218694551936
+      },
+      "total_review_rate": 0.18171428571428572,
+      "siu_rate": 0.008,
+      "fraud_recall_review_queue": 0.5714285714285714,
+      "net_value_vnd": {
+        "mean": 6032389575.430364,
+        "median": 4964036338.634871,
+        "p5": 1125771150.2842634,
+        "p95": 14380930289.694803,
+        "prob_positive": 0.9964
+      }
+    },
+    "prevalence_0.1": {
+      "operating_point": {
+        "t1": 0.4979510220154276,
+        "t2": 0.6894231230582831
+      },
+      "total_review_rate": 0.19428571428571428,
+      "siu_rate": 0.04,
+      "fraud_recall_review_queue": 0.5714285714285714,
+      "net_value_vnd": {
+        "mean": 9337575785.745056,
+        "median": 7775547830.8995075,
+        "p5": 1882914660.4785373,
+        "p95": 21654357932.91864,
+        "prob_positive": 0.9944
+      }
+    }
+  },
+  "base_prevalence": 0.07,
+  "capacity_sensitivity": [
+    {
+      "name": "conservative",
+      "K1": 0.15,
+      "K2": 0.03,
+      "t1": 0.5445253168636898,
+      "t2": 0.7722218694551936,
+      "total_review_rate": 0.13142857142857142,
+      "siu_rate": 0.008,
+      "fraud_recall_review": 0.4857142857142857,
+      "net_value_vnd": {
+        "mean": 5365846586.890926,
+        "median": 4461125745.62439,
+        "p5": 1178194864.1752295,
+        "p95": 12454145015.344328,
+        "prob_positive": 0.9978
+      }
+    },
+    {
+      "name": "base",
+      "K1": 0.2,
+      "K2": 0.05,
+      "t1": 0.4979510220154276,
+      "t2": 0.7722218694551936,
+      "total_review_rate": 0.18171428571428572,
+      "siu_rate": 0.008,
+      "fraud_recall_review": 0.5714285714285714,
+      "net_value_vnd": {
+        "mean": 6032389575.430364,
+        "median": 4964036338.634871,
+        "p5": 1125771150.2842634,
+        "p95": 14380930289.694803,
+        "prob_positive": 0.9964
+      }
+    },
+    {
+      "name": "aggressive",
+      "K1": 0.25,
+      "K2": 0.05,
+      "t1": 0.3634030591204481,
+      "t2": 0.7722218694551936,
+      "total_review_rate": 0.24285714285714285,
+      "siu_rate": 0.008,
+      "fraud_recall_review": 0.6857142857142857,
+      "net_value_vnd": {
+        "mean": 6966405032.959447,
+        "median": 5701882951.534807,
+        "p5": 1125753404.3738606,
+        "p95": 16886217219.763702,
+        "prob_positive": 0.9934
+      }
+    }
+  ],
+  "sampling_bootstrap": {
+    "n_boot": 300,
+    "t1": {
+      "median": 0.5009642675330368,
+      "p5": 0.32390334070483345,
+      "p95": 0.5530410107178024
+    },
+    "t2": {
+      "median": 0.7301019375460058,
+      "p5": 0.6780251943612401,
+      "p95": 0.7717633320938183
+    },
+    "review_rate": {
+      "median": 0.18457142857142858,
+      "p5": 0.13732857142857144,
+      "p95": 0.1985714285714286
+    },
+    "net_value": {
+      "mean": 6040290562.266268,
+      "median": 4978417310.023816,
+      "p5": 852452044.9308474,
+      "p95": 14901838598.087347,
+      "prob_positive": 0.9883333333333333
+    }
+  },
+  "fixed_point_regret": [
+    {
+      "prevalence": 0.05,
+      "fixed_net_value": 3943996349.2737536,
+      "fixed_feasible": true,
+      "oracle_net_value": 4282411601.805133,
+      "regret": 338415252.5313792,
+      "regret_pct": 0.07902445724477525
+    },
+    {
+      "prevalence": 0.07,
+      "fixed_net_value": 6011429108.819438,
+      "fixed_feasible": true,
+      "oracle_net_value": 6011429108.819438,
+      "regret": 0.0,
+      "regret_pct": 0.0
+    },
+    {
+      "prevalence": 0.1,
+      "fixed_net_value": 9112578248.137966,
+      "fixed_feasible": true,
+      "oracle_net_value": 9310071873.85599,
+      "regret": 197493625.7180233,
+      "regret_pct": 0.021212900221813925
+    }
+  ],
+  "caveat": "Scenario conditioned on placeholder cost distributions; not a measured business outcome. Confirm real costs before use."
+}
