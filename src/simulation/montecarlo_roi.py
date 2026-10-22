@@ -141,6 +141,44 @@ def choose_operating_point(pos_scores, neg_scores, dists: dict, prevalence: floa
     return best
 
 
+def recall_shift_binormal(recall_test: float, prevalence_test: float, prevalence_target: float, k: float = 0.10) -> float:
+    """Convert a Recall@k measured at one prevalence to another via an equal-variance
+    binormal model (group B ~ N(d, 1), group A ~ N(0, 1)).
+
+    Reproduces Thanh Vy's worked example: a test Recall@10% of 0.224 at p=0.245 maps to
+    ~0.285 at p=0.07. Do NOT infer d from ROC-AUC; fit it to the observed head-of-list
+    recall instead. Recall is capped at min(1, k/prevalence).
+    """
+    import math
+
+    def sf(x):
+        return 0.5 * math.erfc(x / math.sqrt(2))
+
+    def tau(d, p):
+        lo, hi = -12.0, 12.0
+        for _ in range(100):
+            mid = (lo + hi) / 2
+            if p * sf(mid - d) + (1 - p) * sf(mid) - k > 0:
+                lo = mid
+            else:
+                hi = mid
+        return (lo + hi) / 2
+
+    def recall(d, p):
+        return sf(tau(d, p) - d)
+
+    target = min(max(recall_test, 1e-6), min(1.0, k / prevalence_test) - 1e-9)
+    lo, hi = 0.0, 8.0
+    for _ in range(100):
+        mid = (lo + hi) / 2
+        if recall(mid, prevalence_test) < target:
+            lo = mid
+        else:
+            hi = mid
+    d = (lo + hi) / 2
+    return min(recall(d, prevalence_target), min(1.0, k / prevalence_target))
+
+
 def _dist_means(dists: dict) -> dict:
     return {key: mean_param(spec) for key, spec in dists.items()}
 

@@ -3,7 +3,8 @@ import pytest
 
 from src.simulation.montecarlo_roi import (
     bootstrap_operating_point, choose_operating_point, expected_net_value,
-    fixed_point_regret, mean_param, queue_rates, sample_param, simulate_net_value,
+    fixed_point_regret, mean_param, queue_rates, recall_shift_binormal,
+    sample_param, simulate_net_value,
 )
 
 DISTS = {
@@ -67,6 +68,16 @@ def test_bootstrap_operating_point_within_caps():
     assert boot["n_boot"] > 0
     assert boot["review_rate"]["p95"] <= 0.20 + 1e-9
     assert set(boot["net_value"]) >= {"mean", "p5", "p95", "prob_positive"}
+
+
+def test_recall_shift_binormal_matches_worked_example():
+    # Thanh Vy: Recall@10% 0.224 at p=0.245 maps to ~0.286 at p=0.07.
+    shifted = recall_shift_binormal(0.224, 0.245, 0.07, k=0.10)
+    assert shifted == pytest.approx(0.286, abs=0.01)
+    # Identity when prevalence is unchanged.
+    assert recall_shift_binormal(0.20, 0.10, 0.10, k=0.10) == pytest.approx(0.20, abs=1e-3)
+    # Capped at k/prevalence.
+    assert recall_shift_binormal(0.40, 0.245, 0.245, k=0.10) <= 0.10 / 0.245 + 1e-9
 
 
 def test_sample_param_shapes_and_ranges():
