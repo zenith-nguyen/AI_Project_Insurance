@@ -24,6 +24,14 @@ Trên frozen test `dataset_v2/test.parquet` (200 hồ sơ), xác suất hiệu c
 - Chỉ tầng **XGBoost** ở ONNX; **preprocess vẫn là sklearn** (nhẹ). Lý do: skl2onnx hiện chưa convert được `SimpleImputer` giá trị thiếu kiểu float trên cột chữ, nên chưa gộp cả pipeline vào một đồ thị ONNX. Đây là việc còn lại.
 - Model `tabular_v1` giữ nhóm proxy (`insured_hobbies`...), trong khi chính sách bias hiện tại loại chúng ở `features()`; script tự thêm lại cột proxy từ raw cho khớp bundle. Nếu đổi sang bundle `tabular_bias_excluded_v1`, xuất lại ONNX tương ứng.
 
+## Quyết định (PIC, 26/10)
+
+Hai mục backlog của Task 6 được chốt như sau:
+
+- **Export ONNX cho model bảng: LÀM — đã xong** (tài liệu này). Tầng XGBoost (phần nặng) chạy onnxruntime trên CPU, parity 2,4e-07. Đạt yêu cầu "có thể export ONNX để chạy CPU".
+- **Gộp cả preprocess vào ONNX: HOÃN (backlog có lý do).** Khả thi về kỹ thuật (categorical imputer là `constant`='__UNKNOWN__', có thể tiền-điền chuỗi ngoài ONNX rồi onehot+numeric+xgboost trong ONNX), nhưng phải lách giới hạn skl2onnx với imputer chuỗi, đổi lại lợi ích rất nhỏ vì preprocess sklearn đã nhẹ, và thêm rủi ro lệch parity. Không xứng công ở giai đoạn đồ án.
+- **Tách microservices: HOÃN (backlog có lý do).** Monolith + module adapters + endpoint `/verify` kiểu gateway đang chạy tốt. Tách thành nhiều service + gateway là thay đổi kiến trúc lớn, tăng bề mặt triển khai và rủi ro, gần như không thêm giá trị học thuật. Giữ như backlog kèm điều kiện nghiệm thu (đã nêu trong `reports/final/06_OPERATIONALIZATION_PHASE6.md`).
+
 ## Tái lập
 
 ```bash
