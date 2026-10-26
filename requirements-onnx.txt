@@ -1,0 +1,7 @@
+# ONNX export + CPU inference for the tabular risk model (Phase 6).
+# Inference at runtime only needs onnxruntime (+ numpy, scikit-learn for preprocess).
+onnxruntime==1.31.0
+# Export/conversion only (building artifacts with scripts/export_tabular_onnx.py):
+onnx==1.23.2
+skl2onnx==1.20.0
+onnxmltools==1.16.0

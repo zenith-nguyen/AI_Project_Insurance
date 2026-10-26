@@ -5,6 +5,9 @@ services:
       dockerfile: Dockerfile.api
     environment:
       INSURANCE_API_MODE: fixture
+      INSURANCE_VERIFY_LOG: /app/runtime/audit/verify.jsonl
+    volumes:
+      - verify-runtime:/app/runtime
     ports:
       - "8000:8000"
     healthcheck:
@@ -17,3 +20,16 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+  monitor:
+    profiles: [monitor]
+    build:
+      context: .
+      dockerfile: Dockerfile.monitor
+    environment:
+      INSURANCE_VERIFY_LOG: /app/runtime/audit/verify.jsonl
+    volumes:
+      - verify-runtime:/app/runtime:ro
+    ports:
+      - "127.0.0.1:8501:8501"
+volumes:
+  verify-runtime:

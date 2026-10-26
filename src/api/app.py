@@ -2,9 +2,13 @@
 from __future__ import annotations
 
 import os
+import json
+import logging
+import time
 from pathlib import Path
+from uuid import uuid4
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
 
 from src.registry import load_registry
@@ -12,8 +16,10 @@ from src.baselines.registry import load_baseline_registry
 from src.document.policy import DocumentPolicyRegistry
 
 from .jobs import AnalysisJobManager
-from .schemas import AnalysisJobRecord, AnalyzeRequest, CaptureSessionRecord, ClaimAnalysis, ClaimIntakeRecord, ClaimIntakeRequest, CorrectionRecord, CorrectionRequest, EvidenceUploadRecord, HealthResponse, MediaAuthenticityReport, ReviewRecord, ReviewRequest
+from .schemas import AnalysisJobRecord, AnalyzeRequest, CaptureSessionRecord, ClaimAnalysis, ClaimIntakeRecord, ClaimIntakeRequest, CorrectionRecord, CorrectionRequest, EvidenceUploadRecord, HealthResponse, MediaAuthenticityReport, ReviewRecord, ReviewRequest, VerifyRequest, VerifyResponse
 from .service import FixtureClaimService
+from .verify import route_analysis
+from .operations_log import VerificationLog
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -35,12 +41,41 @@ elif MODE == "live":
 else:
     raise RuntimeError("INSURANCE_API_MODE must be 'fixture' or 'live'.")
 JOBS = AnalysisJobManager(SERVICE)
+VERIFY_LOG = VerificationLog(os.getenv("INSURANCE_VERIFY_LOG", str(ROOT / "runtime/audit/verify.jsonl")))
 
 app = FastAPI(
     title="Insurance Claim Review API",
     version=REGISTRY.product_version,
     description="Human-in-the-loop research API. Outputs are decision support, not automatic fraud decisions.",
 )
+
+ACCESS_LOG = logging.getLogger("insurance.api.access")
+if not ACCESS_LOG.handlers:
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter("%(message)s"))
+    ACCESS_LOG.addHandler(handler)
+ACCESS_LOG.setLevel(logging.INFO)
+ACCESS_LOG.propagate = False
+
+
+@app.middleware("http")
+async def json_request_log(request: Request, call_next):
+    """Log request metadata only; never log evidence, feature values or request body."""
+    trace_id = uuid4().hex
+    started = time.monotonic()
+    status = 500
+    try:
+        response = await call_next(request)
+        status = response.status_code
+        response.headers["X-Trace-ID"] = trace_id
+        return response
+    finally:
+        ACCESS_LOG.info(json.dumps({
+            "event": "http_request", "trace_id": trace_id,
+            "method": request.method,
+            "route": request.scope.get("route").path if request.scope.get("route") else "unmatched",
+            "status": status, "duration_ms": round((time.monotonic() - started) * 1000, 1),
+        }, ensure_ascii=False))
 
 
 def _ui_file(name: str, media_type: str | None = None) -> FileResponse:
@@ -257,6 +292,20 @@ def evidence_content(claim_id: str, evidence_id: str) -> FileResponse:
 def analyze(claim_id: str, request: AnalyzeRequest) -> ClaimAnalysis:
     try:
         return SERVICE.analyze(claim_id, request)
+    except KeyError as error:
+        raise HTTPException(status_code=404, detail="Claim is not available in the configured claim store.") from error
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+
+
+@app.post("/verify", response_model=VerifyResponse)
+def verify(request: VerifyRequest) -> VerifyResponse:
+    """Return a research routing suggestion; never authorize payout or deny a claim."""
+    started = time.monotonic()
+    try:
+        result = route_analysis(SERVICE.analyze(request.claim_id, request.analyze))
+        VERIFY_LOG.append(result, (time.monotonic() - started) * 1000)
+        return result
     except KeyError as error:
         raise HTTPException(status_code=404, detail="Claim is not available in the configured claim store.") from error
     except ValueError as error:
