@@ -1,4 +1,51 @@
-# Motor insurance claim fraud risk research
+# Hệ thống hỗ trợ rà soát hồ sơ bồi thường bảo hiểm xe (Claim Review Workbench)
+
+<!-- Nếu đề cương có tên đề tài chính thức khác, thay dòng tiêu đề trên. -->
+
+> Đồ án môn AI · Nhóm 3 · Đại học Kinh tế TP.HCM (UEH)
+
+Hệ thống nhận một hồ sơ bồi thường xe, gom ảnh xe, chứng từ và dữ liệu liên quan dưới cùng một `claim_id`, chạy các model local (dữ liệu bảng, ảnh hư hỏng, chứng từ, quan hệ), giải thích dấu hiệu cần kiểm tra và lưu quyết định của người duyệt. Hệ thống **chỉ hỗ trợ xếp hàng ưu tiên và nêu bằng chứng; không tự kết luận gian lận, không tự từ chối bồi thường.** Mọi quyết định cuối do con người.
+
+## Thành viên và phân công
+
+| Thành viên | Vai trò chính |
+|---|---|
+| Anh Thư | Điều phối tiến độ, README & Repository, trang nhóm |
+| Huy Nhật | Dữ liệu và kỹ thuật, Business Case/ROI, Phase 6 (hỗ trợ), export ONNX |
+| Tú Anh | Đánh giá và quản trị AI, Data Audit, Fairness/Go-NoGo, Risk Register, System Card, Operationalization |
+| Thanh Vy | Giả định nghiệp vụ và chi phí, Project Charter, AI Canvas |
+| Nhật Quyên | Giao diện và trải nghiệm người duyệt |
+
+## Liên kết
+
+- **Repository:** https://github.com/zenith-nguyen/AI_Project_Insurance
+- **Trang nhóm (Notion/Website):** _(cập nhật sau)_
+
+## Chạy demo nhanh (Docker, fixture, không cần model/GPU/dữ liệu thật)
+
+```bash
+git clone https://github.com/zenith-nguyen/AI_Project_Insurance.git
+cd AI_Project_Insurance
+python scripts/handoff.py up    # macOS: python3
+```
+
+Mở `http://127.0.0.1:8000/` (Dashboard/Intake/Workbench) và `http://127.0.0.1:8000/docs` (Swagger). Thử cổng gợi ý xử lý:
+
+```bash
+curl -X POST http://127.0.0.1:8000/verify -H 'Content-Type: application/json' -d '{"claim_id":"CLM-DEMO"}'
+```
+
+Chạy model thật trên CPU, backend ONNX tùy chọn, dashboard giám sát và cấu trúc thư mục đầy đủ: xem `docs/final_handoff/` và `docs/handbook/`.
+
+## Giới hạn
+
+Đây là **nguyên mẫu nghiên cứu học thuật**, chưa phải hệ thống vận hành. Dữ liệu là public/tổng hợp, nhãn chưa kiểm chứng độc lập, chưa đánh giá trên hồ sơ bảo hiểm thật. Điểm rủi ro là ưu tiên rà soát, không phải xác suất gian lận.
+
+---
+
+## Chi tiết kỹ thuật (research)
+
+### Motor insurance claim fraud risk research
 
 This repository reproduces a **tabular research baseline** for the UEH CPMAI project. It scores claims for human review; a score is not evidence of fraud and must never automatically reject a claim. CarDD images and CORD documents are separate, unlinked sources and are not fused with the Kaggle rows.
 
