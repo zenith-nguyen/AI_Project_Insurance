@@ -15,12 +15,18 @@ data/**/*.zip
 data/**/*.json
 !data/**/.gitkeep
 !data/golden/claims/**/*.json
+# Demo/runtime outputs under golden claims (fixtures use expected_analysis.json, not analysis.json)
+data/golden/claims/*/analysis.json
+data/golden/claims/CLM-2026*/
 artifacts/
 reports/metrics/*.json
 reports/metrics/*.csv
 reports/figures/*
 reports/leakage/*.csv
 reports/leakage/*.md
+# Stray local preview/screenshot artifacts
+reports/*_preview.png
+prototype/insurance_review_console_v2_live.png
 .env
 *.log
 # Runtime audit records contain reviewer input and stay outside source control.
