@@ -1,0 +1,11 @@
+# Export and local CPU parity check for the trained tabular XGBoost component.
+numpy>=1.26,<3
+pandas>=2.2,<4
+scipy>=1.13,<2
+scikit-learn>=1.5,<2
+joblib>=1.4,<2
+PyYAML>=6,<7
+pyarrow>=17,<26
+xgboost>=2,<4
+onnxmltools>=1.16,<2
+onnxruntime>=1.20,<2

@@ -156,6 +156,26 @@ class ClaimAnalysis(BaseModel):
     warnings: list[str] = Field(default_factory=list)
 
 
+class VerifyRequest(BaseModel):
+    claim_id: str = Field(min_length=1)
+    analyze: AnalyzeRequest = Field(default_factory=AnalyzeRequest)
+
+
+class VerifyResponse(BaseModel):
+    claim_id: str
+    trace_id: str
+    mode: Literal["fixture", "live"]
+    action: Literal["STP", "SUPPLEMENT", "SIU"]
+    reasons: list[str]
+    research_risk_score: float | None = Field(default=None, ge=0, le=1)
+    risk_score: float | None = Field(default=None, ge=0, le=1)
+    risk_score_is_probability: bool = False
+    model_version: str | None = None
+    evidence_refs: list[str] = Field(default_factory=list)
+    analysis_status: Literal["complete", "partial", "blocked"]
+    human_review_required: bool = True
+
+
 class ReviewRequest(BaseModel):
     reviewer_id: str = Field(min_length=2)
     decision: Literal["continue_processing", "request_evidence", "special_review"]

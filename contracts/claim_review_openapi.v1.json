@@ -451,6 +451,45 @@
         }
       }
     },
+    "/verify": {
+      "post": {
+        "summary": "Verify",
+        "description": "Return a research routing suggestion; never authorize payout or deny a claim.",
+        "operationId": "verify_verify_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifyResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/claims/{claim_id}/analysis-jobs": {
       "post": {
         "summary": "Start Analysis Job",
@@ -2056,6 +2095,132 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "VerifyRequest": {
+        "properties": {
+          "claim_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Claim Id"
+          },
+          "analyze": {
+            "$ref": "#/components/schemas/AnalyzeRequest"
+          }
+        },
+        "type": "object",
+        "required": [
+          "claim_id"
+        ],
+        "title": "VerifyRequest"
+      },
+      "VerifyResponse": {
+        "properties": {
+          "claim_id": {
+            "type": "string",
+            "title": "Claim Id"
+          },
+          "trace_id": {
+            "type": "string",
+            "title": "Trace Id"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "fixture",
+              "live"
+            ],
+            "title": "Mode"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "STP",
+              "SUPPLEMENT",
+              "SIU"
+            ],
+            "title": "Action"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Reasons"
+          },
+          "research_risk_score": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Research Risk Score"
+          },
+          "risk_score": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Score"
+          },
+          "risk_score_is_probability": {
+            "type": "boolean",
+            "title": "Risk Score Is Probability",
+            "default": false
+          },
+          "model_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Version"
+          },
+          "evidence_refs": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Evidence Refs"
+          },
+          "analysis_status": {
+            "type": "string",
+            "enum": [
+              "complete",
+              "partial",
+              "blocked"
+            ],
+            "title": "Analysis Status"
+          },
+          "human_review_required": {
+            "type": "boolean",
+            "title": "Human Review Required",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "claim_id",
+          "trace_id",
+          "mode",
+          "action",
+          "reasons",
+          "analysis_status"
+        ],
+        "title": "VerifyResponse"
       }
     }
   }
