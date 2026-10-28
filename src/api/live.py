@@ -99,13 +99,18 @@ class ClaimRepository:
 
 
 class TabularRiskAdapter:
-    def __init__(self, artifact: str | Path) -> None:
+    def __init__(self, artifact: str | Path, onnx_dir: str | Path | None = None) -> None:
         import joblib
 
         self.artifact = Path(artifact)
         if not self.artifact.is_file():
             raise FileNotFoundError(self.artifact)
         self.bundle = joblib.load(self.artifact)
+        self.onnx = None
+        if onnx_dir:
+            from src.models.onnx_tabular import OnnxTabularEstimator
+
+            self.onnx = OnnxTabularEstimator(onnx_dir, self.artifact)
 
     @staticmethod
     def _business_group(feature: str) -> str:
@@ -146,7 +151,11 @@ class TabularRiskAdapter:
         missing = input_summary["missing_fields"]
         if missing:
             raise ValueError(f"Golden claim is missing model features: {missing}")
-        raw = np.clip(self.bundle["model"].predict_proba(x[expected])[:, 1], 1e-6, 1 - 1e-6)
+        if self.onnx is None:
+            raw = self.bundle["model"].predict_proba(x[expected])[:, 1]
+        else:
+            raw = self.onnx.predict_raw(self.bundle["model"].named_steps["preprocess"], x[expected])
+        raw = np.clip(raw, 1e-6, 1 - 1e-6)
         score = float(self.bundle["calibrator"].predict_proba(np.log(raw / (1 - raw)).reshape(-1, 1))[0, 1])
         thresholds = self.bundle["thresholds"]
         queue = "high" if score >= thresholds["t2"] else ("review" if score >= thresholds["t1"] else "normal")
@@ -190,7 +199,7 @@ class LiveClaimService:
         risk_artifact = root / risk.artifact_uri
         if sha256(risk_artifact) != risk.artifact_hash:
             raise RuntimeError("Registered XGBoost artifact hash does not match the local bundle.")
-        self.risk = TabularRiskAdapter(risk_artifact)
+        self.risk = TabularRiskAdapter(risk_artifact, onnx_dir=os.getenv("INSURANCE_TABULAR_ONNX_DIR"))
         forensic_runner = None
         forensic_checkpoint = os.getenv("INSURANCE_FORENSIC_CHECKPOINT")
         forensic_calibration = os.getenv("INSURANCE_FORENSIC_CALIBRATION")
