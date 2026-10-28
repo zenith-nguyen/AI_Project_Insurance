@@ -21,6 +21,7 @@ Người dùng nghiệp vụ không nhập JSON feature. Hệ thống nghiệp v
 | `POST /claims/{claim_id}/corrections` | Lưu field người duyệt đã sửa |
 | `POST /claims/{claim_id}/review` | Lưu hướng xử lý và lý do |
 | `GET /claims/{claim_id}/events` | Đọc lại lịch sử truy vết |
+| `POST /verify` | Cổng gợi ý hướng xử lý: trả `risk_score`, `action` (STP/SUPPLEMENT/SIU) và danh sách lý do; luôn `human_review_required=true` |
 | `GET /claims` | Hàng đợi dashboard |
 | `GET /readiness` | Module nào thực sự sẵn sàng |
 | `GET /system/model-evidence` | Version, metric, split và hash model |
@@ -62,6 +63,14 @@ Không tự retry upload vì có thể tạo evidence trùng. Khi job chạy lâ
 - `module_status`: nguồn sự thật để UI nói model đã chạy, bị thiếu input, thiếu artifact hay lỗi.
 - `warnings`: phải hiển thị cho người duyệt; không được bỏ qua để tạo giao diện “đẹp”.
 
+## Phase 6: cổng /verify, backend ONNX CPU và giám sát (bổ sung sau 20/10)
+
+- **`POST /verify`** là cổng một-lần: nhận `claim_id`, chạy chính luồng phân tích hiện có, rồi **gợi ý một hướng xử lý**: `STP` (tiếp tục xử lý thông thường dưới giám sát), `SUPPLEMENT` (bổ sung/đối chiếu), hoặc `SIU` (chuyển rà soát chuyên sâu). Phản hồi kèm `reasons`, `risk_score`, `model_version`, `trace_id`, `mode`, và **luôn** `human_review_required=true`, `risk_score_is_probability=false`. Hồ sơ thiếu điểm/thiếu bằng chứng luôn về `SUPPLEMENT`, không bao giờ coi là rủi ro thấp. Chế độ fixture ghi rõ đây là kết quả demo. **Cổng này không ra lệnh chi trả hay từ chối bồi thường.**
+- **Backend ONNX cho CPU (tùy chọn)**: tầng XGBoost có thể chạy bằng onnxruntime để nhẹ hơn trên CPU. Bật bằng biến `INSURANCE_TABULAR_ONNX_DIR` trỏ tới thư mục ONNX đã export. Artifact được **khóa bằng hash** (SHA-256) và chỉ nạp khi khớp manifest; nếu không set thì hệ thống dùng model gốc. Export + kiểm tra parity bằng `scripts/export_tabular_onnx.py` (cổng parity cố định mẫu; sai khác điểm đã kiểm ~2e-07, không lệch hàng đợi). Preprocess và calibration vẫn giữ nguyên trong bundle gốc.
+- **Nhật ký vận hành**: mỗi lượt `/verify` ghi JSONL theo `claim_id` (action, mode, model_version, độ trễ) tại `runtime/audit/verify.jsonl`, không ghi dữ liệu cá nhân hay giá trị feature.
+- **Dashboard giám sát (tùy chọn)**: `prototype/monitor_dashboard.py` (Streamlit) đọc log, hiển thị tỷ lệ STP/SUPPLEMENT/SIU và độ trễ p95, chỉ bind 127.0.0.1. Chạy qua `docker compose --profile monitor up --build` (cổng 8501).
+- **CI**: `.github/workflows/api-research.yml` chạy lint + test hợp đồng API + smoke Docker `/verify`, và một job riêng kiểm tra export ONNX parity.
+
 ## Tích hợp model local
 
 Model registry là `configs/model_registry.v1.yaml`. Mỗi module phải có version, task, artifact URI, hash/revision, metric, evaluation split, evidence report và status. Server chỉ bật adapter khi artifact/dependency đúng yêu cầu.
@@ -83,6 +92,7 @@ INSURANCE_LAYOUTLM_CHECKPOINT=<checkpoint-264 directory>
 INSURANCE_OCR_LANG=vi
 INSURANCE_OCR_PROFILE=robust
 INSURANCE_PRELOAD_MODELS=1
+INSURANCE_TABULAR_ONNX_DIR=<thư mục ONNX đã export>   # tùy chọn, chạy tầng XGBoost bằng onnxruntime trên CPU
 ```
 
 Windows integration machine có thể dùng `scripts/setup_live.ps1` và `scripts/run_live.ps1`. Với macOS, nên dùng máy Mac cho UI/API fixture; full multimodal live phải tạo Python 3.12 environment riêng, cài từng dependency theo wheel tương thích kiến trúc và chạy readiness/golden smoke. Không copy `.venv` giữa Windows, Intel Mac và Apple Silicon.

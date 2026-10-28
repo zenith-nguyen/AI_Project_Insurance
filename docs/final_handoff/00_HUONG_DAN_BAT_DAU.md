@@ -4,6 +4,8 @@
 
 **Claim Review Workbench** nhận một hồ sơ bồi thường, gom ảnh xe, chứng từ và dữ liệu liên quan dưới cùng `claim_id`, chạy các module local đang sẵn sàng, giải thích điều cần kiểm tra và lưu quyết định của người duyệt. Hệ thống hỗ trợ xếp hàng và kiểm tra bằng chứng; không tự kết luận gian lận hoặc tự từ chối bồi thường.
 
+> **Cập nhật so với bản 20/10 (Phase 6):** thêm cổng gợi ý xử lý `POST /verify` (STP/SUPPLEMENT/SIU + lý do, luôn cần người duyệt), backend ONNX tùy chọn để chạy model bảng trên CPU, nhật ký và dashboard giám sát `/verify`, và CI kiểm tra API + parity ONNX. Chi tiết ở `02_API_UI_VA_MODEL.md`. OpenAPI (`05_OPENAPI.json`) đã có `/verify`.
+
 Một địa chỉ duy nhất dùng cho toàn bộ giao diện:
 
 - `http://127.0.0.1:8000/` — Dashboard, Nạp hồ sơ, Workbench và Nhật ký.
