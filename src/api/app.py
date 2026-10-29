@@ -72,7 +72,7 @@ async def basic_auth(request: Request, call_next):
     Active only when both INSURANCE_BASIC_AUTH_USER and _PASS are set; otherwise
     the API behaves exactly as before (local dev and tests are unaffected).
     """
-    if _AUTH_USER and _AUTH_PASS and request.url.path not in _AUTH_OPEN_PATHS:
+    if _AUTH_USER and _AUTH_PASS and request.method != "OPTIONS" and request.url.path not in _AUTH_OPEN_PATHS:
         header = request.headers.get("Authorization", "")
         authorized = False
         if header.startswith("Basic "):
@@ -106,6 +106,23 @@ async def json_request_log(request: Request, call_next):
             "route": request.scope.get("route").path if request.scope.get("route") else "unmatched",
             "status": status, "duration_ms": round((time.monotonic() - started) * 1000, 1),
         }, ensure_ascii=False))
+
+
+# Optional CORS, so a separately hosted frontend (e.g. on Vercel) can call this
+# API across origins. Active only when INSURANCE_CORS_ORIGINS is set to a
+# comma-separated allow-list; off by default so local use is unchanged.
+_CORS_ORIGINS = os.getenv("INSURANCE_CORS_ORIGINS")
+if _CORS_ORIGINS:
+    from fastapi.middleware.cors import CORSMiddleware
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[origin.strip() for origin in _CORS_ORIGINS.split(",") if origin.strip()],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+        expose_headers=["X-Trace-ID"],
+    )
 
 
 def _ui_file(name: str, media_type: str | None = None) -> FileResponse:
