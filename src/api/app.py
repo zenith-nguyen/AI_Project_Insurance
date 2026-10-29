@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 import os
+import base64
 import json
 import logging
+import secrets
 import time
 from pathlib import Path
 from uuid import uuid4
@@ -56,6 +58,34 @@ if not ACCESS_LOG.handlers:
     ACCESS_LOG.addHandler(handler)
 ACCESS_LOG.setLevel(logging.INFO)
 ACCESS_LOG.propagate = False
+
+
+_AUTH_USER = os.getenv("INSURANCE_BASIC_AUTH_USER")
+_AUTH_PASS = os.getenv("INSURANCE_BASIC_AUTH_PASS")
+_AUTH_OPEN_PATHS = {"/health"}  # left open for tunnel/uptime checks
+
+
+@app.middleware("http")
+async def basic_auth(request: Request, call_next):
+    """Optional shared-password gate for exposing the host over a tunnel.
+
+    Active only when both INSURANCE_BASIC_AUTH_USER and _PASS are set; otherwise
+    the API behaves exactly as before (local dev and tests are unaffected).
+    """
+    if _AUTH_USER and _AUTH_PASS and request.url.path not in _AUTH_OPEN_PATHS:
+        header = request.headers.get("Authorization", "")
+        authorized = False
+        if header.startswith("Basic "):
+            try:
+                user, _, password = base64.b64decode(header[6:]).decode("utf-8").partition(":")
+                authorized = secrets.compare_digest(user, _AUTH_USER) and secrets.compare_digest(password, _AUTH_PASS)
+            except Exception:
+                authorized = False
+        if not authorized:
+            from starlette.responses import Response
+
+            return Response(status_code=401, headers={"WWW-Authenticate": 'Basic realm="Claim Review"'})
+    return await call_next(request)
 
 
 @app.middleware("http")
